@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/bchapuis/restic-server/config"
@@ -19,7 +20,7 @@ func HeadData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "403 invalid ID", 403)
 		return
 	}
-	file := filepath.Join(config.DataPath(repo), id)
+	file := filepath.Join(config.DataPath(repo), id.String())
 	if _, err := os.Stat(file); err != nil {
 		http.Error(w, "404 repository not found", 404)
 		return
@@ -37,7 +38,7 @@ func GetData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "403 invalid ID", 403)
 		return
 	}
-	file := filepath.Join(config.DataPath(repo), id)
+	file := filepath.Join(config.DataPath(repo), id.String())
 	if _, err := os.Stat(file); err != nil {
 		http.Error(w, "404 repository not found", 404)
 		return

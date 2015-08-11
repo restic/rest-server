@@ -58,6 +58,7 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	path, _ := ioutil.TempDir("", "restic-repository-")
 
 	config.Init(path)
