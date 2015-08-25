@@ -33,9 +33,28 @@ func BackendType(u string) backend.Type {
 	s := strings.Split(u, "/")
 	var bt backend.Type
 	if len(s) > 2 {
-		bt, _ = backend.ParseType(s[2])
+		bt = parseBackendType(s[2])
 	}
 	return bt
+}
+
+func parseBackendType(u string) backend.Type {
+	switch u {
+	case string(backend.Config):
+		return backend.Config
+	case string(backend.Data):
+		return backend.Data
+	case string(backend.Snapshot):
+		return backend.Snapshot
+	case string(backend.Key):
+		return backend.Key
+	case string(backend.Index):
+		return backend.Index
+	case string(backend.Lock):
+		return backend.Lock
+	default:
+		return ""
+	}
 }
 
 // Returns the blob ID for a given path

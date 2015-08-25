@@ -84,7 +84,7 @@ func ListBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		return
 	}
 	bt := BackendType(uri)
-	if bt.IsNull() {
+	if string(bt) == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -114,7 +114,7 @@ func HeadBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		return
 	}
 	bt := BackendType(uri)
-	if bt.IsNull() {
+	if string(bt) == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -142,7 +142,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		return
 	}
 	bt := BackendType(uri)
-	if bt.IsNull() {
+	if string(bt) == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -172,7 +172,7 @@ func PostBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		return
 	}
 	bt := BackendType(uri)
-	if bt.IsNull() {
+	if string(bt) == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -191,6 +191,7 @@ func PostBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		http.NotFound(w, r)
 		return
 	}
+	w.WriteHeader(201)
 }
 
 func DeleteBlob(w http.ResponseWriter, r *http.Request, c *Context) {
@@ -206,7 +207,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		return
 	}
 	bt := BackendType(uri)
-	if bt.IsNull() {
+	if string(bt) == "" {
 		http.NotFound(w, r)
 		return
 	}

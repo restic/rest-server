@@ -18,14 +18,14 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("%s %s", m, u)
 
-	if Authorize(r) {
+	if err := Authorize(r); err == nil {
 		if handler := RestAPI(m, u); handler != nil {
 			handler(w, r, &router.Context)
 		} else {
 			http.Error(w, "not found", 404)
 		}
 	} else {
-		http.Error(w, "unauthorized", 403)
+		http.Error(w, err.Error(), 403)
 	}
 }
 
@@ -54,7 +54,7 @@ func RestAPI(m string, u string) Handler {
 
 	// Route blob requests
 	id := BlobID(u)
-	if len(s) == 4 && !bt.IsNull() && bt != backend.Config {
+	if len(s) == 4 && string(bt) != "" && bt != backend.Config {
 		if s[3] == "" && m == "GET" {
 			return ListBlob
 		} else if !id.IsNull() {
