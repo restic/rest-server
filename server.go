@@ -12,7 +12,7 @@ func main() {
 
 	context := Context{"/tmp/restic"}
 
-	repo, _ := context.Repository("repo")
+	repo, _ := context.Repository("user")
 	repo.Init()
 
 	errc := context.Init()
