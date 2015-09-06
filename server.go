@@ -7,9 +7,6 @@ import (
 )
 
 func main() {
-	//path, _ := ioutil.TempDir("", "restic-repository-")
-	//log.Printf("initialize context at %s", path)
-
 	context := Context{"/tmp/restic"}
 
 	repo, _ := context.Repository("user")

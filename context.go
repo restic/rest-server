@@ -13,14 +13,16 @@ type Context struct {
 }
 
 func NewContext(path string) Context {
-	return Context{filepath.Clean(path)}
+	path = filepath.Clean(path)
+	if _, err := os.Stat(path); err != nil {
+		os.MkdirAll(path, backend.Modes.Dir)
+	}
+	return Context{path}
 }
 
 // Creates the file structure of the Context
 func (c *Context) Init() error {
-	if _, err := os.Stat(c.path); err != nil {
-		return os.MkdirAll(c.path, backend.Modes.Dir)
-	}
+
 	return nil
 }
 
