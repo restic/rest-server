@@ -20,12 +20,6 @@ func NewContext(path string) Context {
 	return Context{path}
 }
 
-// Creates the file structure of the Context
-func (c *Context) Init() error {
-
-	return nil
-}
-
 func (c *Context) Repository(name string) (Repository, error) {
 	name, err := ParseRepositoryName(name)
 	return Repository{filepath.Join(c.path, name)}, err

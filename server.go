@@ -7,16 +7,10 @@ import (
 )
 
 func main() {
-	context := Context{"/tmp/restic"}
+	context := NewContext("/tmp/restic")
 
 	repo, _ := context.Repository("user")
 	repo.Init()
-
-	errc := context.Init()
-	if errc != nil {
-		log.Println("context initialization failed")
-		return
-	}
 
 	router := Router{context}
 	port := ":8000"

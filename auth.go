@@ -20,9 +20,5 @@ func Authorize(r *http.Request) error {
 		return errors.New("unknown user")
 	}
 
-	if username != repo {
-		return errors.New("unauthorized")
-	}
-
 	return nil
 }
