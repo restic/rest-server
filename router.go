@@ -12,6 +12,10 @@ type Router struct {
 	Context
 }
 
+func NewRouter(context Context) *Router {
+	return &Router{context}
+}
+
 func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m := r.Method
 	u := r.RequestURI

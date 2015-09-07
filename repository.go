@@ -14,25 +14,25 @@ type Repository struct {
 	path string
 }
 
-// Creates the file structure of the Repository
-func (r *Repository) Init() error {
+func NewRepository(path string) (*Repository, error) {
 	dirs := []string{
-		r.path,
-		filepath.Join(r.path, string(backend.Data)),
-		filepath.Join(r.path, string(backend.Snapshot)),
-		filepath.Join(r.path, string(backend.Index)),
-		filepath.Join(r.path, string(backend.Lock)),
-		filepath.Join(r.path, string(backend.Key)),
+		path,
+		filepath.Join(path, string(backend.Data)),
+		filepath.Join(path, string(backend.Snapshot)),
+		filepath.Join(path, string(backend.Index)),
+		filepath.Join(path, string(backend.Lock)),
+		filepath.Join(path, string(backend.Key)),
 	}
 	for _, d := range dirs {
-		if _, errs := os.Stat(d); errs != nil {
-			errmk := os.MkdirAll(d, backend.Modes.Dir)
-			if errmk != nil {
-				return errmk
+		_, err := os.Stat(d)
+		if err != nil {
+			err := os.MkdirAll(d, backend.Modes.Dir)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
-	return nil
+	return &Repository{path}, nil
 }
 
 func (r *Repository) HasConfig() bool {

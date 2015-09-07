@@ -20,7 +20,16 @@ func NewContext(path string) Context {
 	return Context{path}
 }
 
-func (c *Context) Repository(name string) (Repository, error) {
+func (c *Context) Repository(name string) (*Repository, error) {
 	name, err := ParseRepositoryName(name)
-	return Repository{filepath.Join(c.path, name)}, err
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := NewRepository(filepath.Join(c.path, name))
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
