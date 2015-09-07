@@ -3,11 +3,13 @@ package main
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
 )
 
-func Authorize(r *http.Request) error {
+func Authorize(r *http.Request, c *Context) error {
 
-	htpasswd, err := NewHtpasswdFromFile("/tmp/restic/.htpasswd")
+	file := filepath.Join(c.path, ".htpasswd")
+	htpasswd, err := NewHtpasswdFromFile(file)
 	if err != nil {
 		return errors.New("internal server error")
 	}

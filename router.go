@@ -22,7 +22,7 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("%s %s", m, u)
 
-	if err := Authorize(r); err == nil {
+	if err := Authorize(r, &router.Context); err == nil {
 		if handler := RestAPI(m, u); handler != nil {
 			handler(w, r, &router.Context)
 		} else {
