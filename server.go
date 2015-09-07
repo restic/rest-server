@@ -26,6 +26,9 @@ func main() {
 		log.Printf("start server on port %s", HTTPS)
 		privateKey := filepath.Join(*path, "private_key")
 		publicKey := filepath.Join(*path, "public_key")
-		http.ListenAndServeTLS(HTTPS, privateKey, publicKey, router)
+
+		log.Printf("private key: %s", privateKey)
+		log.Printf("public key: %s", publicKey)
+		http.ListenAndServeTLS(HTTPS, publicKey, privateKey, router)
 	}
 }
