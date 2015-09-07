@@ -7,7 +7,6 @@ import (
 )
 
 func Authorize(r *http.Request, c *Context) error {
-
 	file := filepath.Join(c.path, ".htpasswd")
 	htpasswd, err := NewHtpasswdFromFile(file)
 	if err != nil {
