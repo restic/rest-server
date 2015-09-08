@@ -78,6 +78,7 @@ func (r *Repository) HasBlob(bt backend.Type, id backend.ID) bool {
 func (r *Repository) ReadBlob(bt backend.Type, id backend.ID) (io.ReadSeeker, error) {
 	file := filepath.Join(r.path, string(bt), id.String())
 	f, err := os.Open(file)
+	defer f.Close()
 	if err != nil {
 		return f, err
 	}
