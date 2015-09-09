@@ -50,12 +50,12 @@ func TestBackendType(t *testing.T) {
 	var bt backend.Type
 
 	bt = BackendType("/")
-	if !bt.IsNull() {
+	if bt != "" {
 		t.Error("backend type should be nil")
 	}
 
 	bt = BackendType("/test")
-	if !bt.IsNull() {
+	if bt != "" {
 		t.Error("backend type should be nil")
 	}
 

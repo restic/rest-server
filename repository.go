@@ -79,10 +79,7 @@ func (r *Repository) ReadBlob(bt backend.Type, id backend.ID) (io.ReadSeeker, er
 	file := filepath.Join(r.path, string(bt), id.String())
 	f, err := os.Open(file)
 	defer f.Close()
-	if err != nil {
-		return f, err
-	}
-	return f, nil
+	return f, err
 }
 
 func (r *Repository) WriteBlob(bt backend.Type, id backend.ID, data []byte) error {
