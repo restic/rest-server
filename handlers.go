@@ -151,8 +151,8 @@ func GetBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		http.NotFound(w, r)
 		return
 	}
-	blob, errr := repo.ReadBlob(bt, id)
-	if errr != nil {
+	blob, err := repo.ReadBlob(bt, id)
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -191,7 +191,7 @@ func PostBlob(w http.ResponseWriter, r *http.Request, c *Context) {
 		http.NotFound(w, r)
 		return
 	}
-	w.WriteHeader(201)
+	w.WriteHeader(200)
 }
 
 func DeleteBlob(w http.ResponseWriter, r *http.Request, c *Context) {
