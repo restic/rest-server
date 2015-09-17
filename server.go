@@ -37,92 +37,120 @@ func main() {
 		os.MkdirAll(filepath.Join(*path, d), backend.Modes.Dir)
 	}
 
-	router := http.NewServeMux()
+	router := NewRouter()
 
-	// Check if a configuration exists.
-	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		uri := r.RequestURI
-		method := r.Method
-		log.Printf("%s %s", method, uri)
-
-		file := filepath.Join(*path, "config")
-		_, err := os.Stat(file)
-
-		// Check if the config exists
-		if method == "HEAD" && err == nil {
+	router.Head("/config", func(w http.ResponseWriter, r *http.Request) {
+		config := filepath.Join(*path, "config")
+		if _, err := os.Stat(config); err != nil {
+			http.Error(w, "404 not found", 404)
 			return
 		}
-
-		// Get the config
-		if method == "GET" && err == nil {
-			bytes, _ := ioutil.ReadFile(file)
-			w.Write(bytes)
-			return
-		}
-
-		// Save the config
-		if method == "POST" && err != nil {
-			bytes, _ := ioutil.ReadAll(r.Body)
-			ioutil.WriteFile(file, bytes, 0600)
-			return
-		}
-
-		http.Error(w, "404 not found", 404)
+		w.Write([]byte("200 ok"))
 	})
 
-	for _, dir := range dirs {
-		router.HandleFunc("/"+dir+"/", func(w http.ResponseWriter, r *http.Request) {
-			uri := r.RequestURI
-			method := r.Method
-			log.Printf("%s %s", method, uri)
-
-			vars := strings.Split(r.RequestURI, "/")
-			dir := vars[1]
-			name := vars[2]
-			path := filepath.Join(*path, dir, name)
-			_, err := os.Stat(path)
-
-			// List the blobs of a given dir.
-			if method == "GET" && name == "" && err == nil {
-				files, _ := ioutil.ReadDir(path)
-				names := make([]string, len(files))
-				for i, f := range files {
-					names[i] = f.Name()
-				}
-				data, _ := json.Marshal(names)
-				w.Write(data)
-				return
-			}
-
-			// Check if the blob esists
-			if method == "HEAD" && name != "" && err == nil {
-				return
-			}
-
-			// Get a blob of a given dir.
-			if method == "GET" && name != "" && err == nil {
-				file, _ := os.Open(path)
-				defer file.Close()
-				http.ServeContent(w, r, "", time.Unix(0, 0), file)
-				return
-			}
-
-			// Save a blob
-			if method == "POST" && name != "" && err != nil {
-				bytes, _ := ioutil.ReadAll(r.Body)
-				ioutil.WriteFile(path, bytes, 0600)
-				return
-			}
-
-			// Delete a blob
-			if method == "DELETE" && name != "" && err == nil {
-				os.Remove(path)
-				return
-			}
-
+	router.Get("/config", func(w http.ResponseWriter, r *http.Request) {
+		config := filepath.Join(*path, "config")
+		bytes, err := ioutil.ReadFile(config)
+		if err != nil {
 			http.Error(w, "404 not found", 404)
-		})
-	}
+			return
+		}
+		w.Write(bytes)
+	})
+
+	router.Post("/config", func(w http.ResponseWriter, r *http.Request) {
+		config := filepath.Join(*path, "config")
+		bytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "400 bad request", 400)
+			return
+		}
+		errw := ioutil.WriteFile(config, bytes, 0600)
+		if errw != nil {
+			http.Error(w, "500 internal server error", 500)
+			return
+		}
+		w.Write([]byte("200 ok"))
+	})
+
+	router.Get("/:dir/", func(w http.ResponseWriter, r *http.Request) {
+		vars := strings.Split(r.RequestURI, "/")
+		dir := vars[1]
+		path := filepath.Join(*path, dir)
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			http.Error(w, "404 not found", 404)
+			return
+		}
+		names := make([]string, len(files))
+		for i, f := range files {
+			names[i] = f.Name()
+		}
+		data, err := json.Marshal(names)
+		if err != nil {
+			http.Error(w, "500 internal server error", 500)
+			return
+		}
+		w.Write(data)
+	})
+
+	router.Head("/:dir/:name", func(w http.ResponseWriter, r *http.Request) {
+		vars := strings.Split(r.RequestURI, "/")
+		dir := vars[1]
+		name := vars[2]
+		path := filepath.Join(*path, dir, name)
+		_, err := os.Stat(path)
+		if err != nil {
+			http.Error(w, "404 not found", 404)
+			return
+		}
+		w.Write([]byte("200 ok"))
+	})
+
+	router.Get("/:type/:name", func(w http.ResponseWriter, r *http.Request) {
+		vars := strings.Split(r.RequestURI, "/")
+		dir := vars[1]
+		name := vars[2]
+		path := filepath.Join(*path, dir, name)
+		file, err := os.Open(path)
+		if err != nil {
+			http.Error(w, "404 not found", 404)
+			return
+		}
+		defer file.Close()
+		http.ServeContent(w, r, "", time.Unix(0, 0), file)
+	})
+
+	router.Post("/:type/:name", func(w http.ResponseWriter, r *http.Request) {
+		vars := strings.Split(r.RequestURI, "/")
+		dir := vars[1]
+		name := vars[2]
+		path := filepath.Join(*path, dir, name)
+		bytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "400 bad request", 400)
+			return
+		}
+		errw := ioutil.WriteFile(path, bytes, 0600)
+		if errw != nil {
+			http.Error(w, "500 internal server error", 500)
+			return
+		}
+		w.Write([]byte("200 ok"))
+	})
+
+	router.Delete("/:type/:name", func(w http.ResponseWriter, r *http.Request) {
+		vars := strings.Split(r.RequestURI, "/")
+		dir := vars[1]
+		name := vars[2]
+		path := filepath.Join(*path, dir, name)
+		err := os.Remove(path)
+		if err != nil {
+			http.Error(w, "500 internal server error", 500)
+			return
+		}
+		w.Write([]byte("200 ok"))
+	})
 
 	// start the server
 	if !*tls {
