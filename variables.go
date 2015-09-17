@@ -29,13 +29,9 @@ func ParseRepositoryName(n string) (string, error) {
 }
 
 // Returns the backend type for a given path
-func BackendType(u string) backend.Type {
+func BackendType(u string) string {
 	s := strings.Split(u, "/")
-	var bt backend.Type
-	if len(s) > 2 {
-		bt = parseBackendType(s[2])
-	}
-	return bt
+	return s[2]
 }
 
 func parseBackendType(u string) backend.Type {
