@@ -14,22 +14,22 @@ func TestRouter(t *testing.T) {
 	router := NewRouter()
 
 	getConfig := []byte("GET /config")
-	router.Get("/config", func(w http.ResponseWriter, r *http.Request) {
+	router.GetFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(getConfig)
 	})
 
 	postConfig := []byte("POST /config")
-	router.Post("/config", func(w http.ResponseWriter, r *http.Request) {
+	router.PostFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(postConfig)
 	})
 
 	getBlobs := []byte("GET /blobs/")
-	router.Get("/blobs/", func(w http.ResponseWriter, r *http.Request) {
+	router.GetFunc("/blobs/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(getBlobs)
 	})
 
 	getBlob := []byte("GET /blobs/:sha")
-	router.Get("/blobs/:sha", func(w http.ResponseWriter, r *http.Request) {
+	router.GetFunc("/blobs/:sha", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(getBlob)
 	})
 

@@ -19,39 +19,71 @@ func NewRouter() *Router {
 	return &Router{make(map[string][]Route)}
 }
 
-func (router *Router) Options(path string, handler http.HandlerFunc) {
+func (router *Router) Options(path string, handler http.Handler) {
 	router.Handle("OPTIONS", path, handler)
 }
 
-func (router *Router) Get(path string, handler http.HandlerFunc) {
+func (router *Router) OptionsFunc(path string, handler http.HandlerFunc) {
+	router.Handle("OPTIONS", path, handler)
+}
+
+func (router *Router) Get(path string, handler http.Handler) {
 	router.Handle("GET", path, handler)
 }
 
-func (router *Router) Head(path string, handler http.HandlerFunc) {
+func (router *Router) GetFunc(path string, handler http.HandlerFunc) {
+	router.Handle("GET", path, handler)
+}
+
+func (router *Router) Head(path string, handler http.Handler) {
 	router.Handle("HEAD", path, handler)
 }
 
-func (router *Router) Post(path string, handler http.HandlerFunc) {
+func (router *Router) HeadFunc(path string, handler http.HandlerFunc) {
+	router.Handle("HEAD", path, handler)
+}
+
+func (router *Router) Post(path string, handler http.Handler) {
 	router.Handle("POST", path, handler)
 }
 
-func (router *Router) Put(path string, handler http.HandlerFunc) {
+func (router *Router) PostFunc(path string, handler http.HandlerFunc) {
+	router.Handle("POST", path, handler)
+}
+
+func (router *Router) Put(path string, handler http.Handler) {
 	router.Handle("PUT", path, handler)
 }
 
-func (router *Router) Delete(path string, handler http.HandlerFunc) {
+func (router *Router) PutFunc(path string, handler http.HandlerFunc) {
+	router.Handle("PUT", path, handler)
+}
+
+func (router *Router) Delete(path string, handler http.Handler) {
 	router.Handle("DELETE", path, handler)
 }
 
-func (router *Router) Trace(path string, handler http.HandlerFunc) {
+func (router *Router) DeleteFunc(path string, handler http.HandlerFunc) {
+	router.Handle("DELETE", path, handler)
+}
+
+func (router *Router) Trace(path string, handler http.Handler) {
 	router.Handle("TRACE", path, handler)
 }
 
-func (router *Router) Connect(path string, handler http.HandlerFunc) {
+func (router *Router) TraceFunc(path string, handler http.HandlerFunc) {
+	router.Handle("TRACE", path, handler)
+}
+
+func (router *Router) Connect(path string, handler http.Handler) {
 	router.Handle("Connect", path, handler)
 }
 
-func (router *Router) Handle(method string, uri string, handler http.HandlerFunc) {
+func (router *Router) ConnectFunc(path string, handler http.HandlerFunc) {
+	router.Handle("Connect", path, handler)
+}
+
+func (router *Router) Handle(method string, uri string, handler http.Handler) {
 	routes := router.routes[method]
 	path := strings.Split(uri, "/")
 	routes = append(routes, Route{path, handler})
