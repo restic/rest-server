@@ -14,6 +14,21 @@ type Context struct {
 	path string
 }
 
+func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			http.Error(w, "401 unauthorized", 401)
+			return
+		}
+		if !f.Validate(username, password) {
+			http.Error(w, "401 unauthorized", 401)
+			return
+		}
+		h.ServeHTTP(w, r)
+	}
+}
+
 func CheckConfig(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config := filepath.Join(c.path, "config")

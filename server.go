@@ -19,7 +19,7 @@ func main() {
 	var tls = flag.Bool("tls", false, "turns on tls support")
 	flag.Parse()
 
-	// Create all the necessary subdirectories
+	// Create the missing directories
 	dirs := []string{
 		"data",
 		"snapshots",
@@ -27,13 +27,12 @@ func main() {
 		"locks",
 		"keys",
 	}
-
 	for _, d := range dirs {
-		os.MkdirAll(filepath.Join(*path, d), backend.Modes.Dir)
+		os.MkdirAll(filepath.Join(*path, d), 0600)
 	}
 
+	// Define the routes
 	context := &Context{*path}
-
 	router := NewRouter()
 	router.HeadFunc("/config", CheckConfig(context))
 	router.GetFunc("/config", GetConfig(context))
@@ -44,17 +43,28 @@ func main() {
 	router.PostFunc("/:type/:name", SaveBlob(context))
 	router.DeleteFunc("/:type/:name", DeleteBlob(context))
 
+	// Check for a password file
+	var handler http.Handler
+	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
+	if err != nil {
+		log.Println("Authentication disabled")
+		handler = router
+	} else {
+		log.Println("Authentication enabled")
+		handler = AuthHandler(htpasswdFile, router)
+	}
+
 	// start the server
 	if !*tls {
-		log.Printf("start server on port %s", HTTP)
-		http.ListenAndServe(HTTP, router)
+		log.Printf("start server on port %s\n", HTTP)
+		http.ListenAndServe(HTTP, handler)
 	} else {
-		log.Printf("start server on port %s", HTTPS)
 		privateKey := filepath.Join(*path, "private_key")
 		publicKey := filepath.Join(*path, "public_key")
-
+		log.Println("TLS enabled")
 		log.Printf("private key: %s", privateKey)
 		log.Printf("public key: %s", publicKey)
-		http.ListenAndServeTLS(HTTPS, publicKey, privateKey, router)
+		log.Printf("start server on port %s\n", HTTPS)
+		http.ListenAndServeTLS(HTTPS, publicKey, privateKey, handler)
 	}
 }
