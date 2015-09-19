@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/restic/restic/backend"
 )
 
 const (
@@ -23,12 +21,13 @@ func main() {
 
 	// Create all the necessary subdirectories
 	dirs := []string{
-		backend.Paths.Data,
-		backend.Paths.Snapshots,
-		backend.Paths.Index,
-		backend.Paths.Locks,
-		backend.Paths.Keys,
+		"data",
+		"snapshots",
+		"index",
+		"locks",
+		"keys",
 	}
+
 	for _, d := range dirs {
 		os.MkdirAll(filepath.Join(*path, d), backend.Modes.Dir)
 	}
