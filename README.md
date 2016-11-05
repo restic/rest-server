@@ -6,13 +6,13 @@
 [![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/zcalusic/restic-server/blob/master/LICENSE)
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
-Restic Server is a sample server that implements restic's REST backend API.
-It has been developed for demonstration purpose and is not intended to be used in production.
+Restic Server is a sample server that implements restic's REST backend API. It has been developed for demonstration
+purpose and is not intended to be used in production.
 
 ## Getting started
 
-By default the server persists backup data in `/tmp/restic`.
-Build and start the server with a custom persistence directory:
+By default the server persists backup data in `/tmp/restic`. Build and start the server with a custom persistence
+directory:
 
 ```
 go install
