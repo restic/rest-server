@@ -33,7 +33,7 @@ import (
 	"io"
 	"log"
 
-	"restic/fs"
+	"github.com/zcalusic/restic-server/fs"
 )
 
 // lookup passwords in a htpasswd file

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"restic/fs"
+	"github.com/zcalusic/restic-server/fs"
 )
 
 // Context contains repository meta-data.
