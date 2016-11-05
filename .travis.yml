@@ -1,0 +1,20 @@
+os: linux
+sudo: false
+language: go
+
+go:
+  - 1.6
+  - 1.7
+  - tip
+
+matrix:
+  allow_failures:
+    - go: tip
+
+branches:
+  only:
+    - master
+
+notifications:
+  email:
+    on_success: always
