@@ -1,5 +1,11 @@
 # Restic Server
 
+[![Build Status](https://travis-ci.org/zcalusic/restic-server.svg?branch=master)](https://travis-ci.org/zcalusic/restic-server)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zcalusic/restic-server)](https://goreportcard.com/report/github.com/zcalusic/restic-server)
+[![GoDoc](https://godoc.org/github.com/zcalusic/restic-server?status.svg)](https://godoc.org/github.com/zcalusic/restic-server)
+[![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/zcalusic/restic-server/blob/master/LICENSE)
+[![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
+
 Restic Server is a sample server that implements restic's REST backend API.
 It has been developed for demonstration purpose and is not intended to be used in production.
 
