@@ -24,10 +24,10 @@ func main() {
 	// Create the missing directories
 	dirs := []string{
 		"data",
-		"snapshots",
 		"index",
-		"locks",
 		"keys",
+		"locks",
+		"snapshots",
 		"tmp",
 	}
 	for _, d := range dirs {
