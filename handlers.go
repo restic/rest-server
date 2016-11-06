@@ -190,6 +190,12 @@ func SaveBlob(c *Context) http.HandlerFunc {
 			os.Remove(tmp)
 			return
 		}
+		if err := tf.Sync(); err != nil {
+			http.Error(w, "500 internal server error", 500)
+			tf.Close()
+			os.Remove(tmp)
+			return
+		}
 		if err := tf.Close(); err != nil {
 			http.Error(w, "500 internal server error", 500)
 			os.Remove(tmp)
