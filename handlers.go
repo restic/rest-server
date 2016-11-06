@@ -21,9 +21,8 @@ type Context struct {
 	path string
 }
 
-// AuthHandler wraps h with a http.HandlerFunc that performs basic
-// authentication against the user/passwords pairs stored in f and returns the
-// http.HandlerFunc.
+// AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
+// stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
@@ -39,8 +38,7 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	}
 }
 
-// CheckConfig returns a http.HandlerFunc that checks whether
-// a configuration exists.
+// CheckConfig returns a http.HandlerFunc that checks whether a configuration exists.
 func CheckConfig(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config := filepath.Join(c.path, "config")
@@ -53,8 +51,7 @@ func CheckConfig(c *Context) http.HandlerFunc {
 	}
 }
 
-// GetConfig returns a http.HandlerFunc that allows for a
-// config to be retrieved.
+// GetConfig returns a http.HandlerFunc that allows for a config to be retrieved.
 func GetConfig(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config := filepath.Join(c.path, "config")
@@ -67,8 +64,7 @@ func GetConfig(c *Context) http.HandlerFunc {
 	}
 }
 
-// SaveConfig returns a http.HandlerFunc that allows for a
-// config to be saved.
+// SaveConfig returns a http.HandlerFunc that allows for a config to be saved.
 func SaveConfig(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config := filepath.Join(c.path, "config")
@@ -86,8 +82,7 @@ func SaveConfig(c *Context) http.HandlerFunc {
 	}
 }
 
-// ListBlobs returns a http.HandlerFunc that lists
-// all blobs of a given type in an arbitrary order.
+// ListBlobs returns a http.HandlerFunc that lists all blobs of a given type in an arbitrary order.
 func ListBlobs(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := strings.Split(r.RequestURI, "/")
@@ -111,8 +106,7 @@ func ListBlobs(c *Context) http.HandlerFunc {
 	}
 }
 
-// CheckBlob reutrns a http.HandlerFunc that tests whether a blob exists
-// and returns 200, if it does, or 404 otherwise.
+// CheckBlob returns a http.HandlerFunc that tests whether a blob exists and returns 200, if it does, or 404 otherwise.
 func CheckBlob(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := strings.Split(r.RequestURI, "/")
@@ -128,8 +122,7 @@ func CheckBlob(c *Context) http.HandlerFunc {
 	}
 }
 
-// GetBlob returns a http.HandlerFunc that retrieves a blob
-// from the repository.
+// GetBlob returns a http.HandlerFunc that retrieves a blob from the repository.
 func GetBlob(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := strings.Split(r.RequestURI, "/")
@@ -176,8 +169,7 @@ func SaveBlob(c *Context) http.HandlerFunc {
 	}
 }
 
-// DeleteBlob returns a http.HandlerFunc that deletes a blob from the
-// repository.
+// DeleteBlob returns a http.HandlerFunc that deletes a blob from the repository.
 func DeleteBlob(c *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := strings.Split(r.RequestURI, "/")

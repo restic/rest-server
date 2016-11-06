@@ -19,8 +19,7 @@ func Open(name string) (File, error) {
 	return &nonCachingFile{File: file}, err
 }
 
-// nonCachingFile wraps an *os.File and calls fadvise() to instantly forget
-// data that has been read or written.
+// nonCachingFile wraps an *os.File and calls fadvise() to instantly forget data that has been read or written.
 type nonCachingFile struct {
 	*os.File
 	readOffset int64

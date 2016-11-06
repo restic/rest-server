@@ -16,12 +16,12 @@ const (
 )
 
 func main() {
-	// Parse command-line args
+	// Parse command-line args.
 	var path = flag.String("path", "/tmp/restic", "specifies the path of the data directory")
 	var tls = flag.Bool("tls", false, "turns on tls support")
 	flag.Parse()
 
-	// Create the missing directories
+	// Create the missing directories.
 	dirs := []string{
 		"data",
 		"index",
@@ -34,7 +34,7 @@ func main() {
 		os.MkdirAll(filepath.Join(*path, d), 0700)
 	}
 
-	// Define the routes
+	// Define the routes.
 	context := &Context{*path}
 	router := NewRouter()
 	router.HeadFunc("/config", CheckConfig(context))
@@ -46,7 +46,7 @@ func main() {
 	router.PostFunc("/:type/:name", SaveBlob(context))
 	router.DeleteFunc("/:type/:name", DeleteBlob(context))
 
-	// Check for a password file
+	// Check for a password file.
 	var handler http.Handler
 	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
 	if err != nil {
@@ -57,7 +57,7 @@ func main() {
 		handler = AuthHandler(htpasswdFile, router)
 	}
 
-	// start the server
+	// Start the server.
 	if !*tls {
 		log.Printf("start server on port %s\n", defaultHTTPPort)
 		http.ListenAndServe(defaultHTTPPort, handler)

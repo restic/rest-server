@@ -104,7 +104,7 @@ func (router *Router) ConnectFunc(path string, handler http.HandlerFunc) {
 	router.Handle("Connect", path, handler)
 }
 
-// Handle registers a http.Handler for method and uri
+// Handle registers a http.Handler for method and uri.
 func (router *Router) Handle(method string, uri string, handler http.Handler) {
 	routes := router.routes[method]
 	path := strings.Split(uri, "/")

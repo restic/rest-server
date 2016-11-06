@@ -36,17 +36,15 @@ import (
 	"github.com/zcalusic/restic-server/fs"
 )
 
-// lookup passwords in a htpasswd file
-// The entries must have been created with -s for SHA encryption
+// Lookup passwords in a htpasswd file.  The entries must have been created with -s for SHA encryption.
 
 // HtpasswdFile is a map for usernames to passwords.
 type HtpasswdFile struct {
 	Users map[string]string
 }
 
-// NewHtpasswdFromFile reads the users and passwords from a htpasswd
-// file and returns them. If an error is encountered, it is returned, together
-// with a nil-Pointer for the HtpasswdFile.
+// NewHtpasswdFromFile reads the users and passwords from a htpasswd file and returns them.  If an error is encountered,
+// it is returned, together with a nil-Pointer for the HtpasswdFile.
 func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
 	r, err := fs.Open(path)
 	if err != nil {
@@ -56,9 +54,8 @@ func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
 	return NewHtpasswd(r)
 }
 
-// NewHtpasswd reads the users and passwords from a htpasswd
-// datastream in file and returns them. If an error is encountered,
-// it is returned, together with a nil-Pointer for the HtpasswdFile.
+// NewHtpasswd reads the users and passwords from a htpasswd datastream in file and returns them.  If an error is
+// encountered, it is returned, together with a nil-Pointer for the HtpasswdFile.
 func NewHtpasswd(file io.Reader) (*HtpasswdFile, error) {
 	cr := csv.NewReader(file)
 	cr.Comma = ':'
@@ -76,9 +73,8 @@ func NewHtpasswd(file io.Reader) (*HtpasswdFile, error) {
 	return h, nil
 }
 
-// Validate returns true if password matches the stored password
-// for user. If no password for user is stored, or the password
-// is wrong, false is returned.
+// Validate returns true if password matches the stored password for user.  If no password for user is stored, or the
+// password is wrong, false is returned.
 func (h *HtpasswdFile) Validate(user string, password string) bool {
 	realPassword, exists := h.Users[user]
 	if !exists {
