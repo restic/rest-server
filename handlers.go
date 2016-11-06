@@ -14,7 +14,7 @@ import (
 	"github.com/zcalusic/restic-server/fs"
 )
 
-// Context contains repository meta-data.
+// Context contains repository metadata.
 type Context struct {
 	path string
 }
@@ -23,12 +23,7 @@ type Context struct {
 // stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		if !ok {
-			http.Error(w, "401 unauthorized", 401)
-			return
-		}
-		if !f.Validate(username, password) {
+		if username, password, ok := r.BasicAuth(); !ok || !f.Validate(username, password) {
 			http.Error(w, "401 unauthorized", 401)
 			return
 		}
@@ -74,8 +69,7 @@ func SaveConfig(c *Context) http.HandlerFunc {
 			http.Error(w, "400 bad request", 400)
 			return
 		}
-		errw := ioutil.WriteFile(config, bytes, 0600)
-		if errw != nil {
+		if err := ioutil.WriteFile(config, bytes, 0600); err != nil {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
@@ -185,20 +179,20 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		}
 
 		if _, err := io.Copy(tf, r.Body); err != nil {
-			http.Error(w, "400 bad request", 400)
 			tf.Close()
 			os.Remove(tmp)
+			http.Error(w, "400 bad request", 400)
 			return
 		}
 		if err := tf.Sync(); err != nil {
-			http.Error(w, "500 internal server error", 500)
 			tf.Close()
 			os.Remove(tmp)
+			http.Error(w, "500 internal server error", 500)
 			return
 		}
 		if err := tf.Close(); err != nil {
-			http.Error(w, "500 internal server error", 500)
 			os.Remove(tmp)
+			http.Error(w, "500 internal server error", 500)
 			return
 		}
 
@@ -208,8 +202,9 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		path := filepath.Join(c.path, dir, name)
 
 		if err := os.Rename(tmp, path); err != nil {
-			http.Error(w, "500 internal server error", 500)
 			os.Remove(tmp)
+			os.Remove(path)
+			http.Error(w, "500 internal server error", 500)
 			return
 		}
 
@@ -229,8 +224,7 @@ func DeleteBlob(c *Context) http.HandlerFunc {
 		}
 		path := filepath.Join(c.path, dir, name)
 
-		err := os.Remove(path)
-		if err != nil {
+		if err := os.Remove(path); err != nil {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
