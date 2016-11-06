@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+
 	var cpuprofile = flag.String("cpuprofile", "", "write CPU profile to file")
 	var listen = flag.String("listen", ":8000", "listen address")
 	var path = flag.String("path", "/tmp/restic", "data directory")
