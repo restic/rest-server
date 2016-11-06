@@ -32,6 +32,7 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 			http.Error(w, "401 unauthorized", 401)
 			return
 		}
+
 		h.ServeHTTP(w, r)
 	}
 }
@@ -45,6 +46,7 @@ func CheckConfig(c *Context) http.HandlerFunc {
 			http.Error(w, "404 not found", 404)
 			return
 		}
+
 		w.Header().Add("Content-Length", fmt.Sprint(st.Size()))
 	}
 }
@@ -58,6 +60,7 @@ func GetConfig(c *Context) http.HandlerFunc {
 			http.Error(w, "404 not found", 404)
 			return
 		}
+
 		w.Write(bytes)
 	}
 }
@@ -76,6 +79,7 @@ func SaveConfig(c *Context) http.HandlerFunc {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
+
 		w.Write([]byte("200 ok"))
 	}
 }
@@ -86,20 +90,36 @@ func ListBlobs(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		path := filepath.Join(c.path, dir)
-		files, err := ioutil.ReadDir(path)
+
+		items, err := ioutil.ReadDir(path)
 		if err != nil {
 			http.Error(w, "404 not found", 404)
 			return
 		}
-		names := make([]string, len(files))
-		for i, f := range files {
-			names[i] = f.Name()
+
+		var names []string
+		for _, i := range items {
+			if dir == "data" {
+				subpath := filepath.Join(path, i.Name())
+				subitems, err := ioutil.ReadDir(subpath)
+				if err != nil {
+					http.Error(w, "404 not found", 404)
+					return
+				}
+				for _, f := range subitems {
+					names = append(names, f.Name())
+				}
+			} else {
+				names = append(names, i.Name())
+			}
 		}
+
 		data, err := json.Marshal(names)
 		if err != nil {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
+
 		w.Write(data)
 	}
 }
@@ -110,12 +130,18 @@ func CheckBlob(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		name := vars[2]
+
+		if dir == "data" {
+			name = filepath.Join(name[:2], name)
+		}
 		path := filepath.Join(c.path, dir, name)
+
 		st, err := os.Stat(path)
 		if err != nil {
 			http.Error(w, "404 not found", 404)
 			return
 		}
+
 		w.Header().Add("Content-Length", fmt.Sprint(st.Size()))
 	}
 }
@@ -126,13 +152,19 @@ func GetBlob(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		name := vars[2]
+
+		if dir == "data" {
+			name = filepath.Join(name[:2], name)
+		}
 		path := filepath.Join(c.path, dir, name)
+
 		file, err := fs.Open(path)
 		if err != nil {
 			http.Error(w, "404 not found", 404)
 			return
 		}
 		defer file.Close()
+
 		http.ServeContent(w, r, "", time.Unix(0, 0), file)
 	}
 }
@@ -143,8 +175,14 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		name := vars[2]
+
+		if dir == "data" {
+			os.MkdirAll(filepath.Join(c.path, dir, name[:2]), 0700)
+			name = filepath.Join(name[:2], name)
+		}
 		path := filepath.Join(c.path, dir, name)
-		tmp := path + "_tmp"
+
+		tmp := path + ".tmp"
 		tf, err := fs.OpenFile(tmp, os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			http.Error(w, "500 internal server error", 500)
@@ -163,6 +201,7 @@ func SaveBlob(c *Context) http.HandlerFunc {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
+
 		w.Write([]byte("200 ok"))
 	}
 }
@@ -173,12 +212,18 @@ func DeleteBlob(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		name := vars[2]
+
+		if dir == "data" {
+			name = filepath.Join(name[:2], name)
+		}
 		path := filepath.Join(c.path, dir, name)
+
 		err := os.Remove(path)
 		if err != nil {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
+
 		w.Write([]byte("200 ok"))
 	}
 }
