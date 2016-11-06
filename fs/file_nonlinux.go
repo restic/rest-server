@@ -1,4 +1,4 @@
-// +build !linux !go1.4
+// +build !linux
 
 package fs
 

@@ -1,5 +1,3 @@
-// +build linux,go1.4
-
 package fs
 
 import (

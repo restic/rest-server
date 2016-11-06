@@ -1,5 +1,3 @@
-// +build go1.4
-
 package main
 
 import (
