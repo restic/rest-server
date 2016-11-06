@@ -163,9 +163,9 @@ func GetBlob(c *Context) http.HandlerFunc {
 			http.Error(w, "404 not found", 404)
 			return
 		}
-		defer file.Close()
 
 		http.ServeContent(w, r, "", time.Unix(0, 0), file)
+		file.Close()
 	}
 }
 
@@ -176,18 +176,14 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		dir := vars[1]
 		name := vars[2]
 
-		if dir == "data" {
-			os.MkdirAll(filepath.Join(c.path, dir, name[:2]), 0700)
-			name = filepath.Join(name[:2], name)
-		}
-		path := filepath.Join(c.path, dir, name)
+		tmp := filepath.Join(c.path, "tmp", name)
 
-		tmp := path + ".tmp"
 		tf, err := fs.OpenFile(tmp, os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			http.Error(w, "500 internal server error", 500)
 			return
 		}
+
 		if _, err := io.Copy(tf, r.Body); err != nil {
 			http.Error(w, "400 bad request", 400)
 			tf.Close()
@@ -196,9 +192,19 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		}
 		if err := tf.Close(); err != nil {
 			http.Error(w, "500 internal server error", 500)
+			os.Remove(tmp)
+			return
 		}
+
+		if dir == "data" {
+			os.MkdirAll(filepath.Join(c.path, dir, name[:2]), 0700)
+			name = filepath.Join(name[:2], name)
+		}
+		path := filepath.Join(c.path, dir, name)
+
 		if err := os.Rename(tmp, path); err != nil {
 			http.Error(w, "500 internal server error", 500)
+			os.Remove(tmp)
 			return
 		}
 
