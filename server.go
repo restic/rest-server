@@ -7,13 +7,25 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 )
 
 func main() {
+	var cpuprofile = flag.String("cpuprofile", "", "write CPU profile to file")
 	var listen = flag.String("listen", ":8000", "listen address")
 	var path = flag.String("path", "/tmp/restic", "data directory")
 	var tls = flag.Bool("tls", false, "turn on TLS support")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("CPU profiling enabled")
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	log.Println("Creating repository directories")
 	dirs := []string{
