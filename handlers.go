@@ -197,7 +197,6 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		}
 
 		if dir == "data" {
-			os.MkdirAll(filepath.Join(c.path, dir, name[:2]), 0700)
 			name = filepath.Join(name[:2], name)
 		}
 		path := filepath.Join(c.path, dir, name)

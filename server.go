@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -28,6 +29,9 @@ func main() {
 	}
 	for _, d := range dirs {
 		os.MkdirAll(filepath.Join(*path, d), 0700)
+	}
+	for i := 0; i < 256; i++ {
+		os.MkdirAll(filepath.Join(*path, "data", fmt.Sprintf("%02x", i)), 0700)
 	}
 
 	// Define the routes.
