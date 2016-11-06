@@ -8,17 +8,13 @@ import (
 	"path/filepath"
 )
 
-const (
-	defaultHTTPPort  = ":8000"
-	defaultHTTPSPort = ":8443"
-)
-
 func main() {
 	var err error
 
-	// Parse command-line args.
-	var path = flag.String("path", "/tmp/restic", "specifies the path of the data directory")
-	var tls = flag.Bool("tls", false, "turns on tls support")
+	// Parse command line arguments.
+	var listen = flag.String("listen", ":8000", "listen address")
+	var path = flag.String("path", "/tmp/restic", "data directory")
+	var tls = flag.Bool("tls", false, "turn on TLS support")
 	flag.Parse()
 
 	// Create the missing directories.
@@ -59,16 +55,16 @@ func main() {
 
 	// Start the server.
 	if !*tls {
-		log.Printf("Starting server on port %s\n", defaultHTTPPort)
-		err = http.ListenAndServe(defaultHTTPPort, handler)
+		log.Printf("Starting server on %s\n", *listen)
+		err = http.ListenAndServe(*listen, handler)
 	} else {
 		privateKey := filepath.Join(*path, "private_key")
 		publicKey := filepath.Join(*path, "public_key")
 		log.Println("TLS enabled")
 		log.Printf("Private key: %s", privateKey)
 		log.Printf("Public key: %s", publicKey)
-		log.Printf("Starting server on port %s\n", defaultHTTPSPort)
-		err = http.ListenAndServeTLS(defaultHTTPSPort, publicKey, privateKey, handler)
+		log.Printf("Starting server on %s\n", *listen)
+		err = http.ListenAndServeTLS(*listen, publicKey, privateKey, handler)
 	}
 
 	if err != nil {
