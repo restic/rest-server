@@ -14,6 +14,8 @@ const (
 )
 
 func main() {
+	var err error
+
 	// Parse command-line args.
 	var path = flag.String("path", "/tmp/restic", "specifies the path of the data directory")
 	var tls = flag.Bool("tls", false, "turns on tls support")
@@ -57,15 +59,19 @@ func main() {
 
 	// Start the server.
 	if !*tls {
-		log.Printf("start server on port %s\n", defaultHTTPPort)
-		http.ListenAndServe(defaultHTTPPort, handler)
+		log.Printf("Starting server on port %s\n", defaultHTTPPort)
+		err = http.ListenAndServe(defaultHTTPPort, handler)
 	} else {
 		privateKey := filepath.Join(*path, "private_key")
 		publicKey := filepath.Join(*path, "public_key")
 		log.Println("TLS enabled")
-		log.Printf("private key: %s", privateKey)
-		log.Printf("public key: %s", publicKey)
-		log.Printf("start server on port %s\n", defaultHTTPSPort)
-		http.ListenAndServeTLS(defaultHTTPSPort, publicKey, privateKey, handler)
+		log.Printf("Private key: %s", privateKey)
+		log.Printf("Public key: %s", publicKey)
+		log.Printf("Starting server on port %s\n", defaultHTTPSPort)
+		err = http.ListenAndServeTLS(defaultHTTPSPort, publicKey, privateKey, handler)
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
