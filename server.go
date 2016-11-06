@@ -10,15 +10,12 @@ import (
 )
 
 func main() {
-	var err error
-
-	// Parse command line arguments.
 	var listen = flag.String("listen", ":8000", "listen address")
 	var path = flag.String("path", "/tmp/restic", "data directory")
 	var tls = flag.Bool("tls", false, "turn on TLS support")
 	flag.Parse()
 
-	// Create the missing directories.
+	log.Println("Creating repository directories")
 	dirs := []string{
 		"data",
 		"index",
@@ -34,7 +31,6 @@ func main() {
 		os.MkdirAll(filepath.Join(*path, "data", fmt.Sprintf("%02x", i)), 0700)
 	}
 
-	// Define the routes.
 	context := &Context{*path}
 	router := NewRouter()
 	router.HeadFunc("/config", CheckConfig(context))
@@ -46,7 +42,6 @@ func main() {
 	router.PostFunc("/:type/:name", SaveBlob(context))
 	router.DeleteFunc("/:type/:name", DeleteBlob(context))
 
-	// Check for a password file.
 	var handler http.Handler
 	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
 	if err != nil {
@@ -57,7 +52,6 @@ func main() {
 		handler = AuthHandler(htpasswdFile, router)
 	}
 
-	// Start the server.
 	if !*tls {
 		log.Printf("Starting server on %s\n", *listen)
 		err = http.ListenAndServe(*listen, handler)
@@ -70,7 +64,6 @@ func main() {
 		log.Printf("Starting server on %s\n", *listen)
 		err = http.ListenAndServeTLS(*listen, publicKey, privateKey, handler)
 	}
-
 	if err != nil {
 		log.Fatal(err)
 	}
