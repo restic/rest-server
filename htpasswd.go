@@ -30,8 +30,7 @@ import (
 	"encoding/csv"
 	"io"
 	"log"
-
-	"github.com/zcalusic/restic-server/fs"
+	"os"
 )
 
 // Lookup passwords in a htpasswd file.  The entries must have been created with -s for SHA encryption.
@@ -44,7 +43,7 @@ type HtpasswdFile struct {
 // NewHtpasswdFromFile reads the users and passwords from a htpasswd file and returns them.  If an error is encountered,
 // it is returned, together with a nil-Pointer for the HtpasswdFile.
 func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
-	r, err := fs.Open(path)
+	r, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
