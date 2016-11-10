@@ -24,8 +24,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal(err)
+		}
 		log.Println("CPU profiling enabled")
-		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
@@ -39,10 +41,14 @@ func main() {
 		"tmp",
 	}
 	for _, d := range dirs {
-		os.MkdirAll(filepath.Join(*path, d), 0700)
+		if err := os.MkdirAll(filepath.Join(*path, d), 0700); err != nil {
+			log.Fatal(err)
+		}
 	}
 	for i := 0; i < 256; i++ {
-		os.MkdirAll(filepath.Join(*path, "data", fmt.Sprintf("%02x", i)), 0700)
+		if err := os.MkdirAll(filepath.Join(*path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	context := &Context{*path}
