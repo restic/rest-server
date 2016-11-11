@@ -17,6 +17,10 @@ type Context struct {
 	path string
 }
 
+func isHashed(dir string) bool {
+	return dir == "data"
+}
+
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
 // stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
@@ -91,7 +95,7 @@ func ListBlobs(c *Context) http.HandlerFunc {
 
 		var names []string
 		for _, i := range items {
-			if dir == "data" {
+			if isHashed(dir) {
 				subpath := filepath.Join(path, i.Name())
 				subitems, err := ioutil.ReadDir(subpath)
 				if err != nil {
@@ -123,7 +127,7 @@ func CheckBlob(c *Context) http.HandlerFunc {
 		dir := vars[1]
 		name := vars[2]
 
-		if dir == "data" {
+		if isHashed(dir) {
 			name = filepath.Join(name[:2], name)
 		}
 		path := filepath.Join(c.path, dir, name)
@@ -145,7 +149,7 @@ func GetBlob(c *Context) http.HandlerFunc {
 		dir := vars[1]
 		name := vars[2]
 
-		if dir == "data" {
+		if isHashed(dir) {
 			name = filepath.Join(name[:2], name)
 		}
 		path := filepath.Join(c.path, dir, name)
@@ -194,7 +198,7 @@ func SaveBlob(c *Context) http.HandlerFunc {
 			return
 		}
 
-		if dir == "data" {
+		if isHashed(dir) {
 			name = filepath.Join(name[:2], name)
 		}
 		path := filepath.Join(c.path, dir, name)
@@ -217,7 +221,7 @@ func DeleteBlob(c *Context) http.HandlerFunc {
 		dir := vars[1]
 		name := vars[2]
 
-		if dir == "data" {
+		if isHashed(dir) {
 			name = filepath.Join(name[:2], name)
 		}
 		path := filepath.Join(c.path, dir, name)
