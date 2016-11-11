@@ -10,6 +10,47 @@ import (
 	"runtime/pprof"
 )
 
+func createDirectories(path string) {
+	log.Println("Creating repository directories")
+
+	dirs := []string{
+		"data",
+		"index",
+		"keys",
+		"locks",
+		"snapshots",
+		"tmp",
+	}
+
+	for _, d := range dirs {
+		if err := os.MkdirAll(filepath.Join(path, d), 0700); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for i := 0; i < 256; i++ {
+		if err := os.MkdirAll(filepath.Join(path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func setupRoutes(path string) *Router {
+	context := &Context{path}
+
+	router := NewRouter()
+	router.HeadFunc("/config", CheckConfig(context))
+	router.GetFunc("/config", GetConfig(context))
+	router.PostFunc("/config", SaveConfig(context))
+	router.GetFunc("/:dir/", ListBlobs(context))
+	router.HeadFunc("/:dir/:name", CheckBlob(context))
+	router.GetFunc("/:type/:name", GetBlob(context))
+	router.PostFunc("/:type/:name", SaveBlob(context))
+	router.DeleteFunc("/:type/:name", DeleteBlob(context))
+
+	return router
+}
+
 func main() {
 	log.SetFlags(0)
 
@@ -31,45 +72,18 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	log.Println("Creating repository directories")
-	dirs := []string{
-		"data",
-		"index",
-		"keys",
-		"locks",
-		"snapshots",
-		"tmp",
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(*path, d), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
-	for i := 0; i < 256; i++ {
-		if err := os.MkdirAll(filepath.Join(*path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
+	createDirectories(*path)
 
-	context := &Context{*path}
-	router := NewRouter()
-	router.HeadFunc("/config", CheckConfig(context))
-	router.GetFunc("/config", GetConfig(context))
-	router.PostFunc("/config", SaveConfig(context))
-	router.GetFunc("/:dir/", ListBlobs(context))
-	router.HeadFunc("/:dir/:name", CheckBlob(context))
-	router.GetFunc("/:type/:name", GetBlob(context))
-	router.PostFunc("/:type/:name", SaveBlob(context))
-	router.DeleteFunc("/:type/:name", DeleteBlob(context))
+	router := setupRoutes(*path)
 
 	var handler http.Handler
 	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
 	if err != nil {
-		log.Println("Authentication disabled")
 		handler = router
+		log.Println("Authentication disabled")
 	} else {
-		log.Println("Authentication enabled")
 		handler = AuthHandler(htpasswdFile, router)
+		log.Println("Authentication enabled")
 	}
 
 	if !*tls {
