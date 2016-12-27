@@ -7,33 +7,36 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+
+	"goji.io"
+	"goji.io/pat"
 )
 
-var debug = flag.Bool("debug", false, "output debug messages")
+var (
+	path       = flag.String("path", "/tmp/restic", "data directory")
+	listen     = flag.String("listen", ":8000", "listen address")
+	tls        = flag.Bool("tls", false, "turn on TLS support")
+	cpuprofile = flag.String("cpuprofile", "", "write CPU profile to file")
+	debug      = flag.Bool("debug", false, "output debug messages")
+)
 
-func setupRoutes(path string) *Router {
-	context := &Context{path}
+func setupMux() *goji.Mux {
+	mux := goji.NewMux()
+	mux.HandleFunc(pat.Head("/config"), CheckConfig)
+	mux.HandleFunc(pat.Get("/config"), GetConfig)
+	mux.HandleFunc(pat.Post("/config"), SaveConfig)
+	mux.HandleFunc(pat.Get("/:dir/"), ListBlobs)
+	mux.HandleFunc(pat.Head("/:dir/:name"), CheckBlob)
+	mux.HandleFunc(pat.Get("/:type/:name"), GetBlob)
+	mux.HandleFunc(pat.Post("/:type/:name"), SaveBlob)
+	mux.HandleFunc(pat.Delete("/:type/:name"), DeleteBlob)
 
-	router := NewRouter()
-	router.HeadFunc("/config", CheckConfig(context))
-	router.GetFunc("/config", GetConfig(context))
-	router.PostFunc("/config", SaveConfig(context))
-	router.GetFunc("/:dir/", ListBlobs(context))
-	router.HeadFunc("/:dir/:name", CheckBlob(context))
-	router.GetFunc("/:type/:name", GetBlob(context))
-	router.PostFunc("/:type/:name", SaveBlob(context))
-	router.DeleteFunc("/:type/:name", DeleteBlob(context))
-
-	return router
+	return mux
 }
 
 func main() {
 	log.SetFlags(0)
 
-	var cpuprofile = flag.String("cpuprofile", "", "write CPU profile to file")
-	var listen = flag.String("listen", ":8000", "listen address")
-	var path = flag.String("path", "/tmp/restic", "data directory")
-	var tls = flag.Bool("tls", false, "turn on TLS support")
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -48,15 +51,15 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	router := setupRoutes(*path)
+	mux := setupMux()
 
 	var handler http.Handler
 	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
 	if err != nil {
-		handler = router
+		handler = mux
 		log.Println("Authentication disabled")
 	} else {
-		handler = AuthHandler(htpasswdFile, router)
+		handler = AuthHandler(htpasswdFile, mux)
 		log.Println("Authentication enabled")
 	}
 
