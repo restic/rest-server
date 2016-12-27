@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
+
+	"goji.io/pat"
 )
 
 func isHashed(dir string) bool {
@@ -113,8 +114,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("ListBlobs()")
 	}
-	vars := strings.Split(r.RequestURI, "/")
-	dir := vars[1]
+	dir := pat.Param(r, "type")
 	path := filepath.Join(*path, dir)
 
 	items, err := ioutil.ReadDir(path)
@@ -154,9 +154,8 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("CheckBlob()")
 	}
-	vars := strings.Split(r.RequestURI, "/")
-	dir := vars[1]
-	name := vars[2]
+	dir := pat.Param(r, "type")
+	name := pat.Param(r, "name")
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
@@ -177,9 +176,8 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("GetBlob()")
 	}
-	vars := strings.Split(r.RequestURI, "/")
-	dir := vars[1]
-	name := vars[2]
+	dir := pat.Param(r, "type")
+	name := pat.Param(r, "name")
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
@@ -201,9 +199,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("SaveBlob()")
 	}
-	vars := strings.Split(r.RequestURI, "/")
-	dir := vars[1]
-	name := vars[2]
+	dir := pat.Param(r, "type")
+	name := pat.Param(r, "name")
 
 	if dir == "keys" {
 		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
@@ -257,9 +254,8 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("DeleteBlob()")
 	}
-	vars := strings.Split(r.RequestURI, "/")
-	dir := vars[1]
-	name := vars[2]
+	dir := pat.Param(r, "type")
+	name := pat.Param(r, "name")
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
