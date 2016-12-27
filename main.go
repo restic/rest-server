@@ -2,38 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 )
-
-func createDirectories(path string) {
-	log.Println("Creating repository directories")
-
-	dirs := []string{
-		"data",
-		"index",
-		"keys",
-		"locks",
-		"snapshots",
-		"tmp",
-	}
-
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(path, d), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	for i := 0; i < 256; i++ {
-		if err := os.MkdirAll(filepath.Join(path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
 
 func setupRoutes(path string) *Router {
 	context := &Context{path}
@@ -71,8 +45,6 @@ func main() {
 		log.Println("CPU profiling enabled")
 		defer pprof.StopCPUProfile()
 	}
-
-	createDirectories(*path)
 
 	router := setupRoutes(*path)
 

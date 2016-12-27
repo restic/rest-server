@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,6 +20,31 @@ type Context struct {
 
 func isHashed(dir string) bool {
 	return dir == "data"
+}
+
+func createDirectories(c *Context) {
+	log.Println("Creating repository directories")
+
+	dirs := []string{
+		"data",
+		"index",
+		"keys",
+		"locks",
+		"snapshots",
+		"tmp",
+	}
+
+	for _, d := range dirs {
+		if err := os.MkdirAll(filepath.Join(c.path, d), 0700); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for i := 0; i < 256; i++ {
+		if err := os.MkdirAll(filepath.Join(c.path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
@@ -171,6 +197,12 @@ func SaveBlob(c *Context) http.HandlerFunc {
 		vars := strings.Split(r.RequestURI, "/")
 		dir := vars[1]
 		name := vars[2]
+
+		if dir == "keys" {
+			if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
+				createDirectories(c)
+			}
+		}
 
 		tmp := filepath.Join(c.path, "tmp", name)
 
