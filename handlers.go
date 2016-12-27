@@ -20,6 +20,10 @@ func isHashed(dir string) bool {
 func createDirectories(path string) {
 	log.Println("Creating repository directories")
 
+	if err := os.MkdirAll(path, 0700); err != nil {
+		log.Fatal(err)
+	}
+
 	dirs := []string{
 		"data",
 		"index",
