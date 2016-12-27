@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"strings"
 )
@@ -113,6 +114,10 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	uri := r.RequestURI
 	path := strings.Split(uri, "/")
+
+	if *debug {
+		log.Printf("%s %s", method, uri)
+	}
 
 ROUTE:
 	for _, route := range router.routes[method] {

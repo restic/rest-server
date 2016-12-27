@@ -9,6 +9,8 @@ import (
 	"runtime/pprof"
 )
 
+var debug = flag.Bool("debug", false, "output debug messages")
+
 func setupRoutes(path string) *Router {
 	context := &Context{path}
 
