@@ -20,16 +20,37 @@ var (
 	debug      = flag.Bool("debug", false, "output debug messages")
 )
 
+func debugHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("%s %s", r.Method, r.URL)
+			next.ServeHTTP(w, r)
+		})
+}
+
 func setupMux() *goji.Mux {
 	mux := goji.NewMux()
+
+	if *debug {
+		mux.Use(debugHandler)
+	}
+
 	mux.HandleFunc(pat.Head("/config"), CheckConfig)
+	mux.HandleFunc(pat.Head("/:repo/config"), CheckConfig)
 	mux.HandleFunc(pat.Get("/config"), GetConfig)
+	mux.HandleFunc(pat.Get("/:repo/config"), GetConfig)
 	mux.HandleFunc(pat.Post("/config"), SaveConfig)
+	mux.HandleFunc(pat.Post("/:repo/config"), SaveConfig)
 	mux.HandleFunc(pat.Get("/:type/"), ListBlobs)
+	mux.HandleFunc(pat.Get("/:repo/:type/"), ListBlobs)
 	mux.HandleFunc(pat.Head("/:type/:name"), CheckBlob)
+	mux.HandleFunc(pat.Head("/:repo/:type/:name"), CheckBlob)
 	mux.HandleFunc(pat.Get("/:type/:name"), GetBlob)
+	mux.HandleFunc(pat.Get("/:repo/:type/:name"), GetBlob)
 	mux.HandleFunc(pat.Post("/:type/:name"), SaveBlob)
+	mux.HandleFunc(pat.Post("/:repo/:type/:name"), SaveBlob)
 	mux.HandleFunc(pat.Delete("/:type/:name"), DeleteBlob)
+	mux.HandleFunc(pat.Delete("/:repo/:type/:name"), DeleteBlob)
 
 	return mux
 }

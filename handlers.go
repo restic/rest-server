@@ -9,13 +9,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"goji.io/middleware"
 	"goji.io/pat"
 )
 
 func isHashed(dir string) bool {
 	return dir == "data"
+}
+
+func getRepo(r *http.Request) string {
+	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo/") {
+		return filepath.Join(*path, pat.Param(r, "repo"))
+	}
+
+	return *path
 }
 
 func createDirectories(path string) {
@@ -65,7 +75,7 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("CheckConfig()")
 	}
-	config := filepath.Join(*path, "config")
+	config := filepath.Join(getRepo(r), "config")
 	st, err := os.Stat(config)
 	if err != nil {
 		http.Error(w, "404 not found", 404)
@@ -80,7 +90,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("GetConfig()")
 	}
-	config := filepath.Join(*path, "config")
+	config := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadFile(config)
 	if err != nil {
 		http.Error(w, "404 not found", 404)
@@ -95,7 +105,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("SaveConfig()")
 	}
-	config := filepath.Join(*path, "config")
+	config := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "400 bad request", 400)
@@ -115,7 +125,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 		log.Println("ListBlobs()")
 	}
 	dir := pat.Param(r, "type")
-	path := filepath.Join(*path, dir)
+	path := filepath.Join(getRepo(r), dir)
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -160,7 +170,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
-	path := filepath.Join(*path, dir, name)
+	path := filepath.Join(getRepo(r), dir, name)
 
 	st, err := os.Stat(path)
 	if err != nil {
@@ -182,7 +192,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
-	path := filepath.Join(*path, dir, name)
+	path := filepath.Join(getRepo(r), dir, name)
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -199,16 +209,17 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("SaveBlob()")
 	}
+	repo := getRepo(r)
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
 	if dir == "keys" {
 		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
-			createDirectories(*path)
+			createDirectories(repo)
 		}
 	}
 
-	tmp := filepath.Join(*path, "tmp", name)
+	tmp := filepath.Join(repo, "tmp", name)
 
 	tf, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
@@ -237,7 +248,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
-	path := filepath.Join(*path, dir, name)
+	path := filepath.Join(repo, dir, name)
 
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
@@ -260,7 +271,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
-	path := filepath.Join(*path, dir, name)
+	path := filepath.Join(getRepo(r), dir, name)
 
 	if err := os.Remove(path); err != nil {
 		http.Error(w, "500 internal server error", 500)
