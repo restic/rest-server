@@ -1,0 +1,15 @@
+hash: 14108917f401ac37008f72af7995f8f364ba4bf2a4094128b67c3564ac7273c3
+updated: 2016-12-28T21:38:22.564108839+01:00
+imports:
+- name: goji.io
+  version: 0d89ff54b2c18c9c4ba530e32496aef902d3c6cd
+  subpackages:
+  - internal
+  - middleware
+  - pat
+  - pattern
+- name: golang.org/x/net
+  version: 45e771701b814666a7eb299e6c7a57d0b1799e91
+  subpackages:
+  - context
+testImports: []
