@@ -26,10 +26,10 @@ var config = struct {
 	Main      string
 	Tests     []string
 }{
-	Name:      "rest-server",                   // name of the program executable and directory
-	Namespace: "github.com/restic/rest-server", // subdir of GOPATH, e.g. "github.com/foo/bar"
-	Main:      "github.com/restic/rest-server", // package name for the main package
-	Tests:     []string{"rest-server/..."},     // tests to run
+	Name:      "rest-server",                             // name of the program executable and directory
+	Namespace: "github.com/restic/rest-server",           // subdir of GOPATH, e.g. "github.com/foo/bar"
+	Main:      "github.com/restic/rest-server",           // package name for the main package
+	Tests:     []string{"github.com/restic/rest-server"}, // tests to run
 }
 
 // specialDir returns true if the file begins with a special character ('.' or '_').
