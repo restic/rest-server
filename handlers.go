@@ -62,7 +62,7 @@ func createDirectories(path string) {
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if username, password, ok := r.BasicAuth(); !ok || !f.Validate(username, password) {
-			http.Error(w, "401 unauthorized", 401)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
@@ -78,7 +78,7 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	config := filepath.Join(getRepo(r), "config")
 	st, err := os.Stat(config)
 	if err != nil {
-		http.Error(w, "404 not found", 404)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -93,7 +93,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	config := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadFile(config)
 	if err != nil {
-		http.Error(w, "404 not found", 404)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -108,11 +108,11 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	config := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "400 bad request", 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	if err := ioutil.WriteFile(config, bytes, 0600); err != nil {
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -129,7 +129,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		http.Error(w, "404 not found", 404)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -139,7 +139,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 			subpath := filepath.Join(path, i.Name())
 			subitems, err := ioutil.ReadDir(subpath)
 			if err != nil {
-				http.Error(w, "404 not found", 404)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
 			for _, f := range subitems {
@@ -152,14 +152,14 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(names)
 	if err != nil {
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	w.Write(data)
 }
 
-// CheckBlob tests whether a blob exists and returns 200, if it does, or 404 otherwise.
+// CheckBlob tests whether a blob exists.
 func CheckBlob(w http.ResponseWriter, r *http.Request) {
 	if *debug {
 		log.Println("CheckBlob()")
@@ -174,7 +174,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
-		http.Error(w, "404 not found", 404)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -196,7 +196,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		http.Error(w, "404 not found", 404)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -223,25 +223,25 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	tf, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := io.Copy(tf, r.Body); err != nil {
 		tf.Close()
 		os.Remove(tmp)
-		http.Error(w, "400 bad request", 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	if err := tf.Sync(); err != nil {
 		tf.Close()
 		os.Remove(tmp)
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	if err := tf.Close(); err != nil {
 		os.Remove(tmp)
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -253,7 +253,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
 		os.Remove(path)
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -274,7 +274,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(getRepo(r), dir, name)
 
 	if err := os.Remove(path); err != nil {
-		http.Error(w, "500 internal server error", 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
