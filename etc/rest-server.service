@@ -1,5 +1,5 @@
 [Unit]
-Description=Restic Server
+Description=Rest Server
 After=syslog.target
 After=network.target
 
@@ -7,7 +7,7 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-ExecStart=/usr/local/bin/restic-server -path /tmp/restic
+ExecStart=/usr/local/bin/rest-server -path /tmp/restic
 Restart=always
 RestartSec=5
 StartLimitInterval=0
