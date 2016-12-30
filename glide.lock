@@ -1,8 +1,16 @@
-hash: 14108917f401ac37008f72af7995f8f364ba4bf2a4094128b67c3564ac7273c3
-updated: 2016-12-28T21:38:22.564108839+01:00
+hash: 2a84da35c7f6887fc08d80cd20da4e38731a81ea9845e1f137f1ba9913d0268d
+updated: 2016-12-30T20:41:26.129417117+01:00
 imports:
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/spf13/cobra
+  version: 1dd5ff2e11b6dca62fdcb275eb804b94607d8b06
+- name: github.com/spf13/pflag
+  version: 25f8b5b07aece3207895bf19f7ab517eb3b22a40
 - name: goji.io
   version: 0d89ff54b2c18c9c4ba530e32496aef902d3c6cd
+  repo: https://github.com/goji/goji
+  vcs: git
   subpackages:
   - internal
   - middleware
@@ -10,6 +18,6 @@ imports:
   - pattern
 - name: golang.org/x/net
   version: 45e771701b814666a7eb299e6c7a57d0b1799e91
-  subpackages:
-  - context
+  repo: https://github.com/golang/net
+  vcs: git
 testImports: []
