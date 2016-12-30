@@ -45,7 +45,7 @@ version info built into binary, when compiled that way.
 By default the server persists backup data in `/tmp/restic`.  Start the server with a custom persistence directory:
 
 ```
-% rest-server -path /user/home/backup
+% rest-server --path /user/home/backup
 ```
 
 The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence
