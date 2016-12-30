@@ -1,24 +1,43 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 
+	"github.com/spf13/cobra"
+
 	"goji.io"
 	"goji.io/pat"
 )
 
-var (
-	path       = flag.String("path", "/tmp/restic", "data directory")
-	listen     = flag.String("listen", ":8000", "listen address")
-	tls        = flag.Bool("tls", false, "turn on TLS support")
-	cpuprofile = flag.String("cpuprofile", "", "write CPU profile to file")
-	debug      = flag.Bool("debug", false, "output debug messages")
-)
+// cmdRoot is the base command when no other command has been specified.
+var cmdRoot = &cobra.Command{
+	Use:           "rest-server",
+	Short:         "Run a REST server for use with restic",
+	SilenceErrors: true,
+	SilenceUsage:  true,
+	RunE:          runRoot,
+}
+
+var config = struct {
+	path       string
+	listen     string
+	tls        bool
+	cpuprofile string
+	debug      bool
+}{}
+
+func init() {
+	flags := cmdRoot.Flags()
+	flags.StringVar(&config.path, "path", "/tmp/restic", "data directory")
+	flags.StringVar(&config.listen, "listen", ":8000", "listen address")
+	flags.BoolVar(&config.tls, "tls", false, "turn on TLS support")
+	flags.StringVar(&config.cpuprofile, "cpuprofile", "", "write CPU profile to file")
+	flags.BoolVar(&config.debug, "debug", false, "output debug messages")
+}
 
 func debugHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(
@@ -31,7 +50,7 @@ func debugHandler(next http.Handler) http.Handler {
 func setupMux() *goji.Mux {
 	mux := goji.NewMux()
 
-	if *debug {
+	if config.debug {
 		mux.Use(debugHandler)
 	}
 
@@ -55,13 +74,11 @@ func setupMux() *goji.Mux {
 	return mux
 }
 
-func main() {
+func runRoot(cmd *cobra.Command, args []string) error {
 	log.SetFlags(0)
 
-	flag.Parse()
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+	if config.cpuprofile != "" {
+		f, err := os.Create(config.cpuprofile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -75,7 +92,7 @@ func main() {
 	mux := setupMux()
 
 	var handler http.Handler
-	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(*path, ".htpasswd"))
+	htpasswdFile, err := NewHtpasswdFromFile(filepath.Join(config.path, ".htpasswd"))
 	if err != nil {
 		handler = mux
 		log.Println("Authentication disabled")
@@ -84,19 +101,30 @@ func main() {
 		log.Println("Authentication enabled")
 	}
 
-	if !*tls {
-		log.Printf("Starting server on %s\n", *listen)
-		err = http.ListenAndServe(*listen, handler)
+	if !config.tls {
+		log.Printf("Starting server on %s\n", config.listen)
+		err = http.ListenAndServe(config.listen, handler)
 	} else {
-		privateKey := filepath.Join(*path, "private_key")
-		publicKey := filepath.Join(*path, "public_key")
+		privateKey := filepath.Join(config.path, "private_key")
+		publicKey := filepath.Join(config.path, "public_key")
 		log.Println("TLS enabled")
 		log.Printf("Private key: %s", privateKey)
 		log.Printf("Public key: %s", publicKey)
-		log.Printf("Starting server on %s\n", *listen)
-		err = http.ListenAndServeTLS(*listen, publicKey, privateKey, handler)
+		log.Printf("Starting server on %s\n", config.listen)
+		err = http.ListenAndServeTLS(config.listen, publicKey, privateKey, handler)
 	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	return nil
+
+}
+
+func main() {
+	err := cmdRoot.Execute()
+	if err != nil {
+		log.Printf("error: %v", err)
+		os.Exit(1)
 	}
 }
