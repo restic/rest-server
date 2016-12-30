@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/pprof"
 
 	"github.com/spf13/cobra"
@@ -74,8 +75,12 @@ func setupMux() *goji.Mux {
 	return mux
 }
 
+var version = "manually"
+
 func runRoot(cmd *cobra.Command, args []string) error {
 	log.SetFlags(0)
+
+	log.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 
 	if config.cpuprofile != "" {
 		f, err := os.Create(config.cpuprofile)
