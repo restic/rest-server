@@ -3,7 +3,7 @@ sudo: false
 language: go
 
 go:
-  - 1.7
+  - 1.7.4
   - tip
 
 matrix:
@@ -17,3 +17,18 @@ branches:
 notifications:
   email:
     on_success: always
+
+install:
+  - export GOBIN="$GOPATH/bin"
+  - export PATH="$PATH:$GOBIN"
+  - go get -u github.com/golang/lint/golint
+  - go get golang.org/x/tools/cmd/goimports
+
+script:
+  - go install
+  - go test .
+  - go run build.go -v -T
+  - diff <(goimports -d *.go) <(printf "")
+
+after_success:
+  - diff <(golint *.go) <(printf "")
