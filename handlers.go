@@ -22,10 +22,10 @@ func isHashed(dir string) bool {
 
 func getRepo(r *http.Request) string {
 	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo/") {
-		return filepath.Join(*path, pat.Param(r, "repo"))
+		return filepath.Join(config.path, pat.Param(r, "repo"))
 	}
 
-	return *path
+	return config.path
 }
 
 func createDirectories(path string) {
@@ -72,7 +72,7 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 
 // CheckConfig checks whether a configuration exists.
 func CheckConfig(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("CheckConfig()")
 	}
 	config := filepath.Join(getRepo(r), "config")
@@ -87,7 +87,7 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetConfig allows for a config to be retrieved.
 func GetConfig(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("GetConfig()")
 	}
 	config := filepath.Join(getRepo(r), "config")
@@ -102,7 +102,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 
 // SaveConfig allows for a config to be saved.
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("SaveConfig()")
 	}
 	config := filepath.Join(getRepo(r), "config")
@@ -121,7 +121,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 
 // ListBlobs lists all blobs of a given type in an arbitrary order.
 func ListBlobs(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("ListBlobs()")
 	}
 	dir := pat.Param(r, "type")
@@ -161,7 +161,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 // CheckBlob tests whether a blob exists.
 func CheckBlob(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("CheckBlob()")
 	}
 	dir := pat.Param(r, "type")
@@ -183,7 +183,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 // GetBlob retrieves a blob from the repository.
 func GetBlob(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("GetBlob()")
 	}
 	dir := pat.Param(r, "type")
@@ -206,7 +206,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 // SaveBlob saves a blob to the repository.
 func SaveBlob(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("SaveBlob()")
 	}
 	repo := getRepo(r)
@@ -262,7 +262,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 // DeleteBlob deletes a blob from the repository.
 func DeleteBlob(w http.ResponseWriter, r *http.Request) {
-	if *debug {
+	if config.debug {
 		log.Println("DeleteBlob()")
 	}
 	dir := pat.Param(r, "type")
