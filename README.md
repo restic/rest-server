@@ -12,7 +12,7 @@ data remotely, using [restic](https://github.com/restic/restic) backup client.
 
 ## Installation
 
-Rest server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server
+Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server
 with gccgo may work, but is not supported.
 
 Run ```go run build.go```, afterwards you'll find the binary in the current directory.  You can move it anywhere you
@@ -66,6 +66,12 @@ keys with the following commands:
 % openssl genrsa -out private_key 2048
 % openssl req -new -x509 -key private_key -out public_key -days 365
 ```
+
+Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally
+and via HTTP, even simultaneously.
+
+To learn how to use restic backup client with REST backend, please consult [restic
+manual](https://github.com/restic/restic/blob/master/doc/Manual.md#create-a-rest-server-repository).
 
 ## Contributors
 
