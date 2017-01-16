@@ -127,9 +127,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 }
 
 func main() {
-	err := cmdRoot.Execute()
-	if err != nil {
-		log.Printf("error: %v", err)
-		os.Exit(1)
+	if err := cmdRoot.Execute(); err != nil {
+		log.Fatalf("error: %v", err)
 	}
 }
