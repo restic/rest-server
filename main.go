@@ -81,6 +81,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	log.SetFlags(0)
 
 	log.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	log.Printf("Data directory: %s", config.path)
 
 	if config.cpuprofile != "" {
 		f, err := os.Create(config.cpuprofile)
