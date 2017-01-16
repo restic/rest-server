@@ -75,8 +75,8 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("CheckConfig()")
 	}
-	config := filepath.Join(getRepo(r), "config")
-	st, err := os.Stat(config)
+	cfg := filepath.Join(getRepo(r), "config")
+	st, err := os.Stat(cfg)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -90,8 +90,8 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("GetConfig()")
 	}
-	config := filepath.Join(getRepo(r), "config")
-	bytes, err := ioutil.ReadFile(config)
+	cfg := filepath.Join(getRepo(r), "config")
+	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -105,13 +105,13 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("SaveConfig()")
 	}
-	config := filepath.Join(getRepo(r), "config")
+	cfg := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	if err := ioutil.WriteFile(config, bytes, 0600); err != nil {
+	if err := ioutil.WriteFile(cfg, bytes, 0600); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
