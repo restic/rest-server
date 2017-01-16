@@ -78,6 +78,9 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := filepath.Join(getRepo(r), "config")
 	st, err := os.Stat(cfg)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -93,6 +96,9 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -108,10 +114,16 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := filepath.Join(getRepo(r), "config")
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	if err := ioutil.WriteFile(cfg, bytes, 0600); err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -129,6 +141,9 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -139,6 +154,9 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 			subpath := filepath.Join(path, i.Name())
 			subitems, err := ioutil.ReadDir(subpath)
 			if err != nil {
+				if config.debug {
+					log.Print(err)
+				}
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
@@ -152,6 +170,9 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(names)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -174,6 +195,9 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -196,6 +220,9 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -223,6 +250,9 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	tf, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -230,17 +260,26 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(tf, r.Body); err != nil {
 		tf.Close()
 		os.Remove(tmp)
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	if err := tf.Sync(); err != nil {
 		tf.Close()
 		os.Remove(tmp)
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	if err := tf.Close(); err != nil {
 		os.Remove(tmp)
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -253,6 +292,9 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
 		os.Remove(path)
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -274,6 +316,9 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(getRepo(r), dir, name)
 
 	if err := os.Remove(path); err != nil {
+		if config.debug {
+			log.Print(err)
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
