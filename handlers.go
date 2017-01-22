@@ -28,7 +28,13 @@ func getRepo(r *http.Request) string {
 	return config.path
 }
 
+var createdDirs = make(map[string]struct{})
+
 func createDirectories(path string) {
+	if _, ok := createdDirs[path]; ok {
+		return
+	}
+
 	log.Println("Creating repository directories")
 
 	if err := os.MkdirAll(path, 0700); err != nil {
@@ -55,6 +61,8 @@ func createDirectories(path string) {
 			log.Fatal(err)
 		}
 	}
+
+	createdDirs[path] = struct{}{}
 }
 
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
@@ -111,7 +119,11 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("SaveConfig()")
 	}
-	cfg := filepath.Join(getRepo(r), "config")
+
+	repo := getRepo(r)
+	createDirectories(repo)
+
+	cfg := filepath.Join(repo, "config")
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		if config.debug {
@@ -240,11 +252,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
-	if dir == "keys" {
-		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
-			createDirectories(repo)
-		}
-	}
+	createDirectories(repo)
 
 	tmp := filepath.Join(repo, "tmp", name)
 
