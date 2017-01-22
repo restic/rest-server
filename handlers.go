@@ -293,6 +293,13 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 	path := filepath.Join(repo, dir, name)
 
+	if _, err := os.Stat(filepath.Dir(path)); err != nil && os.IsNotExist(err) {
+		if err = os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
 		os.Remove(path)
