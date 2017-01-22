@@ -111,7 +111,13 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("SaveConfig()")
 	}
-	cfg := filepath.Join(getRepo(r), "config")
+	repo := getRepo(r)
+	cfg := filepath.Join(repo, "config")
+
+	if _, err := os.Stat(repo); err != nil && os.IsNotExist(err) {
+		createDirectories(repo)
+	}
+
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		if config.debug {
@@ -240,10 +246,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
-	if dir == "keys" {
-		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
-			createDirectories(repo)
-		}
+	if _, err := os.Stat(filepath.Join(repo, dir)); err != nil && os.IsNotExist(err) {
+		createDirectories(repo)
 	}
 
 	tmp := filepath.Join(repo, "tmp", name)
@@ -288,6 +292,18 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		name = filepath.Join(name[:2], name)
 	}
 	path := filepath.Join(repo, dir, name)
+
+	if _, err := os.Stat(path); err == nil {
+		http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+		return
+	}
+
+	if _, err := os.Stat(filepath.Dir(path)); err != nil && os.IsNotExist(err) {
+		if err = os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
 
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
