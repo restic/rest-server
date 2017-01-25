@@ -21,7 +21,7 @@ func isHashed(dir string) bool {
 }
 
 func getRepo(r *http.Request) string {
-	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo/") {
+	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo") {
 		return filepath.Join(config.path, pat.Param(r, "repo"))
 	}
 
@@ -29,7 +29,7 @@ func getRepo(r *http.Request) string {
 }
 
 func createDirectories(path string) {
-	log.Println("Creating repository directories")
+	log.Printf("Creating repository directories in %s\n", path)
 
 	if err := os.MkdirAll(path, 0700); err != nil {
 		log.Fatal(err)
@@ -240,6 +240,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
+	// Legacy code, required for restic client <= v0.3.3
+	// TODO: remove sometime later
 	if dir == "keys" {
 		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
 			createDirectories(repo)
@@ -322,6 +324,22 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	w.Write([]byte("200 ok"))
+}
+
+// CreateRepo creates repository directories.
+func CreateRepo(w http.ResponseWriter, r *http.Request) {
+	if config.debug {
+		log.Println("CreateRepo()")
+	}
+
+	if r.URL.Query().Get("create") != "true" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	createDirectories(getRepo(r))
 
 	w.Write([]byte("200 ok"))
 }
