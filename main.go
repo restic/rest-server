@@ -70,6 +70,8 @@ func setupMux() *goji.Mux {
 	mux.HandleFunc(pat.Post("/:repo/:type/:name"), SaveBlob)
 	mux.HandleFunc(pat.Delete("/:type/:name"), DeleteBlob)
 	mux.HandleFunc(pat.Delete("/:repo/:type/:name"), DeleteBlob)
+	mux.HandleFunc(pat.Delete("/config"), DeleteBlob)
+	mux.HandleFunc(pat.Delete("/:repo/config"), DeleteBlob)
 	mux.HandleFunc(pat.Post("/"), CreateRepo)
 	mux.HandleFunc(pat.Post("/:repo"), CreateRepo)
 

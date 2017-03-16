@@ -309,23 +309,37 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("DeleteBlob()")
 	}
-	dir := pat.Param(r, "type")
-	name := pat.Param(r, "name")
+
+	var dir, name string
+	if strings.HasSuffix(r.URL.Path, "/config") {
+		dir = "config"
+		name = ""
+	} else {
+		dir = pat.Param(r, "type")
+		name = pat.Param(r, "name")
+	}
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
 	path := filepath.Join(getRepo(r), dir, name)
 
-	if err := os.Remove(path); err != nil {
-		if config.debug {
-			log.Print(err)
-		}
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	err := os.Remove(path)
+	if err == nil {
+		w.Write([]byte("200 ok"))
 		return
 	}
 
-	w.Write([]byte("200 ok"))
+	if config.debug {
+		log.Print(err)
+	}
+
+	if os.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 // CreateRepo creates repository directories.
