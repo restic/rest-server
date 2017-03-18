@@ -131,6 +131,29 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("200 ok"))
 }
 
+// DeleteConfig removes a config.
+func DeleteConfig(w http.ResponseWriter, r *http.Request) {
+	if config.debug {
+		log.Println("DeleteConfig()")
+	}
+
+	err := os.Remove(filepath.Join(getRepo(r), "config"))
+	if err == nil {
+		return
+	}
+
+	if config.debug {
+		log.Print(err)
+	}
+
+	if os.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
 // ListBlobs lists all blobs of a given type in an arbitrary order.
 func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
@@ -298,14 +321,8 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		log.Println("DeleteBlob()")
 	}
 
-	var dir, name string
-	if strings.HasSuffix(r.URL.Path, "/config") {
-		dir = "config"
-		name = ""
-	} else {
-		dir = pat.Param(r, "type")
-		name = pat.Param(r, "name")
-	}
+	dir := pat.Param(r, "type")
+	name := pat.Param(r, "name")
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
