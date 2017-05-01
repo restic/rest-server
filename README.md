@@ -7,7 +7,7 @@
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
 Rest Server is a high performance HTTP server that implements restic's [REST backend
-API](https://github.com/restic/restic/blob/master/doc/REST_backend.md). It provides secure and efficient way to backup
+API](https://github.com/restic/restic/blob/master/doc/REST_backend.md).  It provides secure and efficient way to backup
 data remotely, using [restic](https://github.com/restic/restic) backup client.
 
 ## Installation
@@ -18,7 +18,7 @@ with gccgo may work, but is not supported.
 Run ```go run build.go```, afterwards you'll find the binary in the current directory.  You can move it anywhere you
 want.  There's also an [example systemd service
 file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service) included, so you can get it up &
-running as a proper service in no time. Of course, you can also test it from the command line.
+running as a proper service in no time.  Of course, you can also test it from the command line.
 
 ```
 % go run build.go
@@ -71,7 +71,7 @@ Rest Server uses exactly the same directory structure as local backend, so you s
 and via HTTP, even simultaneously.
 
 To learn how to use restic backup client with REST backend, please consult [restic
-manual](https://github.com/restic/restic/blob/master/doc/Manual.md#create-a-rest-server-repository).
+manual](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
 
 ## Contributors
 
