@@ -120,6 +120,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
 	if err := ioutil.WriteFile(cfg, bytes, 0600); err != nil {
 		if config.debug {
 			log.Print(err)
@@ -127,8 +128,6 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	w.Write([]byte("200 ok"))
 }
 
 // DeleteConfig removes a config.
@@ -137,21 +136,17 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("DeleteConfig()")
 	}
 
-	err := os.Remove(filepath.Join(getRepo(r), "config"))
-	if err == nil {
+	if err := os.Remove(filepath.Join(getRepo(r), "config")); err != nil {
+		if config.debug {
+			log.Print(err)
+		}
+		if os.IsNotExist(err) {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 		return
 	}
-
-	if config.debug {
-		log.Print(err)
-	}
-
-	if os.IsNotExist(err) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 // ListBlobs lists all blobs of a given type in an arbitrary order.
@@ -294,6 +289,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
 	if err := tf.Sync(); err != nil {
 		tf.Close()
 		os.Remove(path)
@@ -303,6 +299,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
 	if err := tf.Close(); err != nil {
 		os.Remove(path)
 		if config.debug {
@@ -311,8 +308,6 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	w.Write([]byte("200 ok"))
 }
 
 // DeleteBlob deletes a blob from the repository.
@@ -329,22 +324,17 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 	path := filepath.Join(getRepo(r), dir, name)
 
-	err := os.Remove(path)
-	if err == nil {
-		w.Write([]byte("200 ok"))
+	if err := os.Remove(path); err != nil {
+		if config.debug {
+			log.Print(err)
+		}
+		if os.IsNotExist(err) {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 		return
 	}
-
-	if config.debug {
-		log.Print(err)
-	}
-
-	if os.IsNotExist(err) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 // CreateRepo creates repository directories.
@@ -359,6 +349,4 @@ func CreateRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createDirectories(getRepo(r))
-
-	w.Write([]byte("200 ok"))
 }
