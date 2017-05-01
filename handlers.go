@@ -94,6 +94,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetConfig()")
 	}
 	cfg := filepath.Join(getRepo(r), "config")
+
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		if config.debug {
@@ -112,6 +113,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("SaveConfig()")
 	}
 	cfg := filepath.Join(getRepo(r), "config")
+
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		if config.debug {
@@ -258,14 +260,6 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
-	// Legacy code, required for restic client <= v0.3.3
-	// TODO: remove sometime later
-	if dir == "keys" {
-		if _, err := os.Stat("keys"); err != nil && os.IsNotExist(err) {
-			createDirectories(repo)
-		}
-	}
-
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
 	}
@@ -315,7 +309,6 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("DeleteBlob()")
 	}
-
 	dir := pat.Param(r, "type")
 	name := pat.Param(r, "name")
 
