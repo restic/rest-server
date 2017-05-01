@@ -28,35 +28,6 @@ func getRepo(r *http.Request) string {
 	return config.path
 }
 
-func createDirectories(path string) {
-	log.Printf("Creating repository directories in %s\n", path)
-
-	if err := os.MkdirAll(path, 0700); err != nil {
-		log.Fatal(err)
-	}
-
-	dirs := []string{
-		"data",
-		"index",
-		"keys",
-		"locks",
-		"snapshots",
-		"tmp",
-	}
-
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(path, d), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	for i := 0; i < 256; i++ {
-		if err := os.MkdirAll(filepath.Join(path, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
 // stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
@@ -335,11 +306,34 @@ func CreateRepo(w http.ResponseWriter, r *http.Request) {
 	if config.debug {
 		log.Println("CreateRepo()")
 	}
+	repo := getRepo(r)
 
 	if r.URL.Query().Get("create") != "true" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	createDirectories(getRepo(r))
+	log.Printf("Creating repository directories in %s\n", repo)
+
+	if err := os.MkdirAll(repo, 0700); err != nil {
+		log.Print(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	for _, d := range []string{"data", "index", "keys", "locks", "snapshots", "tmp"} {
+		if err := os.MkdirAll(filepath.Join(repo, d), 0700); err != nil {
+			log.Print(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	for i := 0; i < 256; i++ {
+		if err := os.MkdirAll(filepath.Join(repo, "data", fmt.Sprintf("%02x", i)), 0700); err != nil {
+			log.Print(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
 }
