@@ -7,13 +7,19 @@
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
 Rest Server is a high performance HTTP server that implements restic's [REST backend
-API](https://github.com/restic/restic/blob/master/doc/REST_backend.md).  It provides secure and efficient way to backup
+API](https://github.com/restic/restic/blob/master/doc/rest_backend.rst).  It provides secure and efficient way to backup
 data remotely, using [restic](https://github.com/restic/restic) backup client.
 
-## Installation
+## Requirements
 
 Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server
 with gccgo may work, but is not supported.
+
+The minimum supported version of restic backup client is [v0.6.0](https://github.com/restic/restic/releases/tag/v0.6.0),
+due to some [changes](https://github.com/restic/restic/commit/1a538509d0232f1a532266e07da509875fe9e0d6) in the REST
+backend API.
+
+## Installation
 
 Run ```go run build.go```, afterwards you'll find the binary in the current directory.  You can move it anywhere you
 want.  There's also an [example systemd service
