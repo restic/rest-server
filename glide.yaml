@@ -1,7 +1,7 @@
 package: github.com/restic/rest-server
 import:
 - package: goji.io
-  version: 0d89ff54b2c18c9c4ba530e32496aef902d3c6cd
+  version: v2.0
   repo: https://github.com/goji/goji
   vcs: git
 - package: golang.org/x/net
