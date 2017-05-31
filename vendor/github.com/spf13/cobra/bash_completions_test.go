@@ -2,15 +2,12 @@ package cobra
 
 import (
 	"bytes"
-	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 )
-
-var _ = fmt.Println
-var _ = os.Stderr
 
 func checkOmit(t *testing.T, found, unexpected string) {
 	if strings.Contains(found, unexpected) {
@@ -176,5 +173,24 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 	bashCompletion := out.String()
 	if strings.Contains(bashCompletion, flagName) {
 		t.Errorf("expected completion to not include %q flag: Got %v", flagName, bashCompletion)
+	}
+}
+
+func BenchmarkBashCompletion(b *testing.B) {
+	c := initializeWithRootCmd()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdEcho, cmdPrint, cmdDeprecated, cmdColon)
+
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := c.GenBashCompletion(file); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
