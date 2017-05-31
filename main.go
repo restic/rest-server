@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	"github.com/gorilla/handlers"
 	"github.com/spf13/cobra"
 	"goji.io"
 	"goji.io/pat"
@@ -26,17 +27,19 @@ var config = struct {
 	path       string
 	listen     string
 	tls        bool
+	log        string
 	cpuprofile string
 	debug      bool
 }{}
 
 func init() {
 	flags := cmdRoot.Flags()
-	flags.StringVar(&config.path, "path", "/tmp/restic", "data directory")
-	flags.StringVar(&config.listen, "listen", ":8000", "listen address")
-	flags.BoolVar(&config.tls, "tls", false, "turn on TLS support")
 	flags.StringVar(&config.cpuprofile, "cpuprofile", "", "write CPU profile to file")
 	flags.BoolVar(&config.debug, "debug", false, "output debug messages")
+	flags.StringVar(&config.listen, "listen", ":8000", "listen address")
+	flags.StringVar(&config.log, "log", "", "log HTTP requests in the combined log format")
+	flags.StringVar(&config.path, "path", "/tmp/restic", "data directory")
+	flags.BoolVar(&config.tls, "tls", false, "turn on TLS support")
 }
 
 func debugHandler(next http.Handler) http.Handler {
@@ -47,11 +50,24 @@ func debugHandler(next http.Handler) http.Handler {
 		})
 }
 
+func logHandler(next http.Handler) http.Handler {
+	accessLog, err := os.OpenFile(config.log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return handlers.CombinedLoggingHandler(accessLog, next)
+}
+
 func setupMux() *goji.Mux {
 	mux := goji.NewMux()
 
 	if config.debug {
 		mux.Use(debugHandler)
+	}
+
+	if config.log != "" {
+		mux.Use(logHandler)
 	}
 
 	mux.HandleFunc(pat.Head("/config"), CheckConfig)

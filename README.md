@@ -38,7 +38,9 @@ Usage:
 Flags:
       --cpuprofile string   write CPU profile to file
       --debug               output debug messages
+  -h, --help                help for rest-server
       --listen string       listen address (default ":8000")
+      --log string          log HTTP requests in the combined log format
       --path string         data directory (default "/tmp/restic")
       --tls                 turn on TLS support
 ```

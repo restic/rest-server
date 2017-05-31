@@ -1,6 +1,8 @@
 hash: 2a84da35c7f6887fc08d80cd20da4e38731a81ea9845e1f137f1ba9913d0268d
-updated: 2017-05-31T22:22:04.790932554+02:00
+updated: 2017-05-31T23:28:23.41107346+02:00
 imports:
+- name: github.com/gorilla/handlers
+  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/spf13/cobra
