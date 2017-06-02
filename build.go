@@ -65,7 +65,7 @@ func excludePath(name string) bool {
 // updateGopath builds a valid GOPATH at dst, with all Go files in src/ copied
 // to dst/prefix/, so calling
 //
-//   updateGopath("/tmp/gopath", "/home/u/restic", "github.com/restic/restic")
+//   updateGopath("/tmp/gopath", "/home/u/rest-server", "github.com/restic/rest-server")
 //
 // with "/home/u/restic" containing the file "foo.go" yields the following tree
 // at "/tmp/gopath":
@@ -74,7 +74,7 @@ func excludePath(name string) bool {
 //   └── src
 //       └── github.com
 //           └── restic
-//               └── restic
+//               └── rest-server
 //                   └── foo.go
 func updateGopath(dst, src, prefix string) error {
 	return filepath.Walk(src, func(name string, fi os.FileInfo, err error) error {
@@ -292,7 +292,7 @@ func (cs Constants) LDFlags() string {
 func main() {
 	ver := runtime.Version()
 	if strings.HasPrefix(ver, "go1") && ver < "go1.7" {
-		fmt.Fprintf(os.Stderr, "Go version %s detected, restic requires at least Go 1.7\n", ver)
+		fmt.Fprintf(os.Stderr, "Go version %s detected, rest-server requires at least Go 1.7\n", ver)
 		os.Exit(1)
 	}
 
