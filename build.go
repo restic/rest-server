@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -62,13 +63,11 @@ func excludePath(name string) bool {
 	return true
 }
 
-// updateGopath builds a valid GOPATH at dst, with all Go files in src/ copied
-// to dst/prefix/, so calling
+// updateGopath builds a valid GOPATH at dst, with all Go files in src/ copied to dst/prefix/, so calling
 //
 //   updateGopath("/tmp/gopath", "/home/u/rest-server", "github.com/restic/rest-server")
 //
-// with "/home/u/restic" containing the file "foo.go" yields the following tree
-// at "/tmp/gopath":
+// with "/home/u/restic" containing the file "foo.go" yields the following tree at "/tmp/gopath":
 //
 //   /tmp/gopath
 //   └── src
@@ -150,13 +149,6 @@ func copyFile(dst, src string) error {
 	return err
 }
 
-// die prints the message with fmt.Fprintf() to stderr and exits with an error
-// code.
-func die(message string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, message, args...)
-	os.Exit(1)
-}
-
 func showUsage(output io.Writer) {
 	fmt.Fprintf(output, "USAGE: go run build.go OPTIONS\n")
 	fmt.Fprintf(output, "\n")
@@ -179,8 +171,7 @@ func verbosePrintf(message string, args ...interface{}) {
 	fmt.Printf("build: "+message, args...)
 }
 
-// cleanEnv returns a clean environment with GOPATH and GOBIN removed (if
-// present).
+// cleanEnv returns a clean environment with GOPATH and GOBIN removed (if present).
 func cleanEnv() (env []string) {
 	for _, v := range os.Environ() {
 		if strings.HasPrefix(v, "GOPATH=") || strings.HasPrefix(v, "GOBIN=") {
@@ -226,8 +217,7 @@ func test(cwd, gopath string, args ...string) error {
 	return cmd.Run()
 }
 
-// getVersion returns the version string from the file VERSION in the current
-// directory.
+// getVersion returns the version string from the file VERSION in the current directory.
 func getVersionFromFile() string {
 	buf, err := ioutil.ReadFile("VERSION")
 	if err != nil {
@@ -238,9 +228,8 @@ func getVersionFromFile() string {
 	return strings.TrimSpace(string(buf))
 }
 
-// getVersion returns a version string which is a combination of the contents
-// of the file VERSION in the current directory and the version from git (if
-// available).
+// getVersion returns a version string which is a combination of the contents of the file VERSION in the current
+// directory and the version from git (if available).
 func getVersion() string {
 	versionFile := getVersionFromFile()
 	versionGit := getVersionFromGit()
@@ -258,8 +247,7 @@ func getVersion() string {
 	return fmt.Sprintf("%s (%s)", versionFile, versionGit)
 }
 
-// getVersionFromGit returns a version string that identifies the currently
-// checked out git commit.
+// getVersionFromGit returns a version string that identifies the currently checked out git commit.
 func getVersionFromGit() string {
 	cmd := exec.Command("git", "describe",
 		"--long", "--tags", "--dirty", "--always")
@@ -274,8 +262,7 @@ func getVersionFromGit() string {
 	return version
 }
 
-// Constants represents a set of constants that are set in the final binary to
-// the given value via compiler flags.
+// Constants represents a set of constants that are set in the final binary to the given value via compiler flags.
 type Constants map[string]string
 
 // LDFlags returns the string that can be passed to go build's `-ldflags`.
@@ -290,10 +277,11 @@ func (cs Constants) LDFlags() string {
 }
 
 func main() {
+	log.SetFlags(0)
+
 	ver := runtime.Version()
 	if strings.HasPrefix(ver, "go1") && ver < "go1.7" {
-		fmt.Fprintf(os.Stderr, "Go version %s detected, rest-server requires at least Go 1.7\n", ver)
-		os.Exit(1)
+		log.Fatalf("Go version %s detected, rest-server requires at least Go 1.7\n", ver)
 	}
 
 	buildTags := []string{}
@@ -319,7 +307,7 @@ func main() {
 			keepGopath = true
 		case "-t", "-tags", "--tags":
 			if i+1 >= len(params) {
-				die("-t given but no tag specified")
+				log.Fatal("-t given but no tag specified")
 			}
 			skipNext = true
 			buildTags = strings.Split(params[i+1], " ")
@@ -340,7 +328,7 @@ func main() {
 			showUsage(os.Stdout)
 			return
 		default:
-			fmt.Fprintf(os.Stderr, "Error: unknown option %q\n\n", arg)
+			log.Printf("Error: unknown option %q\n\n", arg)
 			showUsage(os.Stderr)
 			os.Exit(1)
 		}
@@ -359,23 +347,23 @@ func main() {
 
 	root, err := os.Getwd()
 	if err != nil {
-		die("Getwd(): %v\n", err)
+		log.Fatalf("Getwd(): %v\n", err)
 	}
 
 	gopath, err := ioutil.TempDir("", fmt.Sprintf("%v-build-", config.Name))
 	if err != nil {
-		die("TempDir(): %v\n", err)
+		log.Fatalf("TempDir(): %v\n", err)
 	}
 
 	verbosePrintf("create GOPATH at %v\n", gopath)
 	if err = updateGopath(gopath, root, config.Namespace); err != nil {
-		die("copying files from %v/src to %v/src failed: %v\n", root, gopath, err)
+		log.Fatalf("copying files from %v/src to %v/src failed: %v\n", root, gopath, err)
 	}
 
 	vendor := filepath.Join(root, "vendor")
 	if directoryExists(vendor) {
 		if err = updateGopath(gopath, vendor, ""); err != nil {
-			die("copying files from %v to %v failed: %v\n", root, gopath, err)
+			log.Fatalf("copying files from %v to %v failed: %v\n", root, gopath, err)
 		}
 	}
 
@@ -383,7 +371,7 @@ func main() {
 		if !keepGopath {
 			verbosePrintf("remove %v\n", gopath)
 			if err = os.RemoveAll(gopath); err != nil {
-				die("remove GOPATH at %s failed: %v\n", err)
+				log.Fatalf("remove GOPATH at %s failed: %v\n", gopath, err)
 			}
 		} else {
 			verbosePrintf("leaving temporary GOPATH at %v\n", gopath)
@@ -399,7 +387,7 @@ func main() {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		die("Getwd() returned %v\n", err)
+		log.Fatalf("Getwd() returned %v\n", err)
 	}
 	output := filepath.Join(cwd, outputFilename)
 
@@ -419,7 +407,7 @@ func main() {
 
 	err = build(filepath.Join(gopath, "src"), targetGOOS, targetGOARCH, gopath, args...)
 	if err != nil {
-		die("build failed: %v\n", err)
+		log.Fatalf("build failed: %v\n", err)
 	}
 
 	if runTests {
@@ -427,7 +415,7 @@ func main() {
 
 		err = test(cwd, gopath, config.Tests...)
 		if err != nil {
-			die("running tests failed: %v\n", err)
+			log.Fatalf("running tests failed: %v\n", err)
 		}
 	}
 }
