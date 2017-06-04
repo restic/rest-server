@@ -82,6 +82,20 @@ and via HTTP, even simultaneously.
 To learn how to use restic backup client with REST backend, please consult [restic
 manual](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
 
+## Why use Rest Server?
+
+Compared to the SFTP backend, the REST backend has better performance, especially so if you can skip additional crypto
+overhead by using plain HTTP transport (restic already properly encrypts all data it sends, so using HTTPS is mostly
+about authentication).
+
+But, even if you use HTTPS transport, the REST protocol should be faster and more scalable, due to some inefficiencies
+of the SFTP protocol (everything needs to be transferred in chunks of 32 KiB at most, each packet needs to be
+acknowledged by the server).
+
+Finally, the Rest Server implementation is really simple and as such could be used on the low-end devices, no problem.
+Also, in some cases, for example behind corporate firewalls, HTTP/S might be the only protocol allowed.  Here too REST
+backend might be the perfect option for your backup needs.
+
 ## Contributors
 
 Contributors are welcome, just open a new issue / pull request.
