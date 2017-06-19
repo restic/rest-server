@@ -233,6 +233,18 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if isHashed(dir) {
 		name = filepath.Join(name[:2], name)
+
+		hashDir := filepath.Join(repo, dir, name[:2])
+		if _, err := os.Stat(hashDir); os.IsNotExist(err) {
+			if err := os.Mkdir(hashDir, 0700); err != nil {
+				if config.debug {
+					log.Print(err)
+				}
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
 	}
 	path := filepath.Join(repo, dir, name)
 
