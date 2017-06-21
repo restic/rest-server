@@ -1,4 +1,4 @@
-package main
+package restserver
 
 /*
 Copied from: github.com/bitly/oauth2_proxy
