@@ -1,4 +1,4 @@
-package main
+package restserver
 
 import (
 	"encoding/json"
@@ -22,10 +22,10 @@ func isHashed(dir string) bool {
 
 func getRepo(r *http.Request) string {
 	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo") {
-		return filepath.Join(config.path, pat.Param(r, "repo"))
+		return filepath.Join(Config.Path, pat.Param(r, "repo"))
 	}
 
-	return config.path
+	return Config.Path
 }
 
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
@@ -43,13 +43,13 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 
 // CheckConfig checks whether a configuration exists.
 func CheckConfig(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("CheckConfig()")
 	}
 	cfg := filepath.Join(getRepo(r), "config")
 	st, err := os.Stat(cfg)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -61,14 +61,14 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetConfig allows for a config to be retrieved.
 func GetConfig(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("GetConfig()")
 	}
 	cfg := filepath.Join(getRepo(r), "config")
 
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -80,14 +80,14 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 
 // SaveConfig allows for a config to be saved.
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("SaveConfig()")
 	}
 	cfg := filepath.Join(getRepo(r), "config")
 
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -95,7 +95,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := ioutil.WriteFile(cfg, bytes, 0600); err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -105,12 +105,12 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 
 // DeleteConfig removes a config.
 func DeleteConfig(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("DeleteConfig()")
 	}
 
 	if err := os.Remove(filepath.Join(getRepo(r), "config")); err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		if os.IsNotExist(err) {
@@ -124,7 +124,7 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 
 // ListBlobs lists all blobs of a given type in an arbitrary order.
 func ListBlobs(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("ListBlobs()")
 	}
 	dir := pat.Param(r, "type")
@@ -132,7 +132,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -145,7 +145,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 			subpath := filepath.Join(path, i.Name())
 			subitems, err := ioutil.ReadDir(subpath)
 			if err != nil {
-				if config.debug {
+				if Config.Debug {
 					log.Print(err)
 				}
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -161,7 +161,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(names)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -173,7 +173,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 // CheckBlob tests whether a blob exists.
 func CheckBlob(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("CheckBlob()")
 	}
 	dir := pat.Param(r, "type")
@@ -186,7 +186,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -198,7 +198,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 // GetBlob retrieves a blob from the repository.
 func GetBlob(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("GetBlob()")
 	}
 	dir := pat.Param(r, "type")
@@ -211,7 +211,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -224,7 +224,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 // SaveBlob saves a blob to the repository.
 func SaveBlob(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("SaveBlob()")
 	}
 	repo := getRepo(r)
@@ -238,7 +238,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	tf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
 	if err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -248,7 +248,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(tf, r.Body); err != nil {
 		tf.Close()
 		os.Remove(path)
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -258,7 +258,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err := tf.Sync(); err != nil {
 		tf.Close()
 		os.Remove(path)
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -267,7 +267,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if err := tf.Close(); err != nil {
 		os.Remove(path)
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -277,7 +277,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 // DeleteBlob deletes a blob from the repository.
 func DeleteBlob(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("DeleteBlob()")
 	}
 	dir := pat.Param(r, "type")
@@ -289,7 +289,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(getRepo(r), dir, name)
 
 	if err := os.Remove(path); err != nil {
-		if config.debug {
+		if Config.Debug {
 			log.Print(err)
 		}
 		if os.IsNotExist(err) {
@@ -303,7 +303,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 
 // CreateRepo creates repository directories.
 func CreateRepo(w http.ResponseWriter, r *http.Request) {
-	if config.debug {
+	if Config.Debug {
 		log.Println("CreateRepo()")
 	}
 	repo := getRepo(r)
