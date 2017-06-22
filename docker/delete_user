@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    echo "delete_user [username]"
+    exit 1
+fi
+
+htpasswd -D $PASSWORD_FILE $1

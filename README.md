@@ -22,6 +22,8 @@ performance [improvements](https://github.com/restic/restic/commit/04b262d8f10ba
 
 ## Installation
 
+### From source
+
 Run ```go run build.go```, afterwards you'll find the binary in the current directory.  You can move it anywhere you
 want.  There's also an [example systemd service
 file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service) included, so you can get it up &
@@ -49,7 +51,19 @@ Flags:
 Alternatively, you can compile and install it in your $GOBIN with a standard `go install`.  But, beware, you won't have
 version info built into binary, when compiled that way.
 
+#### Build Docker Image
+
+Run `docker/build.sh`, image name is `restic/rest-server:latest`.
+
+### From Docker image
+
+```
+docker pull restic/rest-server:latest
+```
+
 ## Getting started
+
+### Using binary
 
 By default the server persists backup data in `/tmp/restic`.  Start the server with a custom persistence directory:
 
@@ -81,6 +95,40 @@ and via HTTP, even simultaneously.
 
 To learn how to use restic backup client with REST backend, please consult [restic
 manual](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
+
+### Using Docker image
+
+By default, image use authentication. To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
+
+Persistent data volume is located to `/data`
+
+#### Start server
+
+```
+docker run --name myserver -v /my/data:/data restic/rest-server
+```
+
+It's suggested to set a name to more easily manage users (see next section).
+
+#### Manager users
+
+##### Add user
+
+```
+docker exec -ti myserver create_user myuser
+```
+
+or
+
+```
+docker exec -ti myserver create_user myuser mypassword
+```
+
+##### Delete user
+
+```
+docker exec myserver delete_user myuser
+```
 
 ## Why use Rest Server?
 
