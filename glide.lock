@@ -1,8 +1,8 @@
 hash: fa6b47593c912fd3ce7a0a9bb3f2893f61e3e4b6f7a5772c5e602e1038d74015
-updated: 2017-06-02T10:26:06.121356863+02:00
+updated: 2017-06-25T12:05:26.132955333+02:00
 imports:
 - name: github.com/gorilla/handlers
-  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
+  version: a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca
   repo: https://github.com/gorilla/handlers
   vcs: git
 - name: github.com/inconshreveable/mousetrap
@@ -10,7 +10,7 @@ imports:
   repo: https://github.com/inconshreveable/mousetrap
   vcs: git
 - name: github.com/spf13/cobra
-  version: 8d4ce3549a0bf0e3569df3aae7423b7743cd05a9
+  version: 4d647c8944eb42504a714e57e97f244ed6344722
   repo: https://github.com/spf13/cobra
   vcs: git
 - name: github.com/spf13/pflag
@@ -27,7 +27,7 @@ imports:
   - pat
   - pattern
 - name: golang.org/x/net
-  version: 3da985ce5951d99de868be4385f21ea6c2b22f24
+  version: 5f8847ae0d0e90b6a9dc8148e7ad616874625171
   repo: https://github.com/golang/net
   vcs: git
 testImports: []
