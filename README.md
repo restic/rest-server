@@ -48,18 +48,12 @@ Flags:
       --tls                 turn on TLS support
 ```
 
-Alternatively, you can compile and install it in your $GOBIN with a standard `go install`.  But, beware, you won't have
-version info built into binary, when compiled that way.
+Alternatively, you can compile and install it in your $GOBIN with a standard `go install ./cmd/rest-server`.  But,
+beware, you won't have version info built into binary, when compiled that way.
 
-#### Build Docker Image
+### Building Docker Image
 
 Run `docker/build.sh`, image name is `restic/rest-server:latest`.
-
-### From Docker image
-
-```
-docker pull restic/rest-server:latest
-```
 
 ## Getting started
 
@@ -98,7 +92,11 @@ manual](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
 
 ### Using Docker image
 
-By default, image use authentication. To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
+```
+docker pull restic/rest-server:latest
+```
+
+By default, image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
 
 Persistent data volume is located to `/data`
 
@@ -110,24 +108,24 @@ docker run --name myserver -v /my/data:/data restic/rest-server
 
 It's suggested to set a name to more easily manage users (see next section).
 
-#### Manager users
+#### Manage users
 
 ##### Add user
 
 ```
-docker exec -ti myserver create_user myuser
+docker exec -it myserver create_user myuser
 ```
 
 or
 
 ```
-docker exec -ti myserver create_user myuser mypassword
+docker exec -it myserver create_user myuser mypassword
 ```
 
 ##### Delete user
 
 ```
-docker exec myserver delete_user myuser
+docker exec -it myserver delete_user myuser
 ```
 
 ## Why use Rest Server?
