@@ -103,7 +103,7 @@ Persistent data volume is located to `/data`
 #### Start server
 
 ```
-docker run --name myserver -v /my/data:/data restic/rest-server
+docker run --name myserver --publish 80:80 -v /my/data:/data restic/rest-server
 ```
 
 It's suggested to set a name to more easily manage users (see next section).
