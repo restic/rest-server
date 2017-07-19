@@ -4,7 +4,7 @@
 [[projects]]
   name = "github.com/gorilla/handlers"
   packages = ["."]
-  revision = "a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca"
+  revision = "a4043c62cc2329bacda331d33fc908ab11ef0ec3"
   source = "https://github.com/gorilla/handlers"
   version = "v1.2.1"
 
@@ -18,7 +18,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "4d647c8944eb42504a714e57e97f244ed6344722"
+  revision = "715f41bd7a70b5111f898b71ab484da52ee6266d"
 
 [[projects]]
   branch = "master"
