@@ -15,10 +15,14 @@ data remotely, using [restic](https://github.com/restic/restic) backup client.
 Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server
 with gccgo may work, but is not supported.
 
-The required version of restic backup client to use with rest-server is
-[v0.6.1](https://github.com/restic/restic/releases/tag/v0.6.1) or higher, due to some
-[changes](https://github.com/restic/restic/commit/1a538509d0232f1a532266e07da509875fe9e0d6) in the REST backend API and
-performance [improvements](https://github.com/restic/restic/commit/04b262d8f10ba9eacde041734c08f806c4685e7f).
+The required version of restic backup client to use with Rest Server is
+[v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
+
+If you have a local repository created with an older version of restic client, which you would now like to serve via
+Rest Server, you need to first create missing subdirectories in the data directory.  Run this simple one-liner in the
+repository directory:
+
+```for i in {0..255}; do mkdir -p $(printf "data/%02x" $i); done```
 
 ## Installation
 
