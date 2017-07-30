@@ -34,7 +34,7 @@ func debugHandler(next http.Handler) http.Handler {
 func logHandler(next http.Handler) http.Handler {
 	accessLog, err := os.OpenFile(Config.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error: %v", err)
 	}
 
 	return handlers.CombinedLoggingHandler(accessLog, next)

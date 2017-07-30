@@ -42,10 +42,10 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	if restserver.Config.CPUProfile != "" {
 		f, err := os.Create(restserver.Config.CPUProfile)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		log.Println("CPU profiling enabled")
 		defer pprof.StopCPUProfile()
@@ -75,12 +75,8 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		log.Printf("Starting server on %s\n", restserver.Config.Listen)
 		err = http.ListenAndServeTLS(restserver.Config.Listen, publicKey, privateKey, handler)
 	}
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	return nil
-
+	return err
 }
 
 func main() {
