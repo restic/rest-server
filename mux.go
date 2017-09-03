@@ -20,8 +20,8 @@ var Config = struct {
 	Debug      bool
 	AppendOnly bool
 }{
-	Path:   "/tmp/restic",
-	Listen: ":8000",
+	Path:       "/tmp/restic",
+	Listen:     ":8000",
 	AppendOnly: false,
 }
 
