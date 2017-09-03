@@ -18,9 +18,11 @@ var Config = struct {
 	Log        string
 	CPUProfile string
 	Debug      bool
+	AppendOnly bool
 }{
 	Path:   "/tmp/restic",
 	Listen: ":8000",
+	AppendOnly: false,
 }
 
 func debugHandler(next http.Handler) http.Handler {

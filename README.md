@@ -43,6 +43,7 @@ Usage:
   rest-server [flags]
 
 Flags:
+      --append-only         Enable append only mode
       --cpuprofile string   write CPU profile to file
       --debug               output debug messages
   -h, --help                help for rest-server
@@ -87,6 +88,9 @@ keys with the following commands:
 % openssl genrsa -out private_key 2048
 % openssl req -new -x509 -key private_key -out public_key -days 365
 ```
+
+Append only mode allows creation of new backups but prevents deletion and modification of existing backups. This
+can be useful when backing up systems that have a potential of being hacked.
 
 Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally
 and via HTTP, even simultaneously.

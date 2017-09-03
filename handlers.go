@@ -194,6 +194,12 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("DeleteConfig()")
 	}
+
+	if Config.AppendOnly {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
 	cfg, err := getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -370,6 +376,11 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("DeleteBlob()")
+	}
+
+	if Config.AppendOnly && pat.Param(r, "type") != "locks" {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
 	}
 
 	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
