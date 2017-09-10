@@ -8,7 +8,7 @@
 
 Rest Server is a high performance HTTP server that implements restic's [REST backend
 API](https://github.com/restic/restic/blob/master/doc/rest_backend.rst).  It provides secure and efficient way to backup
-data remotely, using [restic](https://github.com/restic/restic) backup client.
+data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest: URL](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
 
 ## Requirements
 
