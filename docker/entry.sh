@@ -18,4 +18,4 @@ else
     rm -f $PASSWORD_FILE
 fi
 
-rest-server --listen ":80" --path $DATA_DIRECTORY
+rest-server --listen ":80" $OPTIONS --path $DATA_DIRECTORY
