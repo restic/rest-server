@@ -7,8 +7,9 @@
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
 Rest Server is a high performance HTTP server that implements restic's [REST backend
-API](https://github.com/restic/restic/blob/master/doc/rest_backend.rst).  It provides secure and efficient way to backup
-data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest: URL](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
+API](http://restic.readthedocs.io/en/latest/100_references.html#rest-backend).  It provides secure and efficient way to
+backup data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest:
+URL](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
 ## Requirements
 
@@ -96,7 +97,7 @@ Rest Server uses exactly the same directory structure as local backend, so you s
 and via HTTP, even simultaneously.
 
 To learn how to use restic backup client with REST backend, please consult [restic
-manual](https://restic.readthedocs.io/en/latest/manual.html#rest-server).
+manual](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
 ### Using Docker image
 
