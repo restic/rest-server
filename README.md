@@ -44,7 +44,7 @@ Usage:
   rest-server [flags]
 
 Flags:
-      --append-only         Enable append only mode
+      --append-only         enable append only mode
       --cpuprofile string   write CPU profile to file
       --debug               output debug messages
   -h, --help                help for rest-server

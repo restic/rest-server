@@ -29,7 +29,7 @@ func init() {
 	flags.StringVar(&restserver.Config.Log, "log", restserver.Config.Log, "log HTTP requests in the combined log format")
 	flags.StringVar(&restserver.Config.Path, "path", restserver.Config.Path, "data directory")
 	flags.BoolVar(&restserver.Config.TLS, "tls", restserver.Config.TLS, "turn on TLS support")
-	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "Enable append only mode")
+	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "enable append only mode")
 }
 
 var version = "manually"
