@@ -29,10 +29,10 @@ repository directory:
 
 ### From source
 
-Run ```go run build.go```, afterwards you'll find the binary in the current directory.  You can move it anywhere you
-want.  There's also an [example systemd service
-file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service) included, so you can get it up &
-running as a proper service in no time.  Of course, you can also test it from the command line.
+Run ```make```, afterwards you'll find the binary in the current directory.  You can move it anywhere you want.  There's
+also an [example systemd service file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service)
+included, so you can get it up & running as a proper service in no time.  Of course, you can also test it from the
+command line.
 
 ```
 % go run build.go
