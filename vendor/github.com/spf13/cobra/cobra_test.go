@@ -36,6 +36,7 @@ var cmdHidden = &Command{
 
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
+	Args:  MinimumNArgs(1),
 	Short: "Print anything to the screen",
 	Long:  `an absolutely utterly useless command for testing.`,
 	Run: func(cmd *Command, args []string) {
@@ -75,6 +76,7 @@ var cmdDeprecated = &Command{
 	Deprecated: "Please use echo instead",
 	Run: func(cmd *Command, args []string) {
 	},
+	Args: NoArgs,
 }
 
 var cmdTimes = &Command{
@@ -88,6 +90,8 @@ var cmdTimes = &Command{
 	Run: func(cmd *Command, args []string) {
 		tt = args
 	},
+	Args:      OnlyValidArgs,
+	ValidArgs: []string{"one", "two", "three", "four"},
 }
 
 var cmdRootNoRun = &Command{
@@ -103,6 +107,16 @@ var cmdRootSameName = &Command{
 	Use:   "print",
 	Short: "Root with the same name as a subcommand",
 	Long:  "The root description for help",
+}
+
+var cmdRootTakesArgs = &Command{
+	Use:   "root-with-args [random args]",
+	Short: "The root can run it's own function and takes args!",
+	Long:  "The root description for help, and some args",
+	Run: func(cmd *Command, args []string) {
+		tr = args
+	},
+	Args: ArbitraryArgs,
 }
 
 var cmdRootWithRun = &Command{
@@ -176,6 +190,7 @@ func flagInit() {
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
 	cmdTimes.Flags().StringVarP(&flags2b, "strtwo", "t", "2", strtwoChildHelp)
 	cmdTimes.PersistentFlags().StringVarP(&flags2b, "strtwo", "t", "2", strtwoChildHelp)
+	cmdTimes.LocalFlags() // populate lflags before parent is set
 	cmdPrint.Flags().BoolVarP(&flagb3, "boolthree", "b", true, "help message for flag boolthree")
 	cmdPrint.PersistentFlags().StringVarP(&flags3, "strthree", "s", "three", "help message for flag strthree")
 }
@@ -196,8 +211,8 @@ func initialize() *Command {
 	rootPersPre, echoPre, echoPersPre, timesPersPre = nil, nil, nil, nil
 
 	var c = cmdRootNoRun
-	flagInit()
 	commandInit()
+	flagInit()
 	return c
 }
 
@@ -205,8 +220,8 @@ func initializeWithSameName() *Command {
 	tt, tp, te = nil, nil, nil
 	rootPersPre, echoPre, echoPersPre, timesPersPre = nil, nil, nil, nil
 	var c = cmdRootSameName
-	flagInit()
 	commandInit()
+	flagInit()
 	return c
 }
 
@@ -458,6 +473,63 @@ func TestUsage(t *testing.T) {
 	checkResultOmits(t, x, cmdCustomFlags.Use+" [flags]")
 }
 
+func TestRootTakesNoArgs(t *testing.T) {
+	c := initializeWithSameName()
+	c.AddCommand(cmdPrint, cmdEcho)
+	result := simpleTester(c, "illegal")
+
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
+
+	expectedError := `unknown command "illegal" for "print"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("exptected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
+func TestRootTakesArgs(t *testing.T) {
+	c := cmdRootTakesArgs
+	result := simpleTester(c, "legal")
+
+	if result.Error != nil {
+		t.Errorf("expected no error, but got %v", result.Error)
+	}
+}
+
+func TestSubCmdTakesNoArgs(t *testing.T) {
+	result := fullSetupTest("deprecated", "illegal")
+
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
+
+	expectedError := `unknown command "illegal" for "cobra-test deprecated"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("expected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
+func TestSubCmdTakesArgs(t *testing.T) {
+	noRRSetupTest("echo", "times", "one", "two")
+	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
+func TestCmdOnlyValidArgs(t *testing.T) {
+	result := noRRSetupTest("echo", "times", "one", "two", "five")
+
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
+
+	expectedError := `invalid argument "five"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("expected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
 func TestFlagLong(t *testing.T) {
 	noRRSetupTest("echo", "--intone=13", "something", "--", "here")
 
@@ -672,9 +744,9 @@ func TestPersistentFlags(t *testing.T) {
 	}
 
 	// persistentFlag should act like normal flag on its own command
-	fullSetupTest("echo", "times", "-s", "again", "-c", "-p", "test", "here")
+	fullSetupTest("echo", "times", "-s", "again", "-c", "-p", "one", "two")
 
-	if strings.Join(tt, " ") != "test here" {
+	if strings.Join(tt, " ") != "one two" {
 		t.Errorf("flags didn't leave proper args remaining. %s given", tt)
 	}
 
@@ -839,6 +911,7 @@ func TestRootHelp(t *testing.T) {
 func TestFlagAccess(t *testing.T) {
 	initialize()
 
+	cmdEcho.AddCommand(cmdTimes)
 	local := cmdTimes.LocalFlags()
 	inherited := cmdTimes.InheritedFlags()
 
@@ -1094,9 +1167,16 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	}
 
 	rootCmd := initialize()
+	rootCmd.AddCommand(cmdEcho)
+
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
-	if reflect.ValueOf(normFunc) != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()) {
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
 		t.Error("rootCmd seems to have a wrong normalization function")
+	}
+
+	// Also check it propagates retroactively
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(cmdEcho.GlobalNormalizationFunc()).Pointer() {
+		t.Error("cmdEcho should have had the normalization function of rootCmd")
 	}
 
 	// First add the cmdEchoSub to cmdPrint
@@ -1110,6 +1190,67 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	if reflect.ValueOf(cmdPrint.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() ||
 		reflect.ValueOf(cmdEchoSub.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
 		t.Error("cmdPrint and cmdEchoSub should had the normalization function of rootCmd")
+	}
+}
+
+func TestNormPassedOnLocal(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+
+	cmd := &Command{}
+	flagVal := false
+
+	cmd.Flags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	cmd.SetGlobalNormalizationFunc(n)
+	if cmd.LocalFlags().Lookup("flagname") != cmd.LocalFlags().Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to Local flag set")
+	}
+}
+
+func TestNormPassedOnInherited(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+
+	cmd, childBefore, childAfter := &Command{}, &Command{}, &Command{}
+	flagVal := false
+	cmd.AddCommand(childBefore)
+
+	cmd.PersistentFlags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	cmd.SetGlobalNormalizationFunc(n)
+
+	cmd.AddCommand(childAfter)
+
+	if f := childBefore.InheritedFlags(); f.Lookup("flagname") == nil || f.Lookup("flagname") != f.Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to inherited flag set in command added before flag")
+	}
+	if f := childAfter.InheritedFlags(); f.Lookup("flagname") == nil || f.Lookup("flagname") != f.Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to inherited flag set in command added after flag")
+	}
+}
+
+// Related to https://github.com/spf13/cobra/issues/521.
+func TestNormConsistent(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+	id := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(name)
+	}
+
+	cmd := &Command{}
+	flagVal := false
+
+	cmd.Flags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	// Build local flag set
+	cmd.LocalFlags()
+
+	cmd.SetGlobalNormalizationFunc(n)
+	cmd.SetGlobalNormalizationFunc(id)
+
+	if cmd.LocalFlags().Lookup("flagname") == cmd.LocalFlags().Lookup("FLAGNAME") {
+		t.Error("Normalizing flag names should not result in duplicate flags")
 	}
 }
 
