@@ -6,22 +6,15 @@
 [![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/restic/rest-server/blob/master/LICENSE)
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
-Rest Server is a high performance HTTP server that implements restic's [REST backend
-API](http://restic.readthedocs.io/en/latest/100_references.html#rest-backend).  It provides secure and efficient way to
-backup data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest:
-URL](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
+Rest Server is a high performance HTTP server that implements restic's [REST backend API](http://restic.readthedocs.io/en/latest/100_references.html#rest-backend).  It provides secure and efficient way to backup data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest: URL](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
 ## Requirements
 
-Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server
-with gccgo may work, but is not supported.
+Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server with gccgo may work, but is not supported.
 
-The required version of restic backup client to use with Rest Server is
-[v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
+The required version of restic backup client to use with Rest Server is [v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
 
-If you have a local repository created with an older version of restic client, which you would now like to serve via
-Rest Server, you need to first create missing subdirectories in the data directory.  Run this simple one-liner in the
-repository directory:
+If you have a local repository created with an older version of restic client, which you would now like to serve via Rest Server, you need to first create missing subdirectories in the data directory.  Run this simple one-liner in the repository directory:
 
 ```for i in {0..255}; do mkdir -p $(printf "data/%02x" $i); done```
 
@@ -29,15 +22,43 @@ repository directory:
 
 ### From source
 
-Run ```make```, afterwards you'll find the binary in the current directory.  You can move it anywhere you want.  There's
-also an [example systemd service file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service)
-included, so you can get it up & running as a proper service in no time.  Of course, you can also test it from the
-command line.
+#### Build
+
+```make```
+
+or
+
+```go run build.go```
+
+If all goes well, you'll find the binary in the current directory.
+
+Alternatively, you can compile and install it in your $GOBIN with a standard `go install ./cmd/rest-server`.  But, beware, you won't have version info built into binary when compiled that way!
+
+#### Install
+
+```make install```
+
+Installs the binary as `/usr/local/bin/rest-server`.
+
+Alternatively, you can install it manually anywhere you want.  It's a single binary, there are no dependencies.
+
+### Docker
+
+#### Build image
+
+```docker/build.sh```
+
+#### Pull image 
+
+```docker pull restic/rest-server```
+
+## Usage
+
+To learn how to use restic backup client with REST backend, please consult [restic manual](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
 ```
-% go run build.go
+rest-server --help
 
-% ./rest-server --help
 Run a REST server for use with restic
 
 Usage:
@@ -54,102 +75,76 @@ Flags:
       --tls                 turn on TLS support
 ```
 
-Alternatively, you can compile and install it in your $GOBIN with a standard `go install ./cmd/rest-server`.  But,
-beware, you won't have version info built into binary, when compiled that way.
-
-### Building Docker Image
-
-Run `docker/build.sh`, image name is `restic/rest-server:latest`.
-
-## Getting started
-
-### Using binary
-
 By default the server persists backup data in `/tmp/restic`.  Start the server with a custom persistence directory:
 
 ```
-% rest-server --path /user/home/backup
+rest-server --path /user/home/backup
 ```
 
-The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence
-directory by executing the following command.  In order to append new user to the file, just omit the `-c` argument.
+The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence directory by executing the following command.  In order to append new user to the file, just omit the `-c` argument.
 
 ```
-% htpasswd -s -c .htpasswd username
+htpasswd -s -c .htpasswd username
 ```
 
-By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and
-passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and
-add a private and public key at the root of your persistence directory.
+By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and add a private and public key at the root of your persistence directory.
 
-Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned
-keys with the following commands:
+Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
 
 ```
-% openssl genrsa -out private_key 2048
-% openssl req -new -x509 -key private_key -out public_key -days 365
+openssl genrsa -out private_key 2048
+openssl req -new -x509 -key private_key -out public_key -days 365
 ```
 
-Append only mode allows creation of new backups but prevents deletion and modification of existing backups. This
-can be useful when backing up systems that have a potential of being hacked.
+Append only mode allows creation of new backups but prevents deletion and modification of existing backups. This can be useful when backing up systems that have a potential of being hacked.
 
-Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally
-and via HTTP, even simultaneously.
+Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally and via HTTP, even simultaneously.
 
-To learn how to use restic backup client with REST backend, please consult [restic
-manual](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
+### Systemd
 
-### Using Docker image
+There's an example [systemd service file](https://github.com/restic/rest-server/blob/master/etc/rest-server.service) included with the source, so you can get Rest Server up & running as a proper Systemd service in no time.  Before installing, adapt paths and options to your environment.
 
-```
-docker pull restic/rest-server:latest
-```
+### Docker
 
 By default, image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
 
-Persistent data volume is located to `/data`
+Persistent data volume is located to `/data`.
 
 #### Start server
 
 ```
-docker run --name myserver --publish 80:80 -v /my/data:/data restic/rest-server
+docker run -p 80:80 -v /my/data:/data --name rest_server restic/rest-server
 ```
 
-It's suggested to set a name to more easily manage users (see next section).
+It's suggested to set a container name to more easily manage users (see next section).
 
 #### Manage users
 
 ##### Add user
 
 ```
-docker exec -it myserver create_user myuser
+docker exec -it rest_server create_user myuser
 ```
 
 or
 
 ```
-docker exec -it myserver create_user myuser mypassword
+docker exec -it rest_server create_user myuser mypassword
 ```
 
 ##### Delete user
 
 ```
-docker exec -it myserver delete_user myuser
+docker exec -it rest_server delete_user myuser
 ```
 
 ## Why use Rest Server?
 
-Compared to the SFTP backend, the REST backend has better performance, especially so if you can skip additional crypto
-overhead by using plain HTTP transport (restic already properly encrypts all data it sends, so using HTTPS is mostly
-about authentication).
+Compared to the SFTP backend, the REST backend has better performance, especially so if you can skip additional crypto overhead by using plain HTTP transport (restic already properly encrypts all data it sends, so using HTTPS is mostly about authentication).
 
-But, even if you use HTTPS transport, the REST protocol should be faster and more scalable, due to some inefficiencies
-of the SFTP protocol (everything needs to be transferred in chunks of 32 KiB at most, each packet needs to be
-acknowledged by the server).
+But, even if you use HTTPS transport, the REST protocol should be faster and more scalable, due to some inefficiencies of the SFTP protocol (everything needs to be transferred in chunks of 32 KiB at most, each packet needs to be acknowledged by the server).
 
-Finally, the Rest Server implementation is really simple and as such could be used on the low-end devices, no problem.
-Also, in some cases, for example behind corporate firewalls, HTTP/S might be the only protocol allowed.  Here too REST
-backend might be the perfect option for your backup needs.
+Finally, the Rest Server implementation is really simple and as such could be used on the low-end devices, no problem.  Also, in some cases, for example behind corporate firewalls, HTTP/S might be the only protocol allowed.  Here too REST backend might be the perfect option for your backup needs.
 
 ## Contributors
 
