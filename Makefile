@@ -1,4 +1,4 @@
-.PHONY: default install uninstall clean
+.PHONY: default rest-server install uninstall clean
 
 default: rest-server
 
