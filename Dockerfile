@@ -9,7 +9,7 @@ COPY rest-server docker/*_user /usr/bin/
 
 VOLUME /data
 
-EXPOSE  80
+EXPOSE 80
 
 COPY docker/entrypoint.sh /entrypoint.sh
 
