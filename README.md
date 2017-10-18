@@ -46,7 +46,7 @@ Alternatively, you can install it manually anywhere you want.  It's a single bin
 
 #### Build image
 
-```docker/build.sh```
+```make docker_build```
 
 #### Pull image 
 
@@ -117,6 +117,8 @@ docker run -p 80:80 -v /my/data:/data --name rest_server restic/rest-server
 ```
 
 It's suggested to set a container name to more easily manage users (see next section).
+
+You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
 
 #### Manage users
 
