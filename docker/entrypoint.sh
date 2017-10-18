@@ -16,4 +16,4 @@ else
     rm -f "$PASSWORD_FILE"
 fi
 
-exec rest-server --listen ":80" $OPTIONS --path "$DATA_DIRECTORY"
+exec rest-server --path "$DATA_DIRECTORY" $OPTIONS
