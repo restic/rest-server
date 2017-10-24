@@ -8,6 +8,7 @@ import (
 	goji "goji.io"
 
 	"github.com/gorilla/handlers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"goji.io/pat"
 )
 
@@ -19,6 +20,7 @@ var Config = struct {
 	CPUProfile string
 	Debug      bool
 	AppendOnly bool
+	Prometheus bool
 }{
 	Path:       "/tmp/restic",
 	Listen:     ":8000",
@@ -51,6 +53,10 @@ func NewMux() *goji.Mux {
 
 	if Config.Log != "" {
 		mux.Use(logHandler)
+	}
+
+	if Config.Prometheus {
+		mux.Handle(pat.Get("/metrics"), promhttp.Handler())
 	}
 
 	mux.HandleFunc(pat.Head("/config"), CheckConfig)

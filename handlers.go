@@ -13,9 +13,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	"goji.io/middleware"
 	"goji.io/pat"
+	"github.com/miolini/datacounter"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func isHashed(dir string) bool {
@@ -317,8 +318,15 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.ServeContent(w, r, "", time.Unix(0, 0), file)
+	wc := datacounter.NewResponseWriterCounter(w)
+	http.ServeContent(wc, r, "", time.Unix(0, 0), file)
 	file.Close()
+
+	if Config.Prometheus {
+		labels := prometheus.Labels{"repo": getRepo(r), "type": pat.Param(r, "type")}
+		metricBlobReadTotal.With(labels).Inc()
+		metricBlobReadBytesTotal.With(labels).Add(float64(wc.Count()))
+	}
 }
 
 // SaveBlob saves a blob to the repository.
@@ -342,7 +350,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := io.Copy(tf, r.Body); err != nil {
+	written, err := io.Copy(tf, r.Body)
+	if err != nil {
 		tf.Close()
 		os.Remove(path)
 		if Config.Debug {
@@ -369,6 +378,12 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	if Config.Prometheus {
+		labels := prometheus.Labels{"repo": getRepo(r), "type": pat.Param(r, "type")}
+		metricBlobWriteTotal.With(labels).Inc()
+		metricBlobWriteBytesTotal.With(labels).Add(float64(written))
 	}
 }
 
