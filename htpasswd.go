@@ -38,11 +38,11 @@ import (
 
 // HtpasswdFile is a map for usernames to passwords.
 type HtpasswdFile struct {
-	mutex sync.Mutex
-	path string
-	stat os.FileInfo
+	mutex    sync.Mutex
+	path     string
+	stat     os.FileInfo
 	throttle chan struct{}
-	Users map[string]string
+	Users    map[string]string
 }
 
 // NewHtpasswdFromFile reads the users and passwords from a htpasswd file and returns them.  If an error is encountered,
@@ -54,9 +54,9 @@ func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
 	}
 
 	h := &HtpasswdFile{
-		mutex: sync.Mutex{},
-		path: path,
-		stat: stat,
+		mutex:    sync.Mutex{},
+		path:     path,
+		stat:     stat,
 		throttle: make(chan struct{}),
 	}
 
