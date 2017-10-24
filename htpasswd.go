@@ -34,6 +34,8 @@ import (
 	"time"
 )
 
+const CheckInterval = 30 * time.Second
+
 // Lookup passwords in a htpasswd file.  The entries must have been created with -s for SHA encryption.
 
 // HtpasswdFile is a map for usernames to passwords.
@@ -64,17 +66,17 @@ func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
 		return nil, err
 	}
 
-	// Start a goroutine that limits reload checks to once a second at most
+	// Start a goroutine that limits reload checks to once per CheckInterval
 	go h.throttleTimer()
 
 	return h, nil
 }
 
-// throttleTimer sends at most one message per second to throttle file change checks.
+// throttleTimer sends at most one message per CheckInterval to throttle file change checks.
 func (h *HtpasswdFile) throttleTimer() {
 	var check struct{}
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(CheckInterval)
 		h.throttle <- check
 	}
 }
@@ -108,7 +110,7 @@ func (h *HtpasswdFile) Reload() error {
 	return nil
 }
 
-// ReloadCheck checks at most once per second if the file changed and will reload the file if it did.
+// ReloadCheck checks at most once per CheckInterval if the file changed and will reload the file if it did.
 // It logs errors and successful reloads, and returns an error if any was encountered.
 func (h *HtpasswdFile) ReloadCheck() error {
 	select {
