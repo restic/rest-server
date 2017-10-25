@@ -246,7 +246,8 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	for _, i := range items {
 		if isHashed(fileType) {
 			subpath := filepath.Join(path, i.Name())
-			subitems, err := ioutil.ReadDir(subpath)
+			var subitems []os.FileInfo
+			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
 				if Config.Debug {
 					log.Print(err)
