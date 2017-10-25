@@ -16,12 +16,12 @@ import (
 var Config = struct {
 	Path       string
 	Listen     string
-	TLS        bool
 	Log        string
 	CPUProfile string
-	Debug      bool
+	TLS        bool
 	AppendOnly bool
 	Prometheus bool
+	Debug      bool
 }{
 	Path:       "/tmp/restic",
 	Listen:     ":8000",
