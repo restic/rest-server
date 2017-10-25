@@ -72,6 +72,7 @@ Flags:
       --listen string       listen address (default ":8000")
       --log string          log HTTP requests in the combined log format
       --path string         data directory (default "/tmp/restic")
+      --prometheus          enable Prometheus metrics
       --tls                 turn on TLS support
 ```
 
