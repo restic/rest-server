@@ -12,6 +12,7 @@ import (
 	"goji.io/pat"
 )
 
+// Config struct holds program configuration.
 var Config = struct {
 	Path       string
 	Listen     string
@@ -44,6 +45,7 @@ func logHandler(next http.Handler) http.Handler {
 	return handlers.CombinedLoggingHandler(accessLog, next)
 }
 
+// NewMux is master HTTP multiplexer/router.
 func NewMux() *goji.Mux {
 	mux := goji.NewMux()
 

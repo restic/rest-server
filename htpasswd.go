@@ -34,6 +34,7 @@ import (
 	"time"
 )
 
+// CheckInterval represents how often we check for changes in htpasswd file.
 const CheckInterval = 30 * time.Second
 
 // Lookup passwords in a htpasswd file.  The entries must have been created with -s for SHA encryption.
