@@ -159,7 +159,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 // SaveConfig allows for a config to be saved.
@@ -272,7 +272,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 // CheckBlob tests whether a blob exists.
@@ -322,7 +322,11 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	wc := datacounter.NewResponseWriterCounter(w)
 	http.ServeContent(wc, r, "", time.Unix(0, 0), file)
-	file.Close()
+
+	if err = file.Close(); err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	if Config.Prometheus {
 		labels := prometheus.Labels{"repo": getRepo(r), "type": pat.Param(r, "type")}
@@ -354,8 +358,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	written, err := io.Copy(tf, r.Body)
 	if err != nil {
-		tf.Close()
-		os.Remove(path)
+		_ = tf.Close()
+		_ = os.Remove(path)
 		if Config.Debug {
 			log.Print(err)
 		}
@@ -364,8 +368,8 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := tf.Sync(); err != nil {
-		tf.Close()
-		os.Remove(path)
+		_ = tf.Close()
+		_ = os.Remove(path)
 		if Config.Debug {
 			log.Print(err)
 		}
@@ -374,7 +378,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := tf.Close(); err != nil {
-		os.Remove(path)
+		_ = os.Remove(path)
 		if Config.Debug {
 			log.Print(err)
 		}

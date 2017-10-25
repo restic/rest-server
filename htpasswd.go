@@ -88,7 +88,6 @@ func (h *HtpasswdFile) Reload() error {
 	if err != nil {
 		return err
 	}
-	defer r.Close()
 
 	cr := csv.NewReader(r)
 	cr.Comma = ':'
@@ -97,6 +96,7 @@ func (h *HtpasswdFile) Reload() error {
 
 	records, err := cr.ReadAll()
 	if err != nil {
+		_ = r.Close()
 		return err
 	}
 	users := make(map[string]string)
@@ -108,6 +108,8 @@ func (h *HtpasswdFile) Reload() error {
 	h.mutex.Lock()
 	h.Users = users
 	h.mutex.Unlock()
+
+	_ = r.Close()
 	return nil
 }
 
@@ -160,7 +162,7 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	}
 	if realPassword[:5] == "{SHA}" {
 		d := sha1.New()
-		d.Write([]byte(password))
+		_, _ = d.Write([]byte(password))
 		if realPassword[5:] == base64.StdEncoding.EncodeToString(d.Sum(nil)) {
 			return true
 		}
