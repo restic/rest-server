@@ -159,6 +159,7 @@ The BSD 2-Clause License
 
 Copyright © 2015, Bertil Chapuis
 Copyright © 2016, Zlatko Čalušić, Alexander Neumann
+Copyright © 2017, The Rest Server Authors
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
