@@ -2,7 +2,6 @@ package restserver
 
 import "github.com/prometheus/client_golang/prometheus"
 
-
 var metricBlobWriteTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "rest_server_blob_write_total",

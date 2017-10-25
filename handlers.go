@@ -13,10 +13,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"goji.io/middleware"
-	"goji.io/pat"
+
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
+	"goji.io/middleware"
+	"goji.io/pat"
 )
 
 func isHashed(dir string) bool {
