@@ -2,12 +2,14 @@ package restserver
 
 import "github.com/prometheus/client_golang/prometheus"
 
+var metricLabelList = []string{"user", "repo", "type"}
+
 var metricBlobWriteTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "rest_server_blob_write_total",
 		Help: "Total number of blobs written",
 	},
-	[]string{"repo", "type"},
+	metricLabelList,
 )
 
 var metricBlobWriteBytesTotal = prometheus.NewCounterVec(
@@ -15,7 +17,7 @@ var metricBlobWriteBytesTotal = prometheus.NewCounterVec(
 		Name: "rest_server_blob_write_bytes_total",
 		Help: "Total number of bytes written to blobs",
 	},
-	[]string{"repo", "type"},
+	metricLabelList,
 )
 
 var metricBlobReadTotal = prometheus.NewCounterVec(
@@ -23,7 +25,7 @@ var metricBlobReadTotal = prometheus.NewCounterVec(
 		Name: "rest_server_blob_read_total",
 		Help: "Total number of blobs read",
 	},
-	[]string{"repo", "type"},
+	metricLabelList,
 )
 
 var metricBlobReadBytesTotal = prometheus.NewCounterVec(
@@ -31,7 +33,23 @@ var metricBlobReadBytesTotal = prometheus.NewCounterVec(
 		Name: "rest_server_blob_read_bytes_total",
 		Help: "Total number of bytes read from blobs",
 	},
-	[]string{"repo", "type"},
+	metricLabelList,
+)
+
+var metricBlobDeleteTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "rest_server_blob_delete_total",
+		Help: "Total number of blobs deleted",
+	},
+	metricLabelList,
+)
+
+var metricBlobDeleteBytesTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "rest_server_blob_delete_bytes_total",
+		Help: "Total number of bytes of blobs deleted",
+	},
+	metricLabelList,
 )
 
 func init() {
@@ -40,4 +58,6 @@ func init() {
 	prometheus.MustRegister(metricBlobWriteBytesTotal)
 	prometheus.MustRegister(metricBlobReadTotal)
 	prometheus.MustRegister(metricBlobReadBytesTotal)
+	prometheus.MustRegister(metricBlobDeleteTotal)
+	prometheus.MustRegister(metricBlobDeleteBytesTotal)
 }
