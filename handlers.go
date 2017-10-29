@@ -103,6 +103,25 @@ func getFilePath(r *http.Request, fileType, name string) (string, error) {
 	return join(Config.Path, getRepo(r), fileType, name)
 }
 
+// getUser returns the username from the request, or an empty string if none.
+func getUser(r *http.Request) string {
+	username, _, ok := r.BasicAuth()
+	if !ok {
+		return ""
+	}
+	return username
+}
+
+// getMetricLabels returns the prometheus labels from the request.
+func getMetricLabels(r *http.Request) prometheus.Labels {
+	labels := prometheus.Labels{
+		"user": getUser(r),
+		"repo": getRepo(r),
+		"type": pat.Param(r, "type"),
+	}
+	return labels
+}
+
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
 // stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
@@ -329,7 +348,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if Config.Prometheus {
-		labels := prometheus.Labels{"repo": getRepo(r), "type": pat.Param(r, "type")}
+		labels := getMetricLabels(r)
 		metricBlobReadTotal.With(labels).Inc()
 		metricBlobReadBytesTotal.With(labels).Add(float64(wc.Count()))
 	}
@@ -387,7 +406,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if Config.Prometheus {
-		labels := prometheus.Labels{"repo": getRepo(r), "type": pat.Param(r, "type")}
+		labels := getMetricLabels(r)
 		metricBlobWriteTotal.With(labels).Inc()
 		metricBlobWriteBytesTotal.With(labels).Add(float64(written))
 	}
@@ -410,6 +429,14 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var size int64
+	if Config.Prometheus {
+		stat, err := os.Stat(path)
+		if err != nil {
+			size = stat.Size()
+		}
+	}
+
 	if err := os.Remove(path); err != nil {
 		if Config.Debug {
 			log.Print(err)
@@ -420,6 +447,12 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		return
+	}
+
+	if Config.Prometheus {
+		labels := getMetricLabels(r)
+		metricBlobDeleteTotal.With(labels).Inc()
+		metricBlobDeleteBytesTotal.With(labels).Add(float64(size))
 	}
 }
 
