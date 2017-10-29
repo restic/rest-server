@@ -141,6 +141,14 @@ docker exec -it rest_server create_user myuser mypassword
 docker exec -it rest_server delete_user myuser
 ```
 
+
+## Prometheus support and Grafana dashboard
+
+The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`.
+
+This repository contains an example full stack Docker Compose setup with a Grafana dashboard in [example/compose-with-grafana/](example/compose-with-grafana/).
+
+
 ## Why use Rest Server?
 
 Compared to the SFTP backend, the REST backend has better performance, especially so if you can skip additional crypto overhead by using plain HTTP transport (restic already properly encrypts all data it sends, so using HTTPS is mostly about authentication).

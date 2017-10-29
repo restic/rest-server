@@ -1,0 +1,59 @@
+# Demo of rest-server with prometheus and grafana
+version: '2'
+
+services:
+  restserver:
+    # NOTE: You must run `make docker_build` in the repo root first
+    # If you want to run this in production, you want auth and tls!
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - data:/data
+    environment:
+      DISABLE_AUTHENTICATION: 1
+      OPTIONS: "--prometheus"
+    ports:
+      - "127.0.0.1:8010:8000"
+    networks:
+      - net
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "127.0.0.1:8020:9090"
+    volumes:
+      - prometheusdata:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - restserver
+    networks:
+      - net
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./dashboards:/dashboards
+      - ./grafana.ini:/etc/grafana/grafana.ini
+    ports:
+      - "127.0.0.1:8030:3000"
+    environment:
+      GF_USERS_DEFAULT_THEME: light
+    #  GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    depends_on:
+      - prometheus
+    networks:
+      - net
+
+networks:
+  net:
+
+volumes:
+  data:
+    driver: local
+  prometheusdata:
+    driver: local
+  grafanadata:
+    driver: local
+
