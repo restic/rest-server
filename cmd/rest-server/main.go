@@ -30,7 +30,7 @@ func init() {
 	flags.StringVar(&restserver.Config.Path, "path", restserver.Config.Path, "data directory")
 	flags.BoolVar(&restserver.Config.TLS, "tls", restserver.Config.TLS, "turn on TLS support")
 	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "enable append only mode")
-	flags.BoolVar(&restserver.Config.Prometheus, "prometheus", restserver.Config.AppendOnly, "enable Prometheus metrics")
+	flags.BoolVar(&restserver.Config.Prometheus, "prometheus", restserver.Config.Prometheus, "enable Prometheus metrics")
 }
 
 var version = "manually"
