@@ -74,6 +74,9 @@ Flags:
       --path string         data directory (default "/tmp/restic")
       --prometheus          enable Prometheus metrics
       --tls                 turn on TLS support
+      --tls-cert string     TLS certificate path
+      --tls-key string      TLS key path
+
 ```
 
 By default the server persists backup data in `/tmp/restic`.  Start the server with a custom persistence directory:
@@ -88,7 +91,7 @@ The server uses an `.htpasswd` file to specify users.  You can create such a fil
 htpasswd -s -c .htpasswd username
 ```
 
-By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and add a private and public key at the root of your persistence directory.
+By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by --tls-cert and --tls-key
 
 Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
 

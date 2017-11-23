@@ -19,6 +19,8 @@ var Config = struct {
 	Log        string
 	CPUProfile string
 	TLS        bool
+	TLSKey     string
+	TLSCert    string
 	AppendOnly bool
 	Prometheus bool
 	Debug      bool
