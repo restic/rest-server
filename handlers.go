@@ -142,7 +142,7 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -172,7 +172,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -202,7 +202,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -238,7 +238,7 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -275,7 +275,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -336,7 +336,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -366,7 +366,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -408,7 +408,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -483,11 +483,10 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
-
 
 	if Config.AppendOnly && pat.Param(r, "type") != "locks" {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
@@ -534,11 +533,10 @@ func CreateRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// private repos
-	if (Config.PrivateRepos && (getUser(r) != getRepo(r))) {
+	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
-
 
 	repo, err := join(Config.Path, getRepo(r))
 	if err != nil {

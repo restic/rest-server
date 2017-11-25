@@ -14,17 +14,17 @@ import (
 
 // Config struct holds program configuration.
 var Config = struct {
-	Path       string
-	Listen     string
-	Log        string
-	CPUProfile string
-	TLSKey     string
-	TLSCert    string
-	TLS        bool
-	AppendOnly bool
+	Path         string
+	Listen       string
+	Log          string
+	CPUProfile   string
+	TLS          bool
+	TLSKey       string
+	TLSCert      string
+	AppendOnly   bool
 	PrivateRepos bool
-	Prometheus bool
-	Debug      bool
+	Prometheus   bool
+	Debug        bool
 }{
 	Path:       "/tmp/restic",
 	Listen:     ":8000",
