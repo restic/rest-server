@@ -22,6 +22,7 @@ var Config = struct {
 	TLSCert    string
 	TLS        bool
 	AppendOnly bool
+	PrivateRepos bool
 	Prometheus bool
 	Debug      bool
 }{
