@@ -1,8 +1,9 @@
 package main
 
 import (
-	restserver "github.com/restic/rest-server"
 	"testing"
+
+	restserver "github.com/restic/rest-server"
 )
 
 func TestTLSSettings(t *testing.T) {

@@ -2,14 +2,15 @@ package main
 
 import (
 	"errors"
-	restserver "github.com/restic/rest-server"
-	"github.com/spf13/cobra"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+
+	restserver "github.com/restic/rest-server"
+	"github.com/spf13/cobra"
 )
 
 // cmdRoot is the base command when no other command has been specified.
