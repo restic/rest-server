@@ -32,6 +32,7 @@ func init() {
 	flags.StringVar(&restserver.Config.TLSCert, "tls-cert", restserver.Config.TLSCert, "TLS certificate path")
 	flags.StringVar(&restserver.Config.TLSKey, "tls-key", restserver.Config.TLSKey, "TLS key path")
 	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "enable append only mode")
+	flags.BoolVar(&restserver.Config.PrivateRepos, "private-repos", restserver.Config.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&restserver.Config.Prometheus, "prometheus", restserver.Config.Prometheus, "enable Prometheus metrics")
 }
 
@@ -86,6 +87,12 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	} else {
 		handler = restserver.AuthHandler(htpasswdFile, mux)
 		log.Println("Authentication enabled")
+	}
+
+	if restserver.Config.PrivateRepos {
+		log.Println("Private repositories enabled")
+	} else {
+		log.Println("Private repositories disabled")
 	}
 
 	enabledTLS, privateKey, publicKey, err := tlsSettings()
