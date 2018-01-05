@@ -14,10 +14,6 @@ Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the
 
 The required version of restic backup client to use with Rest Server is [v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
 
-If you have a local repository created with an older version of restic client, which you would now like to serve via Rest Server, you need to first create missing subdirectories in the data directory.  Run this simple one-liner in the repository directory:
-
-```for i in {0..255}; do mkdir -p $(printf "data/%02x" $i); done```
-
 ## Installation
 
 ### From source

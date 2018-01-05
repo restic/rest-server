@@ -367,6 +367,17 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	if os.IsNotExist(err) {
+		// the error is caused by a missing directory, create it and retry
+		mkdirErr := os.MkdirAll(filepath.Dir(path), 0700)
+		if mkdirErr != nil {
+			log.Print(mkdirErr)
+		} else {
+			// try again
+			tf, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+		}
+	}
+
 	if err != nil {
 		if Config.Debug {
 			log.Print(err)
