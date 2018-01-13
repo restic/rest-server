@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -23,15 +23,17 @@ var (
 )
 
 var config = struct {
-	Name      string
-	Namespace string
-	Main      string
-	Tests     []string
+	Name       string
+	Namespace  string
+	Main       string
+	Tests      []string
+	MinVersion GoVersion
 }{
-	Name:      "rest-server",                                   // name of the program executable and directory
-	Namespace: "github.com/restic/rest-server",                 // subdir of GOPATH, e.g. "github.com/foo/bar"
-	Main:      "github.com/restic/rest-server/cmd/rest-server", // package name for the main package
-	Tests:     []string{"github.com/restic/rest-server"},       // tests to run
+	Name:       "rest-server",                                   // name of the program executable and directory
+	Namespace:  "github.com/restic/rest-server",                 // subdir of GOPATH, e.g. "github.com/foo/bar"
+	Main:       "github.com/restic/rest-server/cmd/rest-server", // package name for the main package
+	Tests:      []string{"github.com/restic/rest-server"},       // tests to run
+	MinVersion: GoVersion{Major: 1, Minor: 7, Patch: 0},         // minimum Go version supported
 }
 
 // specialDir returns true if the file begins with a special character ('.' or '_').
@@ -41,7 +43,7 @@ func specialDir(name string) bool {
 	}
 
 	base := filepath.Base(name)
-	if base[0] == '_' || base[0] == '.' {
+	if base == "vendor" || base[0] == '_' || base[0] == '.' {
 		return true
 	}
 
@@ -63,26 +65,37 @@ func excludePath(name string) bool {
 	return true
 }
 
-// updateGopath builds a valid GOPATH at dst, with all Go files in src/ copied to dst/prefix/, so calling
+// updateGopath builds a valid GOPATH at dst, with all Go files in src/ copied
+// to dst/prefix/, so calling
 //
-//   updateGopath("/tmp/gopath", "/home/u/rest-server", "github.com/restic/rest-server")
+//   updateGopath("/tmp/gopath", "/home/u/restic", "github.com/restic/restic")
 //
-// with "/home/u/restic" containing the file "foo.go" yields the following tree at "/tmp/gopath":
+// with "/home/u/restic" containing the file "foo.go" yields the following tree
+// at "/tmp/gopath":
 //
 //   /tmp/gopath
 //   └── src
 //       └── github.com
 //           └── restic
-//               └── rest-server
+//               └── restic
 //                   └── foo.go
 func updateGopath(dst, src, prefix string) error {
+	verbosePrintf("copy contents of %v to %v\n", src, filepath.Join(dst, prefix))
 	return filepath.Walk(src, func(name string, fi os.FileInfo, err error) error {
+		if name == src {
+			return err
+		}
+
 		if specialDir(name) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
 
 			return nil
+		}
+
+		if err != nil {
+			return err
 		}
 
 		if fi.IsDir() {
@@ -125,7 +138,6 @@ func copyFile(dst, src string) error {
 	if err != nil {
 		return err
 	}
-	defer fsrc.Close()
 
 	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		fmt.Printf("MkdirAll(%v)\n", filepath.Dir(dst))
@@ -136,17 +148,35 @@ func copyFile(dst, src string) error {
 	if err != nil {
 		return err
 	}
-	defer fdst.Close()
 
-	_, err = io.Copy(fdst, fsrc)
+	if _, err = io.Copy(fdst, fsrc); err != nil {
+		return err
+	}
+
+	if err == nil {
+		err = fsrc.Close()
+	}
+
+	if err == nil {
+		err = fdst.Close()
+	}
+
 	if err == nil {
 		err = os.Chmod(dst, fi.Mode())
 	}
+
 	if err == nil {
 		err = os.Chtimes(dst, fi.ModTime(), fi.ModTime())
 	}
 
-	return err
+	return nil
+}
+
+// die prints the message with fmt.Fprintf() to stderr and exits with an error
+// code.
+func die(message string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, message, args...)
+	os.Exit(1)
 }
 
 func showUsage(output io.Writer) {
@@ -171,7 +201,8 @@ func verbosePrintf(message string, args ...interface{}) {
 	fmt.Printf("build: "+message, args...)
 }
 
-// cleanEnv returns a clean environment with GOPATH and GOBIN removed (if present).
+// cleanEnv returns a clean environment with GOPATH and GOBIN removed (if
+// present).
 func cleanEnv() (env []string) {
 	for _, v := range os.Environ() {
 		if strings.HasPrefix(v, "GOPATH=") || strings.HasPrefix(v, "GOBIN=") {
@@ -217,7 +248,8 @@ func test(cwd, gopath string, args ...string) error {
 	return cmd.Run()
 }
 
-// getVersion returns the version string from the file VERSION in the current directory.
+// getVersion returns the version string from the file VERSION in the current
+// directory.
 func getVersionFromFile() string {
 	buf, err := ioutil.ReadFile("VERSION")
 	if err != nil {
@@ -228,8 +260,9 @@ func getVersionFromFile() string {
 	return strings.TrimSpace(string(buf))
 }
 
-// getVersion returns a version string which is a combination of the contents of the file VERSION in the current
-// directory and the version from git (if available).
+// getVersion returns a version string which is a combination of the contents
+// of the file VERSION in the current directory and the version from git (if
+// available).
 func getVersion() string {
 	versionFile := getVersionFromFile()
 	versionGit := getVersionFromGit()
@@ -247,7 +280,8 @@ func getVersion() string {
 	return fmt.Sprintf("%s (%s)", versionFile, versionGit)
 }
 
-// getVersionFromGit returns a version string that identifies the currently checked out git commit.
+// getVersionFromGit returns a version string that identifies the currently
+// checked out git commit.
 func getVersionFromGit() string {
 	cmd := exec.Command("git", "describe",
 		"--long", "--tags", "--dirty", "--always")
@@ -262,7 +296,8 @@ func getVersionFromGit() string {
 	return version
 }
 
-// Constants represents a set of constants that are set in the final binary to the given value via compiler flags.
+// Constants represents a set of constants that are set in the final binary to
+// the given value via compiler flags.
 type Constants map[string]string
 
 // LDFlags returns the string that can be passed to go build's `-ldflags`.
@@ -276,12 +311,81 @@ func (cs Constants) LDFlags() string {
 	return strings.Join(l, " ")
 }
 
-func main() {
-	log.SetFlags(0)
+// GoVersion is the version of Go used to compile the project.
+type GoVersion struct {
+	Major int
+	Minor int
+	Patch int
+}
 
-	ver := runtime.Version()
-	if strings.HasPrefix(ver, "go1") && ver < "go1.7" {
-		log.Fatalf("Go version %s detected, rest-server requires at least Go 1.7\n", ver)
+// ParseGoVersion parses the Go version s. If s cannot be parsed, the returned GoVersion is null.
+func ParseGoVersion(s string) (v GoVersion) {
+	if !strings.HasPrefix(s, "go") {
+		return
+	}
+
+	s = s[2:]
+	data := strings.Split(s, ".")
+	if len(data) != 3 {
+		return
+	}
+
+	major, err := strconv.Atoi(data[0])
+	if err != nil {
+		return
+	}
+
+	minor, err := strconv.Atoi(data[1])
+	if err != nil {
+		return
+	}
+
+	patch, err := strconv.Atoi(data[2])
+	if err != nil {
+		return
+	}
+
+	v = GoVersion{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+	}
+	return
+}
+
+// AtLeast returns true if v is at least as new as other. If v is empty, true is returned.
+func (v GoVersion) AtLeast(other GoVersion) bool {
+	var empty GoVersion
+
+	// the empty version satisfies all versions
+	if v == empty {
+		return true
+	}
+
+	if v.Major < other.Major {
+		return false
+	}
+
+	if v.Minor < other.Minor {
+		return false
+	}
+
+	if v.Patch < other.Patch {
+		return false
+	}
+
+	return true
+}
+
+func (v GoVersion) String() string {
+	return fmt.Sprintf("Go %d.%d.%d", v.Major, v.Minor, v.Patch)
+}
+
+func main() {
+	ver := ParseGoVersion(runtime.Version())
+	if !ver.AtLeast(config.MinVersion) {
+		fmt.Fprintf(os.Stderr, "%s detected, this program requires at least %s\n", ver, config.MinVersion)
+		os.Exit(1)
 	}
 
 	buildTags := []string{}
@@ -307,7 +411,7 @@ func main() {
 			keepGopath = true
 		case "-t", "-tags", "--tags":
 			if i+1 >= len(params) {
-				log.Fatal("-t given but no tag specified")
+				die("-t given but no tag specified")
 			}
 			skipNext = true
 			buildTags = strings.Split(params[i+1], " ")
@@ -328,7 +432,7 @@ func main() {
 			showUsage(os.Stdout)
 			return
 		default:
-			log.Printf("Error: unknown option %q\n\n", arg)
+			fmt.Fprintf(os.Stderr, "Error: unknown option %q\n\n", arg)
 			showUsage(os.Stderr)
 			os.Exit(1)
 		}
@@ -347,23 +451,23 @@ func main() {
 
 	root, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Getwd(): %v\n", err)
+		die("Getwd(): %v\n", err)
 	}
 
 	gopath, err := ioutil.TempDir("", fmt.Sprintf("%v-build-", config.Name))
 	if err != nil {
-		log.Fatalf("TempDir(): %v\n", err)
+		die("TempDir(): %v\n", err)
 	}
 
 	verbosePrintf("create GOPATH at %v\n", gopath)
 	if err = updateGopath(gopath, root, config.Namespace); err != nil {
-		log.Fatalf("copying files from %v/src to %v/src failed: %v\n", root, gopath, err)
+		die("copying files from %v/src to %v/src failed: %v\n", root, gopath, err)
 	}
 
 	vendor := filepath.Join(root, "vendor")
 	if directoryExists(vendor) {
-		if err = updateGopath(gopath, vendor, ""); err != nil {
-			log.Fatalf("copying files from %v to %v failed: %v\n", root, gopath, err)
+		if err = updateGopath(gopath, vendor, filepath.Join(config.Namespace, "vendor")); err != nil {
+			die("copying files from %v to %v failed: %v\n", root, gopath, err)
 		}
 	}
 
@@ -371,7 +475,7 @@ func main() {
 		if !keepGopath {
 			verbosePrintf("remove %v\n", gopath)
 			if err = os.RemoveAll(gopath); err != nil {
-				log.Fatalf("remove GOPATH at %s failed: %v\n", gopath, err)
+				die("remove GOPATH at %s failed: %v\n", err)
 			}
 		} else {
 			verbosePrintf("leaving temporary GOPATH at %v\n", gopath)
@@ -387,9 +491,12 @@ func main() {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Getwd() returned %v\n", err)
+		die("Getwd() returned %v\n", err)
 	}
-	output := filepath.Join(cwd, outputFilename)
+	output := outputFilename
+	if !filepath.IsAbs(output) {
+		output = filepath.Join(cwd, output)
+	}
 
 	version := getVersion()
 	constants := Constants{}
@@ -407,7 +514,7 @@ func main() {
 
 	err = build(filepath.Join(gopath, "src"), targetGOOS, targetGOARCH, gopath, args...)
 	if err != nil {
-		log.Fatalf("build failed: %v\n", err)
+		die("build failed: %v\n", err)
 	}
 
 	if runTests {
@@ -415,7 +522,7 @@ func main() {
 
 		err = test(cwd, gopath, config.Tests...)
 		if err != nil {
-			log.Fatalf("running tests failed: %v\n", err)
+			die("running tests failed: %v\n", err)
 		}
 	}
 }
