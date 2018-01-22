@@ -294,6 +294,66 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
+// Blob represents a single blob, its name and its size.
+type Blob struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+}
+
+// ListBlobsV2 lists all blobs of a given type, together with their sizes, in an arbitrary order.
+func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
+	if Config.Debug {
+		log.Println("ListBlobsV2()")
+	}
+	fileType := pat.Param(r, "type")
+	path, err := getPath(r, fileType)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	items, err := ioutil.ReadDir(path)
+	if err != nil {
+		if Config.Debug {
+			log.Print(err)
+		}
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	var blobs []Blob
+	for _, i := range items {
+		if isHashed(fileType) {
+			subpath := filepath.Join(path, i.Name())
+			var subitems []os.FileInfo
+			subitems, err = ioutil.ReadDir(subpath)
+			if err != nil {
+				if Config.Debug {
+					log.Print(err)
+				}
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			for _, f := range subitems {
+				blobs = append(blobs, Blob{Name: f.Name(), Size: f.Size()})
+			}
+		} else {
+			blobs = append(blobs, Blob{Name: i.Name(), Size: i.Size()})
+		}
+	}
+
+	data, err := json.Marshal(blobs)
+	if err != nil {
+		if Config.Debug {
+			log.Print(err)
+		}
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	_, _ = w.Write(data)
+}
+
 // CheckBlob tests whether a blob exists.
 func CheckBlob(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
