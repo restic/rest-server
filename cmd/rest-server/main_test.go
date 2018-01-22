@@ -71,3 +71,24 @@ func TestTLSSettings(t *testing.T) {
 		})
 	}
 }
+
+func TestIsUserPath(t *testing.T) {
+	var tests = []struct {
+		username string
+		path     string
+		result   bool
+	}{
+		{"foo", "/", false},
+		{"foo", "/foo", true},
+		{"foo", "/foo/", true},
+		{"foo", "/foo/bar", true},
+		{"foo", "/foobar", false},
+	}
+
+	for _, test := range tests {
+		result := isUserPath(test.username, test.path)
+		if result != test.result {
+			t.Errorf("isUserPath(%q, %q) was incorrect, got: %v, want: %v.", test.username, test.path, result, test.result)
+		}
+	}
+}
