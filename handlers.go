@@ -122,15 +122,29 @@ func getMetricLabels(r *http.Request) prometheus.Labels {
 	return labels
 }
 
+// isUserPath checks if a request path is accessible by the user when using
+// private repositories.
+func isUserPath(username, path string) bool {
+	prefix := "/" + username
+	if !strings.HasPrefix(path, prefix) {
+		return false
+	}
+	return len(path) == len(prefix) || path[len(prefix)] == '/'
+}
+
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
 // stored in f and returns the http.HandlerFunc.
 func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if username, password, ok := r.BasicAuth(); !ok || !f.Validate(username, password) {
+		username, password, ok := r.BasicAuth()
+		if !ok || !f.Validate(username, password) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-
+		if Config.PrivateRepos && !isUserPath(username, r.URL.Path) {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
 		h.ServeHTTP(w, r)
 	}
 }
@@ -139,12 +153,6 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("CheckConfig()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	cfg, err := getPath(r, "config")
@@ -171,12 +179,6 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetConfig()")
 	}
 
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
-	}
-
 	cfg, err := getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -199,12 +201,6 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("SaveConfig()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	cfg, err := getPath(r, "config")
@@ -237,12 +233,6 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("DeleteConfig()")
 	}
 
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
-	}
-
 	if Config.AppendOnly {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
@@ -272,12 +262,6 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 
 	if Config.Debug {
 		log.Println("ListBlobs()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	fileType := pat.Param(r, "type")
@@ -335,12 +319,6 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 		log.Println("CheckBlob()")
 	}
 
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
-	}
-
 	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -363,12 +341,6 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 func GetBlob(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("GetBlob()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
@@ -405,12 +377,6 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("SaveBlob()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
@@ -482,12 +448,6 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		log.Println("DeleteBlob()")
 	}
 
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
-	}
-
 	if Config.AppendOnly && pat.Param(r, "type") != "locks" {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
@@ -530,12 +490,6 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 func CreateRepo(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("CreateRepo()")
-	}
-
-	// private repos
-	if Config.PrivateRepos && (getUser(r) != getRepo(r)) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		return
 	}
 
 	repo, err := join(Config.Path, getRepo(r))
