@@ -72,8 +72,6 @@ func NewMux() *goji.Mux {
 	mux.HandleFunc(pat.Post("/:repo/config"), SaveConfig)
 	mux.HandleFunc(pat.Delete("/config"), DeleteConfig)
 	mux.HandleFunc(pat.Delete("/:repo/config"), DeleteConfig)
-	mux.HandleFunc(pat.Get("/v2/:type/"), ListBlobsV2)
-	mux.HandleFunc(pat.Get("/v2/:repo/:type/"), ListBlobsV2)
 	mux.HandleFunc(pat.Get("/:type/"), ListBlobs)
 	mux.HandleFunc(pat.Get("/:repo/:type/"), ListBlobs)
 	mux.HandleFunc(pat.Head("/:type/:name"), CheckBlob)
