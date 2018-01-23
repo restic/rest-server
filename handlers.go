@@ -240,10 +240,29 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+const (
+	mimeTypeAPIV1 = "application/vnd.x.restic.rest.v1"
+	mimeTypeAPIV2 = "application/vnd.x.restic.rest.v2"
+)
+
 // ListBlobs lists all blobs of a given type in an arbitrary order.
 func ListBlobs(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("ListBlobs()")
+	}
+
+	switch r.Header.Get("Accept") {
+	case mimeTypeAPIV2:
+		ListBlobsV2(w, r)
+	default:
+		ListBlobsV1(w, r)
+	}
+}
+
+// ListBlobsV1 lists all blobs of a given type in an arbitrary order.
+func ListBlobsV1(w http.ResponseWriter, r *http.Request) {
+	if Config.Debug {
+		log.Println("ListBlobsV1()")
 	}
 	fileType := pat.Param(r, "type")
 	path, err := getPath(r, fileType)
@@ -291,6 +310,7 @@ func ListBlobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", mimeTypeAPIV1)
 	_, _ = w.Write(data)
 }
 
@@ -351,6 +371,7 @@ func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", mimeTypeAPIV2)
 	_, _ = w.Write(data)
 }
 
