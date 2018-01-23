@@ -154,7 +154,6 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("CheckConfig()")
 	}
-
 	cfg, err := getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -178,7 +177,6 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("GetConfig()")
 	}
-
 	cfg, err := getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -202,7 +200,6 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if Config.Debug {
 		log.Println("SaveConfig()")
 	}
-
 	cfg, err := getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -259,11 +256,9 @@ func DeleteConfig(w http.ResponseWriter, r *http.Request) {
 
 // ListBlobs lists all blobs of a given type in an arbitrary order.
 func ListBlobs(w http.ResponseWriter, r *http.Request) {
-
 	if Config.Debug {
 		log.Println("ListBlobs()")
 	}
-
 	fileType := pat.Param(r, "type")
 	path, err := getPath(r, fileType)
 	if err != nil {
