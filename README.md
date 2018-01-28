@@ -145,7 +145,7 @@ docker exec -it rest_server delete_user myuser
 
 The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`.
 
-This repository contains an example full stack Docker Compose setup with a Grafana dashboard in [example/compose-with-grafana/](example/compose-with-grafana/).
+This repository contains an example full stack Docker Compose setup with a Grafana dashboard in [examples/compose-with-grafana/](examples/compose-with-grafana/).
 
 
 ## Why use Rest Server?
