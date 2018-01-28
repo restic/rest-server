@@ -1,4 +1,4 @@
-FROM alpine:3.6
+FROM alpine
 
 ENV DATA_DIRECTORY /data
 ENV PASSWORD_FILE /data/.htpasswd
