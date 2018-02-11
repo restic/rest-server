@@ -30,8 +30,11 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
+	"regexp"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CheckInterval represents how often we check for changes in htpasswd file.
@@ -160,14 +163,23 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	if !exists {
 		return false
 	}
-	if realPassword[:5] == "{SHA}" {
+
+	var shaRe = regexp.MustCompile(`^{SHA}`)
+	var bcrRe = regexp.MustCompile(`^\$2b\$`)
+
+	switch {
+	case shaRe.MatchString(realPassword):
 		d := sha1.New()
 		_, _ = d.Write([]byte(password))
 		if realPassword[5:] == base64.StdEncoding.EncodeToString(d.Sum(nil)) {
 			return true
 		}
-	} else {
-		log.Printf("Invalid htpasswd entry for %s. Must be a SHA entry.", user)
+	case bcrRe.MatchString(realPassword):
+		err := bcrypt.CompareHashAndPassword([]byte(realPassword), []byte(password))
+		if err == nil {
+			return true
+		}
 	}
+	log.Printf("Invalid htpasswd entry for %s.", user)
 	return false
 }

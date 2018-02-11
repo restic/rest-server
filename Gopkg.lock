@@ -97,9 +97,18 @@
   source = "https://github.com/goji/goji"
   version = "v2.0"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = [
+    "bcrypt",
+    "blowfish"
+  ]
+  revision = "5119cf507ed5294cc409c092980c7497ee5d6fd2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4c77a43dac77efaa88292cc9adf9292de5eb9ad50aac23b7275726db9a88fcb"
+  inputs-digest = "75defe551bdc78f25a237a35d6833f7eb83ece365e6acc667fe8434281d2869a"
   solver-name = "gps-cdcl"
   solver-version = 1
