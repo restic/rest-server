@@ -165,7 +165,7 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	}
 
 	var shaRe = regexp.MustCompile(`^{SHA}`)
-	var bcrRe = regexp.MustCompile(`^\$2b\$`)
+	var bcrRe = regexp.MustCompile(`^\$2b\$|^\$2a\$|^\$2y\$`)
 
 	switch {
 	case shaRe.MatchString(realPassword):
