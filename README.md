@@ -81,10 +81,10 @@ By default the server persists backup data in `/tmp/restic`.  Start the server w
 rest-server --path /user/home/backup
 ```
 
-The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence directory by executing the following command.  In order to append new user to the file, just omit the `-c` argument.
+The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence directory by executing the following command.  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
 
 ```
-htpasswd -s -c .htpasswd username
+htpasswd -B -c .htpasswd username
 ```
 
 By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by --tls-cert and --tls-key
