@@ -173,7 +173,6 @@ func copyFile(dst, src string) error {
 	}
 
 	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		fmt.Printf("MkdirAll(%v)\n", filepath.Dir(dst))
 		return err
 	}
 
@@ -186,23 +185,19 @@ func copyFile(dst, src string) error {
 		return err
 	}
 
-	if err == nil {
-		err = fsrc.Close()
+	if err = fsrc.Close(); err != nil {
+		return err
 	}
 
-	if err == nil {
-		err = fdst.Close()
+	if err = fdst.Close(); err != nil {
+		return err
 	}
 
-	if err == nil {
-		err = os.Chmod(dst, fi.Mode())
+	if err = os.Chmod(dst, fi.Mode()); err != nil {
+		return err
 	}
 
-	if err == nil {
-		err = os.Chtimes(dst, fi.ModTime(), fi.ModTime())
-	}
-
-	return nil
+	return os.Chtimes(dst, fi.ModTime(), fi.ModTime())
 }
 
 // die prints the message with fmt.Fprintf() to stderr and exits with an error
