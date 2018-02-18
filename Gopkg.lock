@@ -8,10 +8,10 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/gorilla/handlers"
@@ -68,9 +68,11 @@
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
+    "internal/util",
+    "nfs",
     "xfs"
   ]
-  revision = "b15cd069a83443be3154b719d0cc9fe8117f09fb"
+  revision = "282c8707aa210456a825798969cc27edda34992a"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -104,7 +106,7 @@
     "bcrypt",
     "blowfish"
   ]
-  revision = "5119cf507ed5294cc409c092980c7497ee5d6fd2"
+  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
 
 [solve-meta]
   analyzer-name = "dep"
