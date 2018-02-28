@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. /etc/rc.subr
+
+name=restserver
+rcvar=restserver_enable
+
+start_cmd="${name}_start"
+stop_cmd=":"
+
+load_rc_config $name
+: ${restserver_enable:=no}
+: ${restserver_msg="Nothing started."}
+
+datadir="/backups"
+
+restserver_start()
+{
+	rest-server --path $datadir				\
+		--listen 10.0.1.6:8000				\
+		--private-repos					\
+		--tls						\
+		--tls-cert "/etc/ssl/rest-server.crt"		\
+		--tls-key "/etc/ssl/private/rest-server.key"	&
+}
+
+run_rc_command "$1"
