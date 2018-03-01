@@ -17,7 +17,6 @@ datadir="/backups"
 restserver_start()
 {
 	rest-server --path $datadir				\
-		--listen 10.0.1.6:8000				\
 		--private-repos					\
 		--tls						\
 		--tls-cert "/etc/ssl/rest-server.crt"		\
