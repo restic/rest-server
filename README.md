@@ -62,7 +62,7 @@ Usage:
 
 Flags:
       --append-only         enable append only mode
-      --cpuprofile string   write CPU profile to file
+      --cpu-profile string  write CPU profile to file
       --debug               output debug messages
   -h, --help                help for rest-server
       --listen string       listen address (default ":8000")
