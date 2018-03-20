@@ -29,7 +29,7 @@ install:
 
 script:
   - go install
-  - go test -v ./...
+  - go test -v . ./cmd/rest-server
   - go run build.go -v -T
   - diff <(goimports -d *.go) <(printf "")
 
