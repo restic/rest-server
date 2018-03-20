@@ -24,7 +24,7 @@ var cmdRoot = &cobra.Command{
 
 func init() {
 	flags := cmdRoot.Flags()
-	flags.StringVar(&restserver.Config.CPUProfile, "cpuprofile", restserver.Config.CPUProfile, "write CPU profile to file")
+	flags.StringVar(&restserver.Config.CPUProfile, "cpu-profile", restserver.Config.CPUProfile, "write CPU profile to file")
 	flags.BoolVar(&restserver.Config.Debug, "debug", restserver.Config.Debug, "output debug messages")
 	flags.StringVar(&restserver.Config.Listen, "listen", restserver.Config.Listen, "listen address")
 	flags.StringVar(&restserver.Config.Log, "log", restserver.Config.Log, "log HTTP requests in the combined log format")
