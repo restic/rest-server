@@ -87,7 +87,7 @@ The server uses an `.htpasswd` file to specify users.  You can create such a fil
 htpasswd -B -c .htpasswd username
 ```
 
-By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `-tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by --tls-cert and --tls-key
+By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
 
 Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
 
@@ -96,7 +96,7 @@ openssl genrsa -out private_key 2048
 openssl req -new -x509 -key private_key -out public_key -days 365
 ```
 
-Append only mode allows creation of new backups but prevents deletion and modification of existing backups. This can be useful when backing up systems that have a potential of being hacked.
+The `--append-only` mode allows creation of new backups but prevents deletion and modification of existing backups. This can be useful when backing up systems that have a potential of being hacked.
 
 Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally and via HTTP, even simultaneously.
 
