@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,8 @@ var cmdRoot = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE:          runRoot,
+	// Use this instead of other --version code when the Cobra dependency can be updated.
+	//Version:       fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 }
 
 func init() {
@@ -35,6 +38,7 @@ func init() {
 	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "enable append only mode")
 	flags.BoolVar(&restserver.Config.PrivateRepos, "private-repos", restserver.Config.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&restserver.Config.Prometheus, "prometheus", restserver.Config.Prometheus, "enable Prometheus metrics")
+	flags.BoolVarP(&restserver.Config.Version, "version", "V", restserver.Config.Version, "output version and exit")
 }
 
 var version = "manually"
@@ -61,9 +65,13 @@ func tlsSettings() (bool, string, string, error) {
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
+	if restserver.Config.Version {
+		fmt.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
+
 	log.SetFlags(0)
 
-	log.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 	log.Printf("Data directory: %s", restserver.Config.Path)
 
 	if restserver.Config.CPUProfile != "" {
