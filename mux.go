@@ -25,6 +25,7 @@ var Config = struct {
 	PrivateRepos bool
 	Prometheus   bool
 	Debug        bool
+	Version      bool
 }{
 	Path:       "/tmp/restic",
 	Listen:     ":8000",

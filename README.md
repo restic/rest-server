@@ -73,6 +73,7 @@ Flags:
       --tls                 turn on TLS support
       --tls-cert string     TLS certificate path
       --tls-key string      TLS key path
+  -V, --version             show version and quit
 
 ```
 
