@@ -83,7 +83,9 @@ By default the server persists backup data in `/tmp/restic`.  Start the server w
 rest-server --path /user/home/backup
 ```
 
-The server uses an `.htpasswd` file to specify users.  You can create such a file at the root of the persistence directory by executing the following command.  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
+To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
+
+NOTE: Without a valid `.htaccess` file, the server will not authenticate users (it prints "Authentication disabled upon startup"), in which case anyone who can access the server will be able to back up to it.
 
 ```
 htpasswd -B -c .htpasswd username
