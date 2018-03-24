@@ -1,0 +1,3 @@
+Enhancement: Rename --cpuprofile to --cpu-profile
+
+https://github.com/restic/rest-server/issues/53

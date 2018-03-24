@@ -1,0 +1,8 @@
+Security: Require auth by default, add --no-auth flag
+
+In order to prevent users from accidentally exposing rest-server without
+authentication, rest-server now defaults to requiring a .htpasswd. If you want
+to disable authentication, you need to explicitly pass the new --no-auth flag.
+
+https://github.com/restic/rest-server/issues/60
+https://github.com/restic/rest-server/pull/61
