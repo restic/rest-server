@@ -1,6 +1,9 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	restserver "github.com/restic/rest-server"
@@ -69,5 +72,47 @@ func TestTLSSettings(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func TestGetHandler(t *testing.T) {
+	// Save and restore config
+	defaultConfig := restserver.Config
+	defer func() { restserver.Config = defaultConfig }()
+
+	dir, err := ioutil.TempDir("", "rest-server-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(dir)
+	restserver.Config.Path = dir
+
+	// With NoAuth = false and no .htpasswd
+	restserver.Config.NoAuth = false // default
+	_, err = getHandler()
+	if err == nil {
+		t.Errorf("NoAuth=false: expected error, got nil")
+	}
+
+	// With NoAuth = true and no .htpasswd
+	restserver.Config.NoAuth = true
+	_, err = getHandler()
+	if err != nil {
+		t.Errorf("NoAuth=true: expected no error, got %v", err)
+	}
+
+	// Create .htpasswd
+	htpasswd := filepath.Join(dir, ".htpasswd")
+	err = ioutil.WriteFile(htpasswd, []byte(""), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(htpasswd)
+
+	// With NoAuth = false and with .htpasswd
+	restserver.Config.NoAuth = false // default
+	_, err = getHandler()
+	if err != nil {
+		t.Errorf("NoAuth=false with .htpasswd: expected no error, got %v", err)
 	}
 }

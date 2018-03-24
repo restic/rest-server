@@ -67,6 +67,7 @@ Flags:
   -h, --help                help for rest-server
       --listen string       listen address (default ":8000")
       --log string          log HTTP requests in the combined log format
+      --no-auth             disable .htpasswd authentication
       --path string         data directory (default "/tmp/restic")
       --private-repos       users can only access their private repo
       --prometheus          enable Prometheus metrics
@@ -77,19 +78,21 @@ Flags:
 
 ```
 
-By default the server persists backup data in `/tmp/restic`.  Start the server with a custom persistence directory:
+By default the server persists backup data in `/tmp/restic`.  To start the server with a custom persistence directory and with authentication disabled:
 
 ```
-rest-server --path /user/home/backup
+rest-server --path /user/home/backup --no-auth
 ```
 
 To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
 
-NOTE: Without a valid `.htaccess` file, the server will not authenticate users (it prints "Authentication disabled upon startup"), in which case anyone who can access the server will be able to back up to it.
-
 ```
 htpasswd -B -c .htpasswd username
 ```
+
+If you want to disable authentication, you must add the `--no-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start. 
+
+NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
 
 By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
 
