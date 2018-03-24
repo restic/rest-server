@@ -35,6 +35,7 @@ func init() {
 	flags.BoolVar(&restserver.Config.TLS, "tls", restserver.Config.TLS, "turn on TLS support")
 	flags.StringVar(&restserver.Config.TLSCert, "tls-cert", restserver.Config.TLSCert, "TLS certificate path")
 	flags.StringVar(&restserver.Config.TLSKey, "tls-key", restserver.Config.TLSKey, "TLS key path")
+	flags.BoolVar(&restserver.Config.NoAuth, "no-auth", restserver.Config.NoAuth, "disable .htpasswd authentication")
 	flags.BoolVar(&restserver.Config.AppendOnly, "append-only", restserver.Config.AppendOnly, "enable append only mode")
 	flags.BoolVar(&restserver.Config.PrivateRepos, "private-repos", restserver.Config.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&restserver.Config.Prometheus, "prometheus", restserver.Config.Prometheus, "enable Prometheus metrics")
@@ -64,6 +65,21 @@ func tlsSettings() (bool, string, string, error) {
 	return enabledTLS, key, cert, nil
 }
 
+func getHandler() (http.Handler, error) {
+	mux := restserver.NewMux()
+	if restserver.Config.NoAuth {
+		log.Println("Authentication disabled")
+		return mux, nil
+	}
+
+	log.Println("Authentication enabled")
+	htpasswdFile, err := restserver.NewHtpasswdFromFile(filepath.Join(restserver.Config.Path, ".htpasswd"))
+	if err != nil {
+		return nil, fmt.Errorf("cannot load .htpasswd (use --no-auth to disable): %v", err)
+	}
+	return restserver.AuthHandler(htpasswdFile, mux), nil
+}
+
 func runRoot(cmd *cobra.Command, args []string) error {
 	if restserver.Config.Version {
 		fmt.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
@@ -86,16 +102,9 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	mux := restserver.NewMux()
-
-	var handler http.Handler
-	htpasswdFile, err := restserver.NewHtpasswdFromFile(filepath.Join(restserver.Config.Path, ".htpasswd"))
+	handler, err := getHandler()
 	if err != nil {
-		handler = mux
-		log.Println("Authentication disabled")
-	} else {
-		handler = restserver.AuthHandler(htpasswdFile, mux)
-		log.Println("Authentication enabled")
+		log.Fatalf("error: %v", err)
 	}
 
 	if restserver.Config.PrivateRepos {
@@ -122,6 +131,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 
 	return err
 }
+
 func main() {
 	if err := cmdRoot.Execute(); err != nil {
 		log.Fatalf("error: %v", err)
