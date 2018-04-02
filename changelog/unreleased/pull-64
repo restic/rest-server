@@ -1,0 +1,8 @@
+Security: Refuse overwriting config file in append-only mode
+
+While working on the `rclone serve restic` command we noticed that is currently
+possible to overwrite the config file in a repo even if `--append-only` is
+specified. The first commit adds proper tests, and the second commit fixes the
+issue.
+
+https://github.com/restic/rest-server/pull/64
