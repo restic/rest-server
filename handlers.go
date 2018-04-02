@@ -206,22 +206,31 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
+	f, err := os.OpenFile(cfg, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	if err != nil && os.IsExist(err) {
 		if Config.Debug {
 			log.Print(err)
 		}
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
-	if err := ioutil.WriteFile(cfg, bytes, 0600); err != nil {
+	_, err = io.Copy(f, r.Body)
+	if err != nil {
 		if Config.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	err = f.Close()
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	_ = r.Body.Close()
 }
 
 // DeleteConfig removes a config.
@@ -471,6 +480,11 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 			// try again
 			tf, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
 		}
+	}
+
+	if os.IsExist(err) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
 	}
 
 	if err != nil {
