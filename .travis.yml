@@ -26,12 +26,14 @@ install:
   - export PATH="$PATH:$GOBIN"
   - go get -u github.com/golang/lint/golint
   - go get golang.org/x/tools/cmd/goimports
+  - go get github.com/restic/calens
 
 script:
   - go install
   - go test -v . ./cmd/rest-server
   - go run build.go -v -T
   - diff <(goimports -d *.go) <(printf "")
+  - calens
 
 after_success:
   - diff <(golint *.go) <(printf "")
