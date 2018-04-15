@@ -11,7 +11,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/miolini/datacounter"
@@ -34,6 +36,9 @@ type Server struct {
 	PrivateRepos bool
 	Prometheus   bool
 	Debug        bool
+	MaxRepoSize  uint64
+
+	repoSize uint64 // must be accessed using sync/atomic
 }
 
 func (s Server) isHashed(dir string) bool {
@@ -474,6 +479,21 @@ func (s Server) GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func tallySize(path string) (uint64, error) {
+	if path == "" {
+		path = "."
+	}
+	var size uint64
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		size += uint64(info.Size())
+		return nil
+	})
+	return size, err
+}
+
 // SaveBlob saves a blob to the repository.
 func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if s.Debug {
@@ -509,6 +529,38 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	// ensure this blob does not put us over the size limit
+	if s.MaxRepoSize != 0 {
+		contentLen, err := strconv.Atoi(r.Header.Get("Content-Length"))
+		if err != nil {
+			if s.Debug {
+				log.Println(err)
+			}
+			http.Error(w, http.StatusText(http.StatusLengthRequired), http.StatusLengthRequired)
+			return
+		}
+		currentSize := atomic.LoadUint64(&s.repoSize)
+		if currentSize == 0 {
+			initialSize, err := tallySize(s.Path)
+			if err != nil {
+				if s.Debug {
+					log.Println(err)
+				}
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			atomic.StoreUint64(&s.repoSize, initialSize)
+		}
+		if currentSize+uint64(contentLen) > s.MaxRepoSize {
+			if s.Debug {
+				log.Println("incoming blob would go over size of repository")
+			}
+			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
+			return
+		}
+		atomic.AddUint64(&s.repoSize, uint64(contentLen))
 	}
 
 	written, err := io.Copy(tf, r.Body)
