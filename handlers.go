@@ -532,8 +532,10 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ensure this blob does not put us over the size limit
+	var contentLen int
 	if s.MaxRepoSize != 0 {
-		contentLen, err := strconv.Atoi(r.Header.Get("Content-Length"))
+		var err error
+		contentLen, err = strconv.Atoi(r.Header.Get("Content-Length"))
 		if err != nil {
 			if s.Debug {
 				log.Println(err)
@@ -541,6 +543,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusLengthRequired), http.StatusLengthRequired)
 			return
 		}
+
 		currentSize := atomic.LoadUint64(&s.repoSize)
 		if currentSize == 0 {
 			initialSize, err := tallySize(s.Path)
@@ -553,6 +556,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 			}
 			atomic.StoreUint64(&s.repoSize, initialSize)
 		}
+
 		if currentSize+uint64(contentLen) > s.MaxRepoSize {
 			if s.Debug {
 				log.Println("incoming blob would go over size of repository")
@@ -560,7 +564,6 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
 			return
 		}
-		atomic.AddUint64(&s.repoSize, uint64(contentLen))
 	}
 
 	written, err := io.Copy(tf, r.Body)
@@ -591,6 +594,11 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	// now that write has succeeded, update repo size
+	if s.MaxRepoSize != 0 {
+		atomic.AddUint64(&s.repoSize, uint64(contentLen))
 	}
 
 	if s.Prometheus {
