@@ -555,6 +555,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			atomic.StoreUint64(&s.repoSize, initialSize)
+			currentSize = initialSize
 		}
 
 		if currentSize+uint64(contentLen) > s.MaxRepoSize {
