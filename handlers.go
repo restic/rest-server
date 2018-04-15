@@ -36,9 +36,9 @@ type Server struct {
 	PrivateRepos bool
 	Prometheus   bool
 	Debug        bool
-	MaxRepoSize  uint64
+	MaxRepoSize  int64
 
-	repoSize uint64 // must be accessed using sync/atomic
+	repoSize int64 // must be accessed using sync/atomic
 }
 
 func (s Server) isHashed(dir string) bool {
@@ -479,16 +479,16 @@ func (s Server) GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func tallySize(path string) (uint64, error) {
+func tallySize(path string) (int64, error) {
 	if path == "" {
 		path = "."
 	}
-	var size uint64
+	var size int64
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		size += uint64(info.Size())
+		size += info.Size()
 		return nil
 	})
 	return size, err
@@ -531,11 +531,12 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ensure this blob does not put us over the size limit
-	var contentLen int
+	// ensure this blob does not put us over the size limit (if there is one)
+	var contentLen, availableSpace int64
+	var body io.Reader = r.Body
 	if s.MaxRepoSize != 0 {
 		var err error
-		contentLen, err = strconv.Atoi(r.Header.Get("Content-Length"))
+		contentLen, err = strconv.ParseInt(r.Header.Get("Content-Length"), 10, 64)
 		if err != nil {
 			if s.Debug {
 				log.Println(err)
@@ -544,7 +545,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		currentSize := atomic.LoadUint64(&s.repoSize)
+		currentSize := atomic.LoadInt64(&s.repoSize)
 		if currentSize == 0 {
 			initialSize, err := tallySize(s.Path)
 			if err != nil {
@@ -554,20 +555,26 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			atomic.StoreUint64(&s.repoSize, initialSize)
+			atomic.StoreInt64(&s.repoSize, initialSize)
 			currentSize = initialSize
 		}
 
-		if currentSize+uint64(contentLen) > s.MaxRepoSize {
+		// if content-length is trustworthy, we can save time and issue a polite error
+		if currentSize+contentLen > s.MaxRepoSize {
 			if s.Debug {
-				log.Println("incoming blob would go over size of repository")
+				log.Printf("incoming blob (%d bytes) would go over maximum size of repository (%d bytes)",
+					contentLen, s.MaxRepoSize)
 			}
 			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
 			return
 		}
+
+		// we can't always trust content-length
+		availableSpace = s.MaxRepoSize - currentSize
+		body = io.LimitReader(r.Body, availableSpace)
 	}
 
-	written, err := io.Copy(tf, r.Body)
+	written, err := io.Copy(tf, body)
 	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
@@ -599,7 +606,16 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	// now that write has succeeded, update repo size
 	if s.MaxRepoSize != 0 {
-		atomic.AddUint64(&s.repoSize, uint64(contentLen))
+		atomic.AddInt64(&s.repoSize, written)
+
+		// check if space quota reached or exceeded
+		if written >= availableSpace {
+			if s.Debug {
+				log.Printf("wrote %d/%d bytes (space limit reached: %d bytes)", written, contentLen, s.MaxRepoSize)
+			}
+			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
+			return
+		}
 	}
 
 	if s.Prometheus {
