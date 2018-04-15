@@ -12,7 +12,7 @@ import (
 	"goji.io/pat"
 )
 
-func (c Config) debugHandler(next http.Handler) http.Handler {
+func (s Server) debugHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s %s", r.Method, r.URL)
@@ -20,8 +20,8 @@ func (c Config) debugHandler(next http.Handler) http.Handler {
 		})
 }
 
-func (c Config) logHandler(next http.Handler) http.Handler {
-	accessLog, err := os.OpenFile(c.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+func (s Server) logHandler(next http.Handler) http.Handler {
+	accessLog, err := os.OpenFile(s.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
@@ -30,42 +30,42 @@ func (c Config) logHandler(next http.Handler) http.Handler {
 }
 
 // NewHandler returns the master HTTP multiplexer/router.
-func NewHandler(config Config) *goji.Mux {
+func NewHandler(server Server) *goji.Mux {
 	mux := goji.NewMux()
 
-	if config.Debug {
-		mux.Use(config.debugHandler)
+	if server.Debug {
+		mux.Use(server.debugHandler)
 	}
 
-	if config.Log != "" {
-		mux.Use(config.logHandler)
+	if server.Log != "" {
+		mux.Use(server.logHandler)
 	}
 
-	if config.Prometheus {
+	if server.Prometheus {
 		mux.Handle(pat.Get("/metrics"), promhttp.Handler())
 	}
 
-	mux.HandleFunc(pat.Head("/config"), config.CheckConfig)
-	mux.HandleFunc(pat.Head("/:repo/config"), config.CheckConfig)
-	mux.HandleFunc(pat.Get("/config"), config.GetConfig)
-	mux.HandleFunc(pat.Get("/:repo/config"), config.GetConfig)
-	mux.HandleFunc(pat.Post("/config"), config.SaveConfig)
-	mux.HandleFunc(pat.Post("/:repo/config"), config.SaveConfig)
-	mux.HandleFunc(pat.Delete("/config"), config.DeleteConfig)
-	mux.HandleFunc(pat.Delete("/:repo/config"), config.DeleteConfig)
-	mux.HandleFunc(pat.Get("/:type/"), config.ListBlobs)
-	mux.HandleFunc(pat.Get("/:repo/:type/"), config.ListBlobs)
-	mux.HandleFunc(pat.Head("/:type/:name"), config.CheckBlob)
-	mux.HandleFunc(pat.Head("/:repo/:type/:name"), config.CheckBlob)
-	mux.HandleFunc(pat.Get("/:type/:name"), config.GetBlob)
-	mux.HandleFunc(pat.Get("/:repo/:type/:name"), config.GetBlob)
-	mux.HandleFunc(pat.Post("/:type/:name"), config.SaveBlob)
-	mux.HandleFunc(pat.Post("/:repo/:type/:name"), config.SaveBlob)
-	mux.HandleFunc(pat.Delete("/:type/:name"), config.DeleteBlob)
-	mux.HandleFunc(pat.Delete("/:repo/:type/:name"), config.DeleteBlob)
-	mux.HandleFunc(pat.Post("/"), config.CreateRepo)
-	mux.HandleFunc(pat.Post("/:repo"), config.CreateRepo)
-	mux.HandleFunc(pat.Post("/:repo/"), config.CreateRepo)
+	mux.HandleFunc(pat.Head("/config"), server.CheckConfig)
+	mux.HandleFunc(pat.Head("/:repo/config"), server.CheckConfig)
+	mux.HandleFunc(pat.Get("/config"), server.GetConfig)
+	mux.HandleFunc(pat.Get("/:repo/config"), server.GetConfig)
+	mux.HandleFunc(pat.Post("/config"), server.SaveConfig)
+	mux.HandleFunc(pat.Post("/:repo/config"), server.SaveConfig)
+	mux.HandleFunc(pat.Delete("/config"), server.DeleteConfig)
+	mux.HandleFunc(pat.Delete("/:repo/config"), server.DeleteConfig)
+	mux.HandleFunc(pat.Get("/:type/"), server.ListBlobs)
+	mux.HandleFunc(pat.Get("/:repo/:type/"), server.ListBlobs)
+	mux.HandleFunc(pat.Head("/:type/:name"), server.CheckBlob)
+	mux.HandleFunc(pat.Head("/:repo/:type/:name"), server.CheckBlob)
+	mux.HandleFunc(pat.Get("/:type/:name"), server.GetBlob)
+	mux.HandleFunc(pat.Get("/:repo/:type/:name"), server.GetBlob)
+	mux.HandleFunc(pat.Post("/:type/:name"), server.SaveBlob)
+	mux.HandleFunc(pat.Post("/:repo/:type/:name"), server.SaveBlob)
+	mux.HandleFunc(pat.Delete("/:type/:name"), server.DeleteBlob)
+	mux.HandleFunc(pat.Delete("/:repo/:type/:name"), server.DeleteBlob)
+	mux.HandleFunc(pat.Post("/"), server.CreateRepo)
+	mux.HandleFunc(pat.Post("/:repo"), server.CreateRepo)
+	mux.HandleFunc(pat.Post("/:repo/"), server.CreateRepo)
 
 	return mux
 }

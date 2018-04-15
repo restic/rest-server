@@ -230,7 +230,7 @@ func TestResticHandler(t *testing.T) {
 	}()
 
 	// set append-only mode and configure path
-	mux := NewHandler(Config{
+	mux := NewHandler(Server{
 		AppendOnly: true,
 		Path:       tempdir,
 	})
