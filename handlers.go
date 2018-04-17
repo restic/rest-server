@@ -565,7 +565,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 				log.Printf("incoming blob (%d bytes) would go over maximum size of repository (%d bytes)",
 					contentLen, s.MaxRepoSize)
 			}
-			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
+			http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
 			return
 		}
 
@@ -613,7 +613,7 @@ func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 			if s.Debug {
 				log.Printf("wrote %d/%d bytes (space limit reached: %d bytes)", written, contentLen, s.MaxRepoSize)
 			}
-			http.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
+			http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
 			return
 		}
 	}
