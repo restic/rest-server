@@ -1,6 +1,6 @@
 # Rest Server
 
-[![Build Status](https://travis-ci.org/restic/rest-server.svg?branch=master)](https://travis-ci.org/restic/rest-server)
+[![Build Status](https://travis-ci.com/restic/rest-server.svg?branch=master)](https://travis-ci.com/restic/rest-server)
 [![Go Report Card](https://goreportcard.com/badge/github.com/restic/rest-server)](https://goreportcard.com/report/github.com/restic/rest-server)
 [![GoDoc](https://godoc.org/github.com/restic/rest-server?status.svg)](https://godoc.org/github.com/restic/rest-server)
 [![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/restic/rest-server/blob/master/LICENSE)
