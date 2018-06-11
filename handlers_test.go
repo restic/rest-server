@@ -229,11 +229,11 @@ func TestResticHandler(t *testing.T) {
 		}
 	}()
 
-	// globally set append-only mode and configure path
-	Config.AppendOnly = true
-	Config.Path = tempdir
-
-	mux := NewMux()
+	// set append-only mode and configure path
+	mux := NewHandler(Server{
+		AppendOnly: true,
+		Path:       tempdir,
+	})
 
 	// create the repo
 	checkRequest(t, mux.ServeHTTP,

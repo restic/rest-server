@@ -20,7 +20,23 @@ import (
 	"goji.io/pat"
 )
 
-func isHashed(dir string) bool {
+// Server determines how a Mux's handlers behave.
+type Server struct {
+	Path         string
+	Listen       string
+	Log          string
+	CPUProfile   string
+	TLSKey       string
+	TLSCert      string
+	TLS          bool
+	NoAuth       bool
+	AppendOnly   bool
+	PrivateRepos bool
+	Prometheus   bool
+	Debug        bool
+}
+
+func (s Server) isHashed(dir string) bool {
 	return dir == "data"
 }
 
@@ -39,7 +55,7 @@ func valid(name string) bool {
 
 var validTypes = []string{"data", "index", "keys", "locks", "snapshots", "config"}
 
-func isValidType(name string) bool {
+func (s Server) isValidType(name string) bool {
 	for _, tpe := range validTypes {
 		if name == tpe {
 			return true
@@ -69,8 +85,8 @@ func join(base string, names ...string) (string, error) {
 	return filepath.Join(clean...), nil
 }
 
-// getRepo returns the repository location, relative to Config.Path.
-func getRepo(r *http.Request) string {
+// getRepo returns the repository location, relative to s.Path.
+func (s Server) getRepo(r *http.Request) string {
 	if strings.HasPrefix(fmt.Sprintf("%s", middleware.Pattern(r.Context())), "/:repo") {
 		return pat.Param(r, "repo")
 	}
@@ -79,32 +95,32 @@ func getRepo(r *http.Request) string {
 }
 
 // getPath returns the path for a file type in the repo.
-func getPath(r *http.Request, fileType string) (string, error) {
-	if !isValidType(fileType) {
+func (s Server) getPath(r *http.Request, fileType string) (string, error) {
+	if !s.isValidType(fileType) {
 		return "", errors.New("invalid file type")
 	}
-	return join(Config.Path, getRepo(r), fileType)
+	return join(s.Path, s.getRepo(r), fileType)
 }
 
 // getFilePath returns the path for a file in the repo.
-func getFilePath(r *http.Request, fileType, name string) (string, error) {
-	if !isValidType(fileType) {
+func (s Server) getFilePath(r *http.Request, fileType, name string) (string, error) {
+	if !s.isValidType(fileType) {
 		return "", errors.New("invalid file type")
 	}
 
-	if isHashed(fileType) {
+	if s.isHashed(fileType) {
 		if len(name) < 2 {
 			return "", errors.New("file name is too short")
 		}
 
-		return join(Config.Path, getRepo(r), fileType, name[:2], name)
+		return join(s.Path, s.getRepo(r), fileType, name[:2], name)
 	}
 
-	return join(Config.Path, getRepo(r), fileType, name)
+	return join(s.Path, s.getRepo(r), fileType, name)
 }
 
 // getUser returns the username from the request, or an empty string if none.
-func getUser(r *http.Request) string {
+func (s Server) getUser(r *http.Request) string {
 	username, _, ok := r.BasicAuth()
 	if !ok {
 		return ""
@@ -113,10 +129,10 @@ func getUser(r *http.Request) string {
 }
 
 // getMetricLabels returns the prometheus labels from the request.
-func getMetricLabels(r *http.Request) prometheus.Labels {
+func (s Server) getMetricLabels(r *http.Request) prometheus.Labels {
 	labels := prometheus.Labels{
-		"user": getUser(r),
-		"repo": getRepo(r),
+		"user": s.getUser(r),
+		"repo": s.getRepo(r),
 		"type": pat.Param(r, "type"),
 	}
 	return labels
@@ -134,14 +150,14 @@ func isUserPath(username, path string) bool {
 
 // AuthHandler wraps h with a http.HandlerFunc that performs basic authentication against the user/passwords pairs
 // stored in f and returns the http.HandlerFunc.
-func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
+func (s Server) AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok || !f.Validate(username, password) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		if Config.PrivateRepos && !isUserPath(username, r.URL.Path) {
+		if s.PrivateRepos && !isUserPath(username, r.URL.Path) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -150,11 +166,11 @@ func AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 }
 
 // CheckConfig checks whether a configuration exists.
-func CheckConfig(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) CheckConfig(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("CheckConfig()")
 	}
-	cfg, err := getPath(r, "config")
+	cfg, err := s.getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -162,7 +178,7 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(cfg)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -173,11 +189,11 @@ func CheckConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConfig allows for a config to be retrieved.
-func GetConfig(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) GetConfig(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("GetConfig()")
 	}
-	cfg, err := getPath(r, "config")
+	cfg, err := s.getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -185,7 +201,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -196,11 +212,11 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // SaveConfig allows for a config to be saved.
-func SaveConfig(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) SaveConfig(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("SaveConfig()")
 	}
-	cfg, err := getPath(r, "config")
+	cfg, err := s.getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -208,7 +224,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 
 	f, err := os.OpenFile(cfg, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
 	if err != nil && os.IsExist(err) {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
@@ -217,7 +233,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(f, r.Body)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -234,24 +250,24 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteConfig removes a config.
-func DeleteConfig(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) DeleteConfig(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("DeleteConfig()")
 	}
 
-	if Config.AppendOnly {
+	if s.AppendOnly {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
-	cfg, err := getPath(r, "config")
+	cfg, err := s.getPath(r, "config")
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	if err := os.Remove(cfg); err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		if os.IsNotExist(err) {
@@ -269,26 +285,26 @@ const (
 )
 
 // ListBlobs lists all blobs of a given type in an arbitrary order.
-func ListBlobs(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) ListBlobs(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("ListBlobs()")
 	}
 
 	switch r.Header.Get("Accept") {
 	case mimeTypeAPIV2:
-		ListBlobsV2(w, r)
+		s.ListBlobsV2(w, r)
 	default:
-		ListBlobsV1(w, r)
+		s.ListBlobsV1(w, r)
 	}
 }
 
 // ListBlobsV1 lists all blobs of a given type in an arbitrary order.
-func ListBlobsV1(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) ListBlobsV1(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("ListBlobsV1()")
 	}
 	fileType := pat.Param(r, "type")
-	path, err := getPath(r, fileType)
+	path, err := s.getPath(r, fileType)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -296,7 +312,7 @@ func ListBlobsV1(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -305,12 +321,12 @@ func ListBlobsV1(w http.ResponseWriter, r *http.Request) {
 
 	var names []string
 	for _, i := range items {
-		if isHashed(fileType) {
+		if s.isHashed(fileType) {
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if Config.Debug {
+				if s.Debug {
 					log.Print(err)
 				}
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -326,7 +342,7 @@ func ListBlobsV1(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(names)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -344,12 +360,12 @@ type Blob struct {
 }
 
 // ListBlobsV2 lists all blobs of a given type, together with their sizes, in an arbitrary order.
-func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) ListBlobsV2(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("ListBlobsV2()")
 	}
 	fileType := pat.Param(r, "type")
-	path, err := getPath(r, fileType)
+	path, err := s.getPath(r, fileType)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -357,7 +373,7 @@ func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -366,12 +382,12 @@ func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
 
 	var blobs []Blob
 	for _, i := range items {
-		if isHashed(fileType) {
+		if s.isHashed(fileType) {
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if Config.Debug {
+				if s.Debug {
 					log.Print(err)
 				}
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -387,7 +403,7 @@ func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(blobs)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -399,12 +415,12 @@ func ListBlobsV2(w http.ResponseWriter, r *http.Request) {
 }
 
 // CheckBlob tests whether a blob exists.
-func CheckBlob(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) CheckBlob(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("CheckBlob()")
 	}
 
-	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
+	path, err := s.getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -412,7 +428,7 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -423,12 +439,12 @@ func CheckBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetBlob retrieves a blob from the repository.
-func GetBlob(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) GetBlob(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("GetBlob()")
 	}
 
-	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
+	path, err := s.getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -436,7 +452,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -451,20 +467,20 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if Config.Prometheus {
-		labels := getMetricLabels(r)
+	if s.Prometheus {
+		labels := s.getMetricLabels(r)
 		metricBlobReadTotal.With(labels).Inc()
 		metricBlobReadBytesTotal.With(labels).Add(float64(wc.Count()))
 	}
 }
 
 // SaveBlob saves a blob to the repository.
-func SaveBlob(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("SaveBlob()")
 	}
 
-	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
+	path, err := s.getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -488,7 +504,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -499,7 +515,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -509,7 +525,7 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err := tf.Sync(); err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -518,39 +534,39 @@ func SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if err := tf.Close(); err != nil {
 		_ = os.Remove(path)
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	if Config.Prometheus {
-		labels := getMetricLabels(r)
+	if s.Prometheus {
+		labels := s.getMetricLabels(r)
 		metricBlobWriteTotal.With(labels).Inc()
 		metricBlobWriteBytesTotal.With(labels).Add(float64(written))
 	}
 }
 
 // DeleteBlob deletes a blob from the repository.
-func DeleteBlob(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) DeleteBlob(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("DeleteBlob()")
 	}
 
-	if Config.AppendOnly && pat.Param(r, "type") != "locks" {
+	if s.AppendOnly && pat.Param(r, "type") != "locks" {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
-	path, err := getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
+	path, err := s.getFilePath(r, pat.Param(r, "type"), pat.Param(r, "name"))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	var size int64
-	if Config.Prometheus {
+	if s.Prometheus {
 		stat, err := os.Stat(path)
 		if err != nil {
 			size = stat.Size()
@@ -558,7 +574,7 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := os.Remove(path); err != nil {
-		if Config.Debug {
+		if s.Debug {
 			log.Print(err)
 		}
 		if os.IsNotExist(err) {
@@ -569,20 +585,20 @@ func DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if Config.Prometheus {
-		labels := getMetricLabels(r)
+	if s.Prometheus {
+		labels := s.getMetricLabels(r)
 		metricBlobDeleteTotal.With(labels).Inc()
 		metricBlobDeleteBytesTotal.With(labels).Add(float64(size))
 	}
 }
 
 // CreateRepo creates repository directories.
-func CreateRepo(w http.ResponseWriter, r *http.Request) {
-	if Config.Debug {
+func (s Server) CreateRepo(w http.ResponseWriter, r *http.Request) {
+	if s.Debug {
 		log.Println("CreateRepo()")
 	}
 
-	repo, err := join(Config.Path, getRepo(r))
+	repo, err := join(s.Path, s.getRepo(r))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

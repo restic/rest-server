@@ -35,17 +35,16 @@ func TestTLSSettings(t *testing.T) {
 		{passed{Path: "/tmp", TLS: false, TLSCert: "/etc/restic/cert"}, expected{"", "", true}},
 	}
 
-	defaultConfig := restserver.Config
 	for _, test := range tests {
 
 		t.Run("", func(t *testing.T) {
-			defer func() { restserver.Config = defaultConfig }()
+			// defer func() { restserver.Server = defaultConfig }()
 			if test.passed.Path != "" {
-				restserver.Config.Path = test.passed.Path
+				server.Path = test.passed.Path
 			}
-			restserver.Config.TLS = test.passed.TLS
-			restserver.Config.TLSKey = test.passed.TLSKey
-			restserver.Config.TLSCert = test.passed.TLSCert
+			server.TLS = test.passed.TLS
+			server.TLSKey = test.passed.TLSKey
+			server.TLSCert = test.passed.TLSCert
 
 			gotTLS, gotKey, gotCert, err := tlsSettings()
 			if err != nil && !test.expected.Error {
@@ -76,27 +75,20 @@ func TestTLSSettings(t *testing.T) {
 }
 
 func TestGetHandler(t *testing.T) {
-	// Save and restore config
-	defaultConfig := restserver.Config
-	defer func() { restserver.Config = defaultConfig }()
-
 	dir, err := ioutil.TempDir("", "rest-server-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(dir)
-	restserver.Config.Path = dir
 
 	// With NoAuth = false and no .htpasswd
-	restserver.Config.NoAuth = false // default
-	_, err = getHandler()
+	_, err = getHandler(restserver.Server{Path: dir})
 	if err == nil {
 		t.Errorf("NoAuth=false: expected error, got nil")
 	}
 
 	// With NoAuth = true and no .htpasswd
-	restserver.Config.NoAuth = true
-	_, err = getHandler()
+	_, err = getHandler(restserver.Server{NoAuth: true, Path: dir})
 	if err != nil {
 		t.Errorf("NoAuth=true: expected no error, got %v", err)
 	}
@@ -110,8 +102,7 @@ func TestGetHandler(t *testing.T) {
 	defer os.Remove(htpasswd)
 
 	// With NoAuth = false and with .htpasswd
-	restserver.Config.NoAuth = false // default
-	_, err = getHandler()
+	_, err = getHandler(restserver.Server{Path: dir})
 	if err != nil {
 		t.Errorf("NoAuth=false with .htpasswd: expected no error, got %v", err)
 	}
