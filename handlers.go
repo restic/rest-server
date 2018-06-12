@@ -576,20 +576,6 @@ func (s *Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// now that write has succeeded, update repo size
-	// if s.MaxRepoSize != 0 {
-	// 	atomic.AddInt64(&s.repoSize, written)
-
-	// 	// check if space quota reached or exceeded
-	// 	if written >= availableSpace {
-	// 		if s.Debug {
-	// 			log.Printf("wrote %d/%d bytes (space limit reached: %d bytes)", written, contentLen, s.MaxRepoSize)
-	// 		}
-	// 		http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
-	// 		return
-	// 	}
-	// }
-
 	if s.Prometheus {
 		labels := s.getMetricLabels(r)
 		metricBlobWriteTotal.With(labels).Inc()
