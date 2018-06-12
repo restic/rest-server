@@ -11,9 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/miolini/datacounter"
@@ -479,6 +477,7 @@ func (s *Server) GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// tallySize counts the size of the contents of path.
 func tallySize(path string) (int64, error) {
 	if path == "" {
 		path = "."
@@ -550,6 +549,9 @@ func (s *Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
+		if s.MaxRepoSize > 0 {
+			s.incrementRepoSpaceUsage(-written)
+		}
 		if s.Debug {
 			log.Print(err)
 		}
@@ -560,6 +562,9 @@ func (s *Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 	if err := tf.Sync(); err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
+		if s.MaxRepoSize > 0 {
+			s.incrementRepoSpaceUsage(-written)
+		}
 		if s.Debug {
 			log.Print(err)
 		}
@@ -569,6 +574,9 @@ func (s *Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if err := tf.Close(); err != nil {
 		_ = os.Remove(path)
+		if s.MaxRepoSize > 0 {
+			s.incrementRepoSpaceUsage(-written)
+		}
 		if s.Debug {
 			log.Print(err)
 		}
@@ -601,7 +609,7 @@ func (s *Server) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var size int64
-	if s.Prometheus {
+	if s.Prometheus || s.MaxRepoSize > 0 {
 		stat, err := os.Stat(path)
 		if err != nil {
 			size = stat.Size()
@@ -620,6 +628,9 @@ func (s *Server) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if s.MaxRepoSize > 0 {
+		s.incrementRepoSpaceUsage(-size)
+	}
 	if s.Prometheus {
 		labels := s.getMetricLabels(r)
 		metricBlobDeleteTotal.With(labels).Inc()
@@ -671,39 +682,4 @@ func (s *Server) CreateRepo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-}
-
-// maxSizeWriter wraps w in a writer that enforces s.MaxRepoSize.
-// If there is an error, a status code and the error are returned.
-func (s *Server) maxSizeWriter(req *http.Request, w io.Writer) (io.Writer, int, error) {
-	// if we haven't yet computed the size of the repo, do so now
-	currentSize := atomic.LoadInt64(&s.repoSize)
-	if currentSize == 0 {
-		initialSize, err := tallySize(s.Path)
-		if err != nil {
-			return nil, http.StatusInternalServerError, err
-		}
-		atomic.StoreInt64(&s.repoSize, initialSize)
-		currentSize = initialSize
-	}
-
-	// if content-length is set and is trustworthy, we can save some time
-	// and issue a polite error if it declares a size that's too big; since
-	// we expect the vast majority of clients will be honest, so this check
-	// can only help save time
-	if contentLenStr := req.Header.Get("Content-Length"); contentLenStr != "" {
-		contentLen, err := strconv.ParseInt(contentLenStr, 10, 64)
-		if err != nil {
-			return nil, http.StatusLengthRequired, err
-		}
-		if currentSize+contentLen > s.MaxRepoSize {
-			err := fmt.Errorf("incoming blob (%d bytes) would exceed maximum size of repository (%d bytes)",
-				contentLen, s.MaxRepoSize)
-			return nil, http.StatusRequestEntityTooLarge, err
-		}
-	}
-
-	// since we can't always trust content-length, we will wrap the writer
-	// in a custom writer that enforces the size limit during writes
-	return maxSizeWriter{Writer: w, server: s}, 0, nil
 }
