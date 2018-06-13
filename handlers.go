@@ -610,7 +610,7 @@ func (s *Server) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	var size int64
 	if s.Prometheus || s.MaxRepoSize > 0 {
 		stat, err := os.Stat(path)
-		if err != nil {
+		if err == nil {
 			size = stat.Size()
 		}
 	}
