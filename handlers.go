@@ -528,7 +528,7 @@ func (s *Server) SaveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ensure this blob does not put us over the size limit (if there is one)
+	// ensure this blob does not put us over the repo size limit (if there is one)
 	var outFile io.Writer = tf
 	if s.MaxRepoSize != 0 {
 		var errCode int
