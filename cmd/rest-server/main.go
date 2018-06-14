@@ -41,6 +41,7 @@ func init() {
 	flags.BoolVar(&server.Debug, "debug", server.Debug, "output debug messages")
 	flags.StringVar(&server.Listen, "listen", server.Listen, "listen address")
 	flags.StringVar(&server.Log, "log", server.Log, "log HTTP requests in the combined log format")
+	flags.Int64Var(&server.MaxRepoSize, "max-size", server.MaxRepoSize, "the maximum size of the repository in bytes")
 	flags.StringVar(&server.Path, "path", server.Path, "data directory")
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")

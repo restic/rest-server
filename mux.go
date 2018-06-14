@@ -12,7 +12,7 @@ import (
 	"goji.io/pat"
 )
 
-func (s Server) debugHandler(next http.Handler) http.Handler {
+func (s *Server) debugHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s %s", r.Method, r.URL)
@@ -20,7 +20,7 @@ func (s Server) debugHandler(next http.Handler) http.Handler {
 		})
 }
 
-func (s Server) logHandler(next http.Handler) http.Handler {
+func (s *Server) logHandler(next http.Handler) http.Handler {
 	accessLog, err := os.OpenFile(s.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("error: %v", err)
