@@ -61,46 +61,22 @@ Usage:
   rest-server [flags]
 
 Flags:
-      --append-only         enable append only mode
-      --cpu-profile string  write CPU profile to file
-      --debug               output debug messages
-  -h, --help                help for rest-server
-      --listen string       listen address (default ":8000")
-      --log string          log HTTP requests in the combined log format
-      --no-auth             disable .htpasswd authentication
-      --path string         data directory (default "/tmp/restic")
-      --private-repos       users can only access their private repo
-      --prometheus          enable Prometheus metrics
-      --tls                 turn on TLS support
-      --tls-cert string     TLS certificate path
-      --tls-key string      TLS key path
-  -V, --version             show version and quit
-
-```
-
-By default the server persists backup data in `/tmp/restic`.  To start the server with a custom persistence directory and with authentication disabled:
-
-```
-rest-server --path /user/home/backup --no-auth
-```
-
-To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
-
-```
-htpasswd -B -c .htpasswd username
-```
-
-If you want to disable authentication, you must add the `--no-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start. 
-
-NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
-
-By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
-
-Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
-
-```
-openssl genrsa -out private_key 2048
-openssl req -new -x509 -key private_key -out public_key -days 365
+      --append-only               enable append only mode
+      --cpu-profile string        write CPU profile to file
+      --debug                     output debug messages
+  -h, --help                      help for rest-server
+      --listen string             listen address (default ":8000")
+      --log string                log HTTP requests in the combined log format
+      --max-size int              the maximum size of the repository in bytes
+      --no-http-auth              disable .htpasswd authentication
+      --path string               data directory (default "/tmp/restic")
+      --private-repos             users can only access their private repo
+      --prometheus                enable Prometheus metrics
+      --tls                       turn on TLS support
+      --tls-cert string           TLS certificate path
+      --tls-client-certs string   PEM encoded client certificates for TLS authentication
+      --tls-key string            TLS key path
+  -V, --version                   output version and exit
 ```
 
 The `--append-only` mode allows creation of new backups but prevents deletion and modification of existing backups. This can be useful when backing up systems that have a potential of being hacked.
@@ -108,6 +84,49 @@ The `--append-only` mode allows creation of new backups but prevents deletion an
 To prevent your users from accessing each others' repositories, you may use the `--private-repos` flag which grants access only when a subdirectory with the same name as the user is specified in the repository URL. For example, user "foo" using the repository URLs `rest:https://foo:pass@host:8000/foo`, `rest:https://foo:pass@host:8000/foo/` or `rest:https://foo:pass@host:8000/foo/bar` would be granted access, but the same user using repository URLs `rest:https://foo:pass@host:8000/` or `rest:https://foo:pass@host:8000/foobar/` would be denied access.
 
 Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally and via HTTP, even simultaneously.
+
+By default the server persists backup data in `/tmp/restic`. To start the server with a custom persistence directory and without any authentication:
+
+```
+rest-server --path /user/home/backup --no-http-auth
+```
+
+## Authentication
+
+The server supports two authentication methods which are described below.
+
+### HTTP basic authentication
+
+The server supports HTTP basic authentication, users are specified using a `.htpasswd` file. To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
+
+```
+htpasswd -B -c .htpasswd username
+```
+
+If you want to disable HTTP authentication, you must add the `--no-http-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start.
+
+NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
+
+### TLS client authentication
+
+The server additionally supports authentication using TLS client certificates, this authentication requires HTTPS (see below). Client certificates can be created with the following command:
+
+```
+openssl req -x509 -newkey rsa:4096 -nodes -keyout client-key.pem -out client-cert.pem -days 365
+```
+
+A path to a PEM encoded file containing all client certificates has to be passed on startup using the `--tls-client-certs` flag. If both `--tls-client-certs` and `--no-http-auth` are given TLS authentication using a valid certificate is required, otherwise it's optional.
+
+## Using HTTPS
+
+By default the server uses the HTTP protocol. This is not very secure since with Basic Authentication, username and passwords will travel in cleartext in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
+
+Signed certificate is required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
+
+```
+openssl genrsa -out private_key 2048
+openssl req -new -x509 -key private_key -out public_key -days 365
+```
 
 ### Systemd
 
