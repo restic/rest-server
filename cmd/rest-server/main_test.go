@@ -88,7 +88,7 @@ func TestGetHandler(t *testing.T) {
 	}
 
 	// With NoAuth = true and no .htpasswd
-	_, err = getHandler(restserver.Server{NoAuth: true, Path: dir})
+	_, err = getHandler(restserver.Server{NoHTTPAuth: true, Path: dir})
 	if err != nil {
 		t.Errorf("NoAuth=true: expected no error, got %v", err)
 	}

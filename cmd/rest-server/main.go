@@ -50,7 +50,7 @@ func init() {
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
 	flags.StringVar(&server.TLSClientCerts, "tls-client-certs", server.TLSClientCerts, "PEM encoded client certificates for TLS authentication")
-	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
+	flags.BoolVar(&server.NoHTTPAuth, "no-http-auth", server.NoHTTPAuth, "disable .htpasswd authentication")
 	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode")
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&server.Prometheus, "prometheus", server.Prometheus, "enable Prometheus metrics")
@@ -102,7 +102,7 @@ func listenAndServeTLS(addr, certFile, keyFile, clientCertsFile string, handler 
 		}
 
 		authType := tls.VerifyClientCertIfGiven
-		if server.NoAuth {
+		if server.NoHTTPAuth {
 			authType = tls.RequireAndVerifyClientCert
 		}
 		httpServer.TLSConfig = &tls.Config{
@@ -116,7 +116,7 @@ func listenAndServeTLS(addr, certFile, keyFile, clientCertsFile string, handler 
 
 func getHandler(server restserver.Server) (http.Handler, error) {
 	mux := restserver.NewHandler(server)
-	if server.NoAuth {
+	if server.NoHTTPAuth {
 		log.Println("Authentication disabled")
 		return mux, nil
 	}

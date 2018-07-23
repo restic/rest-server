@@ -30,7 +30,7 @@ type Server struct {
 	TLSCert        string
 	TLSClientCerts string
 	TLS            bool
-	NoAuth         bool
+	NoHTTPAuth     bool
 	AppendOnly     bool
 	PrivateRepos   bool
 	Prometheus     bool
