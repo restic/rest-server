@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -46,6 +49,7 @@ func init() {
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
+	flags.StringVar(&server.TLSClientCerts, "tls-client-certs", server.TLSClientCerts, "PEM encoded client certificates for TLS authentication")
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
 	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode")
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
@@ -55,12 +59,12 @@ func init() {
 
 var version = "manually"
 
-func tlsSettings() (bool, string, string, error) {
+func tlsSettings() (bool, string, string, string, error) {
 	var key, cert string
 	if !server.TLS && (server.TLSKey != "" || server.TLSCert != "") {
-		return false, "", "", errors.New("requires enabled TLS")
+		return false, "", "", "", errors.New("requires enabled TLS")
 	} else if !server.TLS {
-		return false, "", "", nil
+		return false, "", "", "", nil
 	}
 	if server.TLSKey != "" {
 		key = server.TLSKey
@@ -72,7 +76,42 @@ func tlsSettings() (bool, string, string, error) {
 	} else {
 		cert = filepath.Join(server.Path, "public_key")
 	}
-	return server.TLS, key, cert, nil
+	return server.TLS, key, cert, server.TLSClientCerts, nil
+}
+
+func addClientCerts(p *x509.CertPool, fp string) error {
+	data, err := ioutil.ReadFile(fp)
+	if err != nil {
+		return err
+	}
+
+	if !p.AppendCertsFromPEM(data) {
+		return errors.New("PEM file contains invalid certificate")
+	}
+
+	return nil
+}
+
+func listenAndServeTLS(addr, certFile, keyFile, clientCertsFile string, handler http.Handler) error {
+	httpServer := http.Server{Addr: addr, Handler: handler}
+	if clientCertsFile != "" {
+		clientCerts := x509.NewCertPool()
+		err := addClientCerts(clientCerts, clientCertsFile)
+		if err != nil {
+			return err
+		}
+
+		authType := tls.VerifyClientCertIfGiven
+		if server.NoAuth {
+			authType = tls.RequireAndVerifyClientCert
+		}
+		httpServer.TLSConfig = &tls.Config{
+			ClientCAs:  clientCerts,
+			ClientAuth: authType,
+		}
+	}
+
+	return httpServer.ListenAndServeTLS(certFile, keyFile)
 }
 
 func getHandler(server restserver.Server) (http.Handler, error) {
@@ -123,7 +162,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		log.Println("Private repositories disabled")
 	}
 
-	enabledTLS, privateKey, publicKey, err := tlsSettings()
+	enabledTLS, privateKey, publicKey, clientCerts, err := tlsSettings()
 	if err != nil {
 		return err
 	}
@@ -136,7 +175,8 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		log.Printf("Private key: %s", privateKey)
 		log.Printf("Public key(certificate): %s", publicKey)
 		log.Printf("Starting server on %s\n", server.Listen)
-		err = http.ListenAndServeTLS(server.Listen, publicKey, privateKey, handler)
+		err = listenAndServeTLS(server.Listen,
+			publicKey, privateKey, clientCerts, handler)
 	}
 
 	return err

@@ -46,7 +46,7 @@ func TestTLSSettings(t *testing.T) {
 			server.TLSKey = test.passed.TLSKey
 			server.TLSCert = test.passed.TLSCert
 
-			gotTLS, gotKey, gotCert, err := tlsSettings()
+			gotTLS, gotKey, gotCert, _, err := tlsSettings()
 			if err != nil && !test.expected.Error {
 				t.Fatalf("tls_settings returned err (%v)", err)
 			}

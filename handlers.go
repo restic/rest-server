@@ -22,19 +22,20 @@ import (
 
 // Server determines how a Mux's handlers behave.
 type Server struct {
-	Path         string
-	Listen       string
-	Log          string
-	CPUProfile   string
-	TLSKey       string
-	TLSCert      string
-	TLS          bool
-	NoAuth       bool
-	AppendOnly   bool
-	PrivateRepos bool
-	Prometheus   bool
-	Debug        bool
-	MaxRepoSize  int64
+	Path           string
+	Listen         string
+	Log            string
+	CPUProfile     string
+	TLSKey         string
+	TLSCert        string
+	TLSClientCerts string
+	TLS            bool
+	NoAuth         bool
+	AppendOnly     bool
+	PrivateRepos   bool
+	Prometheus     bool
+	Debug          bool
+	MaxRepoSize    int64
 
 	repoSize int64 // must be accessed using sync/atomic
 }
