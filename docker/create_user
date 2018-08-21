@@ -1,5 +1,7 @@
 #!/bin/sh
 
+HTPASSWD="htpasswd"
+
 if [ -z "$1" ]; then
     echo "create_user [username]"
     echo "or"
@@ -7,4 +9,10 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-htpasswd -s $PASSWORD_FILE $1 $2
+if [ ! -z "$2" ]; then
+    HTPASSWD="$HTPASSWD -b"
+fi
+
+HTPASSWD="$HTPASSWD -s $PASSWORD_FILE $1 $2"
+
+$HTPASSWD
