@@ -62,19 +62,17 @@ Usage:
 
 Flags:
       --append-only         enable append only mode
-      --cpu-profile string  write CPU profile to file
+      --cpuprofile string   write CPU profile to file
       --debug               output debug messages
   -h, --help                help for rest-server
       --listen string       listen address (default ":8000")
       --log string          log HTTP requests in the combined log format
-      --no-auth             disable .htpasswd authentication
       --path string         data directory (default "/tmp/restic")
       --private-repos       users can only access their private repo
       --prometheus          enable Prometheus metrics
       --tls                 turn on TLS support
       --tls-cert string     TLS certificate path
       --tls-key string      TLS key path
-  -V, --version             show version and quit
 
 ```
 
