@@ -79,7 +79,7 @@ Flags:
 By default the server persists backup data in `/tmp/restic`.  To start the server with a custom persistence directory and with authentication disabled:
 
 ```
-rest-server --path /user/home/backup --no-auth
+rest-server --path /user/home/backup
 ```
 
 To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
