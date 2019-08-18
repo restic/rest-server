@@ -7,4 +7,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-htpasswd -s $PASSWORD_FILE $1 $2
+if [ -z $2 ]; then
+  htpasswd -s $PASSWORD_FILE $1
+else
+  htpasswd -b -s $PASSWORD_FILE $1 $2
+fi
