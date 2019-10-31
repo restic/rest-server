@@ -14,12 +14,6 @@ default: rest-server
 rest-server:
 	@go run build.go
 
-install: rest-server
-	/usr/bin/install -m 755 rest-server /usr/local/bin/rest-server
-
-uninstall:
-	rm -f /usr/local/bin/rest-server
-
 docker_build:
 	docker pull golang:alpine
 	docker run --rm -it \

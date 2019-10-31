@@ -1,39 +1,20 @@
-os: linux
-sudo: false
 language: go
+sudo: false
 
 go:
-  - "1.7.x"
-  - "1.8.x"
-  - "1.9.x"
-  - "1.10.x"
-  - master
+  - "1.11"
+  - "1.12"
+  - "1.13"
+  - "master"
 
 matrix:
   allow_failures:
     - go: master
 
-branches:
-  only:
-    - master
-
-notifications:
-  email:
-    on_success: always
-
 install:
-  - export GOBIN="$GOPATH/bin"
-  - export PATH="$PATH:$GOBIN"
-  - go get -u github.com/golang/lint/golint
-  - go get golang.org/x/tools/cmd/goimports
-  - go get github.com/restic/calens
+  - go install
+  - go get -u golang.org/x/lint/golint
 
 script:
-  - go install
-  - go test -v . ./cmd/rest-server
-  - go run build.go -v -T
-  - diff <(goimports -d *.go) <(printf "")
-  - calens
-
-after_success:
+  - go test -v ./...
   - diff <(golint *.go) <(printf "")

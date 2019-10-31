@@ -1,4 +1,4 @@
-package restserver
+package resticserver
 
 import "github.com/prometheus/client_golang/prometheus"
 
@@ -53,7 +53,6 @@ var metricBlobDeleteBytesTotal = prometheus.NewCounterVec(
 )
 
 func init() {
-	// These are always initialized, but only updated if Config.Prometheus is set
 	prometheus.MustRegister(metricBlobWriteTotal)
 	prometheus.MustRegister(metricBlobWriteBytesTotal)
 	prometheus.MustRegister(metricBlobReadTotal)

@@ -1,4 +1,4 @@
-package restserver
+package resticserver
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ func TestJoin(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			got, err := join(filepath.FromSlash(test.base), test.name)
+			got, err := JoinPaths(filepath.FromSlash(test.base), test.name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -229,11 +229,14 @@ func TestResticHandler(t *testing.T) {
 		}
 	}()
 
-	// set append-only mode and configure path
-	mux := NewHandler(Server{
+	s := NewServer(&Config{
 		AppendOnly: true,
 		Path:       tempdir,
+		Debug:      true,
 	})
+
+	// set append-only mode and configure path
+	mux := s.NewRouter()
 
 	// create the repo
 	checkRequest(t, mux.ServeHTTP,

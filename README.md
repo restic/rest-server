@@ -1,4 +1,4 @@
-# Rest Server
+# Restic Server
 
 [![Build Status](https://travis-ci.com/restic/rest-server.svg?branch=master)](https://travis-ci.com/restic/rest-server)
 [![Go Report Card](https://goreportcard.com/badge/github.com/restic/rest-server)](https://goreportcard.com/report/github.com/restic/rest-server)
@@ -10,7 +10,7 @@ Rest Server is a high performance HTTP server that implements restic's [REST bac
 
 ## Requirements
 
-Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server with gccgo may work, but is not supported.
+Restic Server requires Go 1.11 or higher to build. The only tested compiler is the official Go compiler. Building server with gccgo may work, but is not supported.
 
 The required version of restic backup client to use with Rest Server is [v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
 
@@ -20,11 +20,15 @@ The required version of restic backup client to use with Rest Server is [v0.7.1]
 
 #### Build
 
-```make```
+```
+make
+```
 
 or
 
-```go run build.go```
+```
+go run build.go
+```
 
 If all goes well, you'll find the binary in the current directory.
 
@@ -44,7 +48,7 @@ Alternatively, you can install it manually anywhere you want.  It's a single bin
 
 ```make docker_build```
 
-#### Pull image 
+#### Pull image
 
 ```docker pull restic/rest-server```
 
@@ -90,7 +94,7 @@ To authenticate users (for access to the rest-server), the server supports using
 htpasswd -B -c .htpasswd username
 ```
 
-If you want to disable authentication, you must add the `--no-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start. 
+If you want to disable authentication, you must add the `--no-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start.
 
 NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
 
@@ -168,6 +172,25 @@ Finally, the Rest Server implementation is really simple and as such could be us
 ## Contributors
 
 Contributors are welcome, just open a new issue / pull request.
+
+## Authors
+
+This is the official list of Restic Server authors for copyright purposes.
+
+Aaron Bieber <aaron@bolddaemon.com>
+Alexander Neumann <alexander@bumpern.de>
+Bertil Chapuis <bchapuis@agimem.com>
+Brice Waegeneire <brice.wge@gmail.com>
+Bruno Clermont <bruno@robotinfra.com>
+Chapuis Bertil <bchapuis@agimem.com>
+Kenny Keslar <r3dey3@r3dey3.com>
+Konrad Wojas <github@m.wojas.nl>
+Matthew Holt <mholt@users.noreply.github.com>
+Mebus <mebus.inbox@googlemail.com>
+Wayne Scott <wsc9tt@gmail.com>
+Zlatko Čalušić <zcalusic@bitsync.net>
+cgonzalez <chgonzalezg@gmail.com>
+n0npax <marcin@niemira.net>
 
 ## License
 
