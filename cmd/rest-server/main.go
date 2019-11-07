@@ -17,20 +17,20 @@ var conf = &restserver.Config{
 func init() {
 	flags := rootCmd.Flags()
 	flags.StringVar(&conf.ListenAddr, "listen", conf.ListenAddr, "listen address")
-	flags.StringVar(&conf.Path, "path", conf.Path, "data directory")
-	flags.Int64Var(&conf.MaxRepoSize, "max-size", conf.MaxRepoSize, "maximum data repo size in bytes")
-	flags.StringVar(&conf.Log, "log", conf.Log, "log files")
+	flags.StringVar(&conf.Path, "path", conf.Path, "data repository path")
+	flags.Int64Var(&conf.MaxRepoSize, "max-size", conf.MaxRepoSize, "maximum data repository size in bytes")
 
-	flags.StringVar(&conf.CPUProfile, "cpu-profile", conf.CPUProfile, "CPU profile file")
-	flags.BoolVar(&conf.Debug, "debug", conf.Debug, "debug messages")
+	flags.StringVar(&conf.Log, "log", conf.Log, "log file path")
+	flags.BoolVar(&conf.Debug, "debug", conf.Debug, "enabled debug messages")
+	flags.StringVar(&conf.CPUProfile, "cpu-profile", conf.CPUProfile, "CPU profile file path")
 
 	flags.BoolVar(&conf.TLS, "tls", conf.TLS, "enabled TLS")
-	flags.StringVar(&conf.TLSCertFile, "tls-cert", conf.TLSCertFile, "TLS certificate file")
-	flags.StringVar(&conf.TLSKeyFile, "tls-key", conf.TLSKeyFile, "TLS key file")
+	flags.StringVar(&conf.TLSCertFile, "tls-cert", conf.TLSCertFile, "TLS certificate file path")
+	flags.StringVar(&conf.TLSKeyFile, "tls-key", conf.TLSKeyFile, "TLS key file path")
 
 	flags.BoolVar(&conf.NoAuth, "no-auth", conf.NoAuth, "disable http authentication")
 	flags.BoolVar(&conf.AppendOnly, "append-only", conf.AppendOnly, "enable append only mode")
-	flags.BoolVar(&conf.PrivateRepos, "private-repos", conf.PrivateRepos, "users can only access their private repo")
+	flags.BoolVar(&conf.PrivateRepos, "private-repos", conf.PrivateRepos, "enable private repositories")
 
 	flags.BoolVar(&conf.Prometheus, "prometheus", conf.Prometheus, "enable Prometheus metrics")
 }
