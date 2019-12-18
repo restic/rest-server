@@ -30,8 +30,10 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
+	"os/signal"
 	"regexp"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -54,6 +56,8 @@ type HtpasswdFile struct {
 // NewHtpasswdFromFile reads the users and passwords from a htpasswd file and returns them.  If an error is encountered,
 // it is returned, together with a nil-Pointer for the HtpasswdFile.
 func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP)
 	stat, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -72,6 +76,17 @@ func NewHtpasswdFromFile(path string) (*HtpasswdFile, error) {
 
 	// Start a goroutine that limits reload checks to once per CheckInterval
 	go h.throttleTimer()
+
+	go func() {
+		for range c {
+			err := h.Reload()
+			if err == nil {
+				log.Printf("Reloaded htpasswd file")
+			} else {
+				log.Printf("Could not reload htpasswd file: %v", err)
+			}
+		}
+	}()
 
 	return h, nil
 }
