@@ -1,11 +1,13 @@
 <!--
 Thank you very much for contributing code or documentation to rest-server!
-Please fill out the following questions to make it easier for us to review
-your changes.
 
-You do not need to check all the boxes below all at once, feel free to take
-your time and add more commits. If you're done and ready for review, please
-check the last box.
+Please note that each PR should be preceded by an issue where the suggested
+change can be discussed in general and without focus on specific code. That
+way, work done in the PR will better match what's been agreed in the issue.
+
+Please fill out the following questions to make it easier for us to review
+your changes. You don't have to check all the checkboxes at once, instead
+feel free to add more commits over time.
 -->
 
 
