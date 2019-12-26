@@ -1,0 +1,80 @@
+# For more details check the documentation at https://goreleaser.com
+before:
+  hooks:
+    - go mod tidy
+
+build: &build
+  main: ./cmd/rest-server/main.go
+  flags:
+    - -tags=release
+  env:
+    - CGO_ENABLED=0
+
+builds:
+  - id: build-darwin
+    <<: *build
+    goos: [darwin]
+    goarch: [386, amd64, arm, arm64]
+
+  - id: build-dragonfly
+    <<: *build
+    goos: [dragonfly]
+    goarch: [amd64]
+
+  - id: build-freebsd
+    <<: *build
+    goos: [freebsd]
+    goarch: [386, amd64, arm]
+
+  - id: build-linux
+    <<: *build
+    goos: [linux]
+    goarch:
+      [386, amd64, arm, arm64, ppc64, ppc64le, mips, mipsle, mips64, mips64le]
+
+  - id: build-netbsd
+    <<: *build
+    goos: [netbsd]
+    goarch: [386, amd64, arm]
+
+  - id: build-openbsd
+    <<: *build
+    goos: [openbsd]
+    goarch: [386, amd64, arm, arm64]
+
+  - id: build-plan9
+    <<: *build
+    goos: [plan9]
+    goarch: [386, amd64, arm]
+
+  - id: build-solaris
+    <<: *build
+    goos: [solaris]
+    goarch: [amd64]
+
+  - id: build-windows
+    <<: *build
+    goos: [windows]
+    goarch: [386, amd64]
+
+archives:
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "sha256sums.txt"
+
+snapshot:
+  name_template: "{{.ShortCommit}}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
