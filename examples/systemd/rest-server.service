@@ -10,7 +10,6 @@ Group=www-data
 ExecStart=/usr/local/bin/rest-server --path /tmp/restic
 Restart=always
 RestartSec=5
-StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target
