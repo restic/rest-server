@@ -21,7 +21,7 @@ Thanks for understanding, and for contributing to the project!
 -->
 
 
-Output of `rest-server --version`, if using docker, `docker images restic/rest-server -q`
+Output of `rest-server --version` <!-- If using docker, output of `docker images restic/rest-server -q` -->
 ---------------------------------
 
 <!--
