@@ -33,6 +33,7 @@ that the issue is closed automatically when this PR is merged.
 Checklist
 ---------
 
+- [ ] I have enabled [maintainer edits for this PR](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork)
 - [ ] I have added tests for all changes in this PR
 - [ ] I have added documentation for the changes (in the manual)
 - [ ] There's a new file in `changelog/unreleased/` that describes the changes for our users (template [here](https://github.com/restic/rest-server/blob/master/changelog/TEMPLATE))
