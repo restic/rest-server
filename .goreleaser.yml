@@ -1,0 +1,107 @@
+---
+before:
+  # Run a few commands to check the state of things. When anything is changed
+  # in files commited to the repo, goreleaser will abort before building
+  # anything because the git checkout is dirty.
+  hooks:
+    # make sure all modules are available
+    - go mod download
+    # make sure all generated code is up to date
+    - go generate ./...
+    # check that $VERSION is set
+    - test -n "{{ .Env.VERSION }}"
+    # make sure the file VERSION contains the latest version (used for build.go)
+    - bash -c 'echo "{{ .Env.VERSION }}" > VERSION'
+    # make sure the file CHANGELOG.md is up to date
+    - calens --output CHANGELOG.md
+
+# build a single binary
+builds:
+  -
+    # make sure everything is statically linked by disabling cgo altogether
+    env:
+      - CGO_ENABLED=0
+
+    # set the package for the main binary
+    main: ./cmd/rest-server
+
+    flags:
+      # don't include any paths to source files in the resulting binary
+      - -trimpath
+
+    ldflags:
+      # set the version variable in the main package
+      - "-s -w -X main.version={{ .Version }}"
+
+    # list all operating systems and architectures we build binaries for
+    goos:
+      - linux
+      - darwin
+      - windows
+      - freebsd
+      - netbsd
+      - openbsd
+      - dragonfly
+      - plan9
+      - solaris
+
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+      - mips
+      - mips64
+      - mips64le
+      - ppc64
+      - ppc64le
+    goarm:
+      - 6
+      - 7
+
+# configure the resulting archives to create
+archives:
+  -
+    # package a directory which contains the source file
+    wrap_in_directory: true
+
+    # add these files to all archives
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+# also build an archive of the source code
+source:
+  enabled: true
+
+# build a file containing the SHA256 hashes
+checksum:
+  name_template: 'SHA256SUMS'
+
+# sign the checksum file
+signs:
+  - artifacts: checksum
+    signature: "${artifact}.asc"
+    args:
+      - "--armor"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+
+# do not generate a changelog file, we're using calens for that
+changelog:
+  skip: true
+
+# configure building the rest-server docker image
+dockers:
+  - image_templates:
+      - restic/rest-server:latest
+      - restic/rest-server:{{ .Version }}
+    build_flag_templates:
+      - "--pull"
+    extra_files:
+      - docker/create_user
+      - docker/delete_user
+      - docker/entrypoint.sh
