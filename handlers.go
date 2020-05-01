@@ -44,11 +44,18 @@ func (s *Server) isHashed(dir string) bool {
 }
 
 func valid(name string) bool {
-	// taken from net/http.Dir
+	// Based on net/http.Dir
 	if strings.Contains(name, "\x00") {
 		return false
 	}
 
+	// Path characters that are disallowed or unsafe under some operating systems
+	// are not allowed here.
+	// The most important one here is '/', since Goji does not decode '%2F' to '/'
+	// during routing, so we can end up with a '/' in the name here.
+	if strings.ContainsAny(name, "/\\:*?\"<>|") {
+		return false
+	}
 	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
 		return false
 	}
