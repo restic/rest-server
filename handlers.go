@@ -167,7 +167,10 @@ func (s *Server) AuthHandler(f *HtpasswdFile, h http.Handler) http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		if s.PrivateRepos && !isUserPath(username, r.URL.Path) && r.URL.Path != "/metrics" {
+
+		// resolve all relative elements in the path
+		urlPath := path.Clean(r.URL.Path)
+		if s.PrivateRepos && !isUserPath(username, urlPath) && urlPath != "/metrics" {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
