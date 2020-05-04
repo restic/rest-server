@@ -10,7 +10,7 @@ Rest Server is a high performance HTTP server that implements restic's [REST bac
 
 ## Requirements
 
-Rest Server requires Go 1.7 or higher to build.  The only tested compiler is the official Go compiler.  Building server with gccgo may work, but is not supported.
+Rest Server requires Go 1.11 or higher to build.  The only tested compiler is the official Go compiler.  Building server with gccgo may work, but is not supported.
 
 The required version of restic backup client to use with Rest Server is [v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
 
@@ -105,7 +105,7 @@ openssl req -new -x509 -key private_key -out public_key -days 365
 
 The `--append-only` mode allows creation of new backups but prevents deletion and modification of existing backups. This can be useful when backing up systems that have a potential of being hacked.
 
-To prevent your users from accessing each others' repositories, you may use the `--private-repos` flag which grants access only when a subdirectory with the same name as the user is specified in the repository URL. For example, user "foo" using the repository URLs `rest:https://foo:pass@host:8000/foo`, `rest:https://foo:pass@host:8000/foo/` or `rest:https://foo:pass@host:8000/foo/bar` would be granted access, but the same user using repository URLs `rest:https://foo:pass@host:8000/` or `rest:https://foo:pass@host:8000/foobar/` would be denied access.
+To prevent your users from accessing each others' repositories, you may use the `--private-repos` flag which grants access only when a subdirectory with the same name as the user is specified in the repository URL. For example, user "foo" using the repository URLs `rest:https://foo:pass@host:8000/foo` or `rest:https://foo:pass@host:8000/foo/` would be granted access, but the same user using repository URLs `rest:https://foo:pass@host:8000/` or `rest:https://foo:pass@host:8000/foobar/` would be denied access.
 
 Rest Server uses exactly the same directory structure as local backend, so you should be able to access it both locally and via HTTP, even simultaneously.
 

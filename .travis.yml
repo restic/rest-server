@@ -1,3 +1,4 @@
+---
 os: linux
 sudo: false
 language: go
@@ -19,13 +20,17 @@ notifications:
 install:
   - export GOBIN="$GOPATH/bin"
   - export PATH="$PATH:$GOBIN"
-  - go get -u github.com/golang/lint/golint
+  - export GO111MODULE=on
+  - export GOPROXY=https://proxy.golang.org
+  - go get -u golang.org/x/lint/golint
   - go get golang.org/x/tools/cmd/goimports
   - go get github.com/restic/calens
 
 script:
-  - go install
-  - go test -v . ./cmd/rest-server
+  - export GO111MODULE=on
+  - export GOPROXY=https://proxy.golang.org
+  - go build ./cmd/rest-server
+  - go test ./...
   - go run build.go -v -T
   - diff <(goimports -d *.go) <(printf "")
   - calens

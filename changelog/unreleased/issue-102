@@ -1,0 +1,14 @@
+Change: Remove vendored dependencies
+
+We've removed the vendored dependencies (in the subdir `vendor/`) similar to
+what we did for `restic` itself. When building restic, the Go compiler
+automatically fetches the dependencies. It will also cryptographically verify
+that the correct code has been fetched by using the hashes in `go.sum` (see the
+link to the documentation below).
+
+Building the rest-server now requires Go 1.11 or newer, since we're using Go
+Modules for dependency management. Older Go versions are not supported any more.
+
+https://github.com/restic/rest-server/issues/102
+https://golang.org/cmd/go/#hdr-Module_downloading_and_verification
+
