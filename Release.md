@@ -2,9 +2,11 @@
 
         export VERSION=0.10.0
 
-2. Add new version to file VERSION:
+2. Add new version to file `VERSION` and `main.go` and commit the result:
 
-        echo "${VERSION}" | tee VERSION && git commit -m "Update VERSION file for ${VERSION}" VERSION
+        echo "${VERSION}" | tee VERSION
+        sed -i "s/var version = \"[^\"]*\"/var version = \"${VERSION}\"/" cmd/rest-server/main.go
+        git commit -m "Update VERSION files for ${VERSION}" VERSION cmd/rest-server/main.go
 
 3. Move changelog files for `calens`:
 
@@ -30,3 +32,8 @@
           release \
           --config ../.goreleaser.yml \
           --release-notes <(calens --template changelog/CHANGELOG-GitHub.tmpl --version "${VERSION}")
+
+7. Set a new version in `main.go` and commit the result:
+
+        sed -i "s/var version = \"[^\"]*\"/var version = \"${VERSION}-dev\"/" cmd/rest-server/main.go
+        git commit -m "Update version for development" cmd/rest-server/main.go
