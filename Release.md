@@ -11,8 +11,12 @@
 3. Move changelog files for `calens`:
 
         mv changelog/unreleased "changelog/${VERSION}_$(date +%Y-%m-%d)"
+        rm -f "changelog/${VERSION}_$(date +%Y-%m-%d)/.gitkeep"
         git add "changelog/${VERSION}"*
         git rm -r changelog/unreleased
+        mkdir changelog/unreleased
+        touch changelog/unreleased/.gitkeep
+        git add changelog/unreleased/.gitkeep
         git commit -m "Move changelog files for ${VERSION}" changelog/{unreleased,"${VERSION}"*}
 
 4. Generate changelog:
@@ -26,11 +30,11 @@
         git tag -a -s -m "v${VERSION}" "v${VERSION}"
         git push --tags
 
-6. Build the project (use `--skip-publish` for testing):
+6. Build the project (use `--skip-publish` for testing, or pass `--config` to
+   use another config file):
 
         goreleaser \
           release \
-          --config ../.goreleaser.yml \
           --release-notes <(calens --template changelog/CHANGELOG-GitHub.tmpl --version "${VERSION}")
 
 7. Set a new version in `main.go` and commit the result:
