@@ -12,8 +12,8 @@ before:
     - test -n "{{ .Env.VERSION }}"
     # make sure the file VERSION contains the latest version (used for build.go)
     - bash -c 'echo "{{ .Env.VERSION }}" > VERSION'
-    # make sure that mani.go contains the latest version
-    - sed -i 's/var version = "[^"]*"/var version = "${VERSION}"/' cmd/rest-server/main.go
+    # make sure that main.go contains the latest version
+    - echo sed -i 's/var version = "[^"]*"/var version = "{{ .Env.VERSION }}"/' cmd/rest-server/main.go
     # make sure the file CHANGELOG.md is up to date
     - calens --output CHANGELOG.md
 
