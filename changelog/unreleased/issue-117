@@ -1,0 +1,19 @@
+Security: Stricter path sanitization
+
+The framework we're using in rest-server to decode paths to repositories
+allowed specifying URL-encoded characters in paths, including sensitive
+characters such as `/` (encoded as `%2F`).
+
+We've changed this unintended behavior, such that rest-server now rejects
+such paths. In particular, it is no longer possible to specify sub-repositories
+for users by encoding the path with `%2F`, such as `http://localhost:8000/foo%2Fbar`,
+which means that this will unfortunately be a breaking change in that case.
+
+If using sub-repositories for users is important to you, please let us know in
+the forum, so we can learn about your use case and implement this properly. As
+it currently stands, the ability to use sub-repositories was an unintentional
+feature made possible by the URL decoding framework used, and hence never meant
+to be supported in the first place. If we wish to have this feature in
+rest-server, we'd like to have it implemented properly and intentionally.
+
+https://github.com/restic/rest-server/issues/117
