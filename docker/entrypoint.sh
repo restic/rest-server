@@ -12,8 +12,6 @@ if [ -z "$DISABLE_AUTHENTICATION" ]; then
         echo "**WARNING** No user exists, please 'docker exec -it \$CONTAINER_ID create_user'"
         echo
     fi
-else
-    rm -f "$PASSWORD_FILE"
 fi
 
 exec rest-server --path "$DATA_DIRECTORY" $OPTIONS
