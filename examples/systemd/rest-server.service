@@ -7,9 +7,16 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-ExecStart=/usr/local/bin/rest-server --path /tmp/restic
+ExecStart=/usr/local/bin/rest-server --path /path/to/backups
 Restart=always
 RestartSec=5
+
+# Optional security enhancements
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/path/to/backups
 
 [Install]
 WantedBy=multi-user.target
