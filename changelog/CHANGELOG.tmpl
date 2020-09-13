@@ -19,10 +19,10 @@ Details
    {{ wrapIndent $par 80 3 }}
 {{ end -}}
 {{ range $id := .Issues }}
-   https://github.com/restic/restic/issues/{{ $id -}}
+   https://github.com/restic/rest-server/issues/{{ $id -}}
 {{ end -}}
 {{ range $id := .PRs }}
-   https://github.com/restic/restic/pull/{{ $id -}}
+   https://github.com/restic/rest-server/pull/{{ $id -}}
 {{ end -}}
 {{ range $url := .OtherURLs }}
    {{ $url -}}
