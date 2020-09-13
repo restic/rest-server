@@ -1,0 +1,25 @@
+name: Style Checkers
+on: [push]
+jobs:
+  build:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15.x
+        id: go
+
+      - name: Install golang-ci
+        run: |
+          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $HOME/bin latest
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Run golang-ci
+        run: |
+          export PATH=$HOME/bin:$PATH
+          golangci-lint run --enable goimports,govet,misspell,stylecheck

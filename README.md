@@ -1,6 +1,8 @@
 # Rest Server
 
-[![Build Status](https://travis-ci.com/restic/rest-server.svg?branch=master)](https://travis-ci.com/restic/rest-server)
+
+[![Status badge for tests](https://github.com/happal/monsoon/workflows/Build%20and%20tests/badge.svg)](https://github.com/happal/monsoon/actions?query=workflow%3A%22Build+and+tests%22)
+[![Status badge for style checkers](https://github.com/happal/monsoon/workflows/Style%20Checkers/badge.svg)](https://github.com/happal/monsoon/actions?query=workflow%3A%22Style+Checkers%22)
 [![Go Report Card](https://goreportcard.com/badge/github.com/restic/rest-server)](https://goreportcard.com/report/github.com/restic/rest-server)
 [![GoDoc](https://godoc.org/github.com/restic/rest-server?status.svg)](https://godoc.org/github.com/restic/rest-server)
 [![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/restic/rest-server/blob/master/LICENSE)
