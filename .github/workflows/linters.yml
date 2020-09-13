@@ -1,5 +1,5 @@
 name: Style Checkers
-on: [push]
+on: [push, pull_request]
 jobs:
   build:
     name: Check
