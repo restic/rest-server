@@ -33,7 +33,7 @@ Details
    framework used, and hence never meant to be supported in the first place. If we wish to have this
    feature in rest-server, we'd like to have it implemented properly and intentionally.
 
-   https://github.com/restic/restic/issues/117
+   https://github.com/restic/rest-server/issues/117
 
  * Security #60: Require auth by default, add --no-auth flag
 
@@ -41,8 +41,8 @@ Details
    rest-server now defaults to requiring a .htpasswd. If you want to disable authentication, you
    need to explicitly pass the new --no-auth flag.
 
-   https://github.com/restic/restic/issues/60
-   https://github.com/restic/restic/pull/61
+   https://github.com/restic/rest-server/issues/60
+   https://github.com/restic/rest-server/pull/61
 
  * Security #64: Refuse overwriting config file in append-only mode
 
@@ -50,7 +50,7 @@ Details
    overwrite the config file in a repo even if `--append-only` is specified. The first commit adds
    proper tests, and the second commit fixes the issue.
 
-   https://github.com/restic/restic/pull/64
+   https://github.com/restic/rest-server/pull/64
 
  * Change #102: Remove vendored dependencies
 
@@ -62,12 +62,12 @@ Details
    Building the rest-server now requires Go 1.11 or newer, since we're using Go Modules for
    dependency management. Older Go versions are not supported any more.
 
-   https://github.com/restic/restic/issues/102
+   https://github.com/restic/rest-server/issues/102
    https://golang.org/cmd/go/#hdr-Module_downloading_and_verification
 
  * Enhancement #44: Add changelog file
 
-   https://github.com/restic/restic/issues/44
-   https://github.com/restic/restic/pull/62
+   https://github.com/restic/rest-server/issues/44
+   https://github.com/restic/rest-server/pull/62
 
 
