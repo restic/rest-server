@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-BSD%20%282--Clause%29-003262.svg?maxAge=2592000)](https://github.com/restic/rest-server/blob/master/LICENSE)
 [![Powered by](https://img.shields.io/badge/powered_by-Go-5272b4.svg?maxAge=2592000)](https://golang.org/)
 
-Rest Server is a high performance HTTP server that implements restic's [REST backend API](http://restic.readthedocs.io/en/latest/100_references.html#rest-backend).  It provides secure and efficient way to backup data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest: URL](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
+Rest Server is a high performance HTTP server that implements restic's [REST backend API](https://restic.readthedocs.io/en/latest/100_references.html#rest-backend).  It provides secure and efficient way to backup data remotely, using [restic](https://github.com/restic/restic) backup client via the [rest: URL](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Put the `rest-server` binary in the current directory, then run:
 
 ## Usage
 
-To learn how to use restic backup client with REST backend, please consult [restic manual](http://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
+To learn how to use restic backup client with REST backend, please consult [restic manual](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
     $ rest-server --help
 
