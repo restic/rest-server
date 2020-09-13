@@ -53,7 +53,7 @@ func init() {
 	flags.BoolVarP(&showVersion, "version", "V", showVersion, "output version and exit")
 }
 
-var version = "manually"
+var version = "0.10.0"
 
 func tlsSettings() (bool, string, string, error) {
 	var key, cert string
