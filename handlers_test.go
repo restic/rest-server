@@ -16,25 +16,24 @@ import (
 
 func TestJoin(t *testing.T) {
 	var tests = []struct {
-		base, name string
-		result     string
+		base   string
+		names  []string
+		result string
 	}{
-		{"/", "foo/bar", "/foo/bar"},
-		{"/srv/server", "foo/bar", "/srv/server/foo/bar"},
-		{"/srv/server", "/foo/bar", "/srv/server/foo/bar"},
-		{"/srv/server", "foo/../bar", "/srv/server/bar"},
-		{"/srv/server", "../bar", "/srv/server/bar"},
-		{"/srv/server", "..", "/srv/server"},
-		{"/srv/server", "../..", "/srv/server"},
-		{"/srv/server", "/repo/data/", "/srv/server/repo/data"},
-		{"/srv/server", "/repo/data/../..", "/srv/server"},
-		{"/srv/server", "/repo/data/../data/../../..", "/srv/server"},
-		{"/srv/server", "/repo/data/../data/../../..", "/srv/server"},
+		{"/", []string{"foo", "bar"}, "/foo/bar"},
+		{"/srv/server", []string{"foo", "bar"}, "/srv/server/foo/bar"},
+		{"/srv/server", []string{"foo", "..", "bar"}, "/srv/server/foo/bar"},
+		{"/srv/server", []string{"..", "bar"}, "/srv/server/bar"},
+		{"/srv/server", []string{".."}, "/srv/server"},
+		{"/srv/server", []string{"..", ".."}, "/srv/server"},
+		{"/srv/server", []string{"repo", "data"}, "/srv/server/repo/data"},
+		{"/srv/server", []string{"repo", "data", "..", ".."}, "/srv/server/repo/data"},
+		{"/srv/server", []string{"repo", "data", "..", "data", "..", "..", ".."}, "/srv/server/repo/data/data"},
 	}
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			got, err := join(filepath.FromSlash(test.base), test.name)
+			got, err := join(filepath.FromSlash(test.base), test.names...)
 			if err != nil {
 				t.Fatal(err)
 			}
