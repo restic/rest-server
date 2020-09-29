@@ -92,7 +92,7 @@ There's an example [systemd service file](https://github.com/restic/rest-server/
 
 ### Docker
 
-By default, image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
+By default, image uses authentication.  To turn it off, add `--no-auth` to environment variable `OPTIONS`.
 
 Persistent data volume is located to `/data`.
 
