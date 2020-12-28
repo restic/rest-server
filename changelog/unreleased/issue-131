@@ -1,0 +1,16 @@
+Security: Prevent loading of usernames containing a slash
+
+"/" is valid char in HTTP authorization headers, but is also used in
+rest-server to map usernames to private repos.
+
+This commit prevents loading maliciously composed usernames like
+"/foo/config" by restricting the allowed characters to the unicode
+character class, numbers, "-", "." and "@".
+
+This prevents requests to other users files like:
+
+curl -v  -X DELETE -u foo/config:attack  http://localhost:8000/foo/config
+
+https://github.com/restic/rest-server/issues/131
+https://github.com/restic/rest-server/pull/132
+

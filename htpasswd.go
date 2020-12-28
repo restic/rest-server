@@ -100,6 +100,8 @@ func (h *HtpasswdFile) throttleTimer() {
 	}
 }
 
+var validUsernameRegexp = regexp.MustCompile(`^[\p{L}@.-]+$`)
+
 // Reload reloads the htpasswd file. If the reload fails, the Users map is not changed and the error is returned.
 func (h *HtpasswdFile) Reload() error {
 	r, err := os.Open(h.path)
@@ -119,6 +121,10 @@ func (h *HtpasswdFile) Reload() error {
 	}
 	users := make(map[string]string)
 	for _, record := range records {
+		if !validUsernameRegexp.MatchString(record[0]) {
+			log.Printf("Ignoring invalid username %q in htpasswd, consists of characters other than letters", record[0])
+			continue
+		}
 		users[record[0]] = record[1]
 	}
 
