@@ -100,7 +100,7 @@ func (h *HtpasswdFile) throttleTimer() {
 	}
 }
 
-var validUsernameRegexp = regexp.MustCompile(`^[\p{L}@.-]+$`)
+var validUsernameRegexp = regexp.MustCompile(`^[\p{L}\d@.-]+$`)
 
 // Reload reloads the htpasswd file. If the reload fails, the Users map is not changed and the error is returned.
 func (h *HtpasswdFile) Reload() error {
