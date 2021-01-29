@@ -542,7 +542,17 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 	path := h.getObjectPath(objectType, objectID)
 
-	tf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, h.opt.FileMode)
+	_, err := os.Stat(path)
+	if err == nil {
+		httpDefaultError(w, http.StatusForbidden)
+		return
+	}
+	if !os.IsNotExist(err) {
+		h.internalServerError(w, err)
+		return
+	}
+
+	tf, err := ioutil.TempFile(filepath.Dir(path), ".rest-server-temp")
 	if os.IsNotExist(err) {
 		// the error is caused by a missing directory, create it and retry
 		mkdirErr := os.MkdirAll(filepath.Dir(path), h.opt.DirMode)
@@ -550,12 +560,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 			log.Print(mkdirErr)
 		} else {
 			// try again
-			tf, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, h.opt.FileMode)
+			tf, err = ioutil.TempFile(filepath.Dir(path), ".rest-server-temp")
 		}
-	}
-	if os.IsExist(err) {
-		httpDefaultError(w, http.StatusForbidden)
-		return
 	}
 	if err != nil {
 		h.internalServerError(w, err)
@@ -590,7 +596,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		_ = tf.Close()
-		_ = os.Remove(path)
+		_ = os.Remove(tf.Name())
 		h.incrementRepoSpaceUsage(-written)
 		if h.opt.Debug {
 			log.Print(err)
@@ -601,14 +607,21 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 
 	if err := tf.Sync(); err != nil {
 		_ = tf.Close()
-		_ = os.Remove(path)
+		_ = os.Remove(tf.Name())
 		h.incrementRepoSpaceUsage(-written)
 		h.internalServerError(w, err)
 		return
 	}
 
 	if err := tf.Close(); err != nil {
-		_ = os.Remove(path)
+		_ = os.Remove(tf.Name())
+		h.incrementRepoSpaceUsage(-written)
+		h.internalServerError(w, err)
+		return
+	}
+
+	if err := os.Rename(tf.Name(), path); err != nil {
+		_ = os.Remove(tf.Name())
 		h.incrementRepoSpaceUsage(-written)
 		h.internalServerError(w, err)
 		return
