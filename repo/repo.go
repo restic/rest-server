@@ -627,7 +627,26 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := syncDir(filepath.Dir(path)); err != nil {
+		// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
+		h.internalServerError(w, err)
+		return
+	}
+
 	h.sendMetric(objectType, BlobWrite, uint64(written))
+}
+
+func syncDir(dirname string) error {
+	dir, err := os.Open(dirname)
+	if err != nil {
+		return err
+	}
+	err = dir.Sync()
+	if err != nil {
+		_ = dir.Close()
+		return err
+	}
+	return dir.Close()
 }
 
 // deleteBlob deletes a blob from the repository.
