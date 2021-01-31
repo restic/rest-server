@@ -1,30 +1,40 @@
-name: Build and tests
-on: [push, pull_request]
+name: test
+on:
+  # run tests on push to master, but not when other branches are pushed to
+  push:
+    branches:
+      - master
+
+  # run tests for all pull requests
+  pull_request:
+
 jobs:
-  build:
-    name: Build
+  test:
     strategy:
       matrix:
-        go-version:
+        go:
           - 1.14.x
           - 1.15.x
     runs-on: ubuntu-latest
+    name: Go ${{ matrix.go }}
 
     env:
       GOPROXY: https://proxy.golang.org
 
     steps:
-
-      - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v1
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
-        id: go
+          go-version: ${{ matrix.go }}
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Build
+        run: |
+          go build ./cmd/rest-server
+
+      - name: Build with build.go
         run: |
           go run build.go --goos linux
           go run build.go --goos windows
@@ -32,5 +42,26 @@ jobs:
 
       - name: Run tests
         run: |
-          export PATH=$HOME/bin:$PATH
           go test ./...
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
+          version: v1.36
+          # Optional: show only new issues if it's a pull request. The default value is `false`.
+          only-new-issues: true
+          args: --verbose --timeout 5m
+
+      - name: Check go.mod/go.sum
+        run: |
+          echo "check if go.mod and go.sum are up to date"
+          go mod tidy
+          git diff --exit-code go.mod go.sum
