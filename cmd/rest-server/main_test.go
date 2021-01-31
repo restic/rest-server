@@ -79,7 +79,12 @@ func TestGetHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(dir)
+	defer func() {
+		err := os.Remove(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// With NoAuth = false and no .htpasswd
 	_, err = getHandler(restserver.Server{Path: dir})
@@ -99,7 +104,12 @@ func TestGetHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(htpasswd)
+	defer func() {
+		err := os.Remove(htpasswd)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// With NoAuth = false and with .htpasswd
 	_, err = getHandler(restserver.Server{Path: dir})
