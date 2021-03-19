@@ -1,0 +1,44 @@
+name: Publish Docker image
+on:
+  push:
+    tags:
+      - "v*.*.*"
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Save tag in env variable
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Save repo in env variable
+        run: echo "REPO_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
+
+      - name: Print release and repo name for debugging
+        run: |
+          echo $RELEASE_VERSION
+          echo $REPO_NAME
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: | 
+            restic/${{ env.REPO_NAME }}:latest
+            restic/${{ env.REPO_NAME }}:${{ env.RELEASE_VERSION }}
+          platforms: linux/amd64,linux/arm/v7
