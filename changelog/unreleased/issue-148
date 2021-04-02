@@ -1,0 +1,7 @@
+Bugfix: Enhance security for example systemd unit file
+
+Additional systemd features have been used to enhance the security of the
+rest-server for systemd users.
+
+https://github.com/restic/rest-server/issues/148
+https://github.com/restic/rest-server/pull/149

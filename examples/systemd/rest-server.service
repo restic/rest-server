@@ -10,13 +10,35 @@ Group=www-data
 ExecStart=/usr/local/bin/rest-server --path /path/to/backups
 Restart=always
 RestartSec=5
+# Makes created files group-readable, but inaccessible by others
+UMask=027
 
-# Optional security enhancements
+# Recommended security enhancements using features present in systemd version 247
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
 NoNewPrivileges=yes
 PrivateTmp=yes
+PrivateDevices=true
+PrivateUsers=true
 ProtectSystem=strict
 ProtectHome=yes
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectProc=invisible
+ProtectHostname=true
+ProcSubset=pid
 ReadWritePaths=/path/to/backups
+RemoveIPC=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictSUIDSGID=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
 
 [Install]
 WantedBy=multi-user.target
