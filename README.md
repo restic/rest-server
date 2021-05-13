@@ -19,11 +19,15 @@ The required version of restic backup client to use with `rest-server` is [v0.7.
 
 For building the `rest-server` binary run `CGO_ENABLED=0 go build -o rest-server ./cmd/rest-server`
 
+
 ## Docker
 
 ### Build image
 
-Put the `rest-server` binary in the current directory, then run:
+The docker image build process will build a fresh version of the rest-server and package that into
+a usable container.
+
+To build the binary along with the container run:
 
     docker build -t restic/rest-server:latest .
 
@@ -31,6 +35,7 @@ Put the `rest-server` binary in the current directory, then run:
 ### Pull image
 
     docker pull restic/rest-server
+
 
 ## Usage
 
