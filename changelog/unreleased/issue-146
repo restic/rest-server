@@ -1,5 +1,8 @@
-Build rest-server at docker container build time
+Change: Build rest-server at docker container build time
 
 Add a build stage such that the latest rest-server is always built and packaged.
 This is done in a standard golang container to ensure a clean build environment
 and only the final binary is shipped rather than the whole build environment.
+
+https://github.com/restic/rest-server/issues/146
+https://github.com/restic/rest-server/pull/145
