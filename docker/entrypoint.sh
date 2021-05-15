@@ -2,7 +2,9 @@
 
 set -e
 
-if [ -z "$DISABLE_AUTHENTICATION" ]; then
+if [ -n "$DISABLE_AUTHENTICATION" ]; then
+    OPTIONS="--no-auth $OPTIONS"
+else
     if [ ! -f "$PASSWORD_FILE" ]; then
         touch "$PASSWORD_FILE"
     fi

@@ -1,0 +1,8 @@
+Bugfix: Fix Docker configuration for DISABLE_AUTHENTICATION
+
+A regression was introduced which caused the DISABLE_AUTHENTICATION environment
+variable to stop working in Docker configurations. This has been fix by
+automatically setting the option `--no-auth` to disable authentication.
+
+https://github.com/restic/rest-server/issues/119
+https://github.com/restic/rest-server/pull/124
