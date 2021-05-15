@@ -11,10 +11,8 @@ RUN go build -o rest-server ./cmd/rest-server
 
 FROM alpine
 
-ENV DATA_DIRECTORY="/data"
-ENV PASSWORD_FILE="/data/.htpasswd"
-ENV DISABLE_AUTHENTICATION=""
-ENV OPTIONS=""
+ENV DATA_DIRECTORY /data
+ENV PASSWORD_FILE /data/.htpasswd
 
 RUN apk add --no-cache --update apache2-utils
 
