@@ -5,15 +5,31 @@ After=network.target
 
 [Service]
 Type=simple
+# You may prefer to use a different user or group on your system.
 User=www-data
 Group=www-data
 ExecStart=/usr/local/bin/rest-server --path /path/to/backups
 Restart=always
 RestartSec=5
+
+# The following options are available (in systemd v247) to restrict the
+# actions of the rest-server.
+
+# As a whole, the purpose of these are to provide an additional layer of
+# security by mitigating any unknown security vulnerabilities which may exist
+# in rest-server or in the libraries, tools and operating system components
+# which it relies upon.
+
+# IMPORTANT!
+# The following line must be customised to your individual requirements.
+ReadWritePaths=/path/to/backups
+
 # Makes created files group-readable, but inaccessible by others
 UMask=027
 
-# Recommended security enhancements using features present in systemd version 247
+# If your system doesn't support all of the features below (e.g. because of
+# the use of an older version of systemd), you may wish to comment-out
+# some of the lines below as appropriate.
 CapabilityBoundingSet=
 LockPersonality=true
 MemoryDenyWriteExecute=true
@@ -31,7 +47,6 @@ ProtectKernelTunables=true
 ProtectProc=invisible
 ProtectHostname=true
 ProcSubset=pid
-ReadWritePaths=/path/to/backups
 RemoveIPC=true
 RestrictNamespaces=true
 RestrictAddressFamilies=AF_INET AF_INET6
