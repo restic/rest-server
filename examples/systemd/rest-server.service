@@ -55,5 +55,19 @@ RestrictRealtime=true
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 
+# Additionally, you may wish to use some of the systemd options documented in
+# systemd.resource-control(5) to limit the CPU, memory, file-system I/O and
+# network I/O that the rest-server is permitted to consume according to the
+# individual requirements of your installation.
+#CPUQuota=25%
+#MemoryMax=bytes
+#MemorySwapMax=bytes
+#TasksMax=N
+#IOReadBandwidthMax=device bytes
+#IOWriteBandwidthMax=device bytes
+#IOReadIOPSMax=device IOPS, IOWriteIOPSMax=device IOPS
+#IPAccounting=true
+#IPAddressAllow=
+
 [Install]
 WantedBy=multi-user.target
