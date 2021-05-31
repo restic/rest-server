@@ -46,7 +46,6 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectProc=invisible
 ProtectHostname=true
-ProcSubset=pid
 RemoveIPC=true
 RestrictNamespaces=true
 RestrictAddressFamilies=AF_INET AF_INET6
