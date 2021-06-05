@@ -1,0 +1,8 @@
+Enhancement: Expand use of security features in example systemd unit file
+
+Additional systemd features have been used which may mitigate potential
+security vulnerabilities in rest-server and the various packages and operating
+system components which it relies upon.
+
+https://github.com/restic/rest-server/issues/148
+https://github.com/restic/rest-server/pull/149

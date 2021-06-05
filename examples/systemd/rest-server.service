@@ -5,18 +5,68 @@ After=network.target
 
 [Service]
 Type=simple
+# You may prefer to use a different user or group on your system.
 User=www-data
 Group=www-data
 ExecStart=/usr/local/bin/rest-server --path /path/to/backups
 Restart=always
 RestartSec=5
 
-# Optional security enhancements
+# The following options are available (in systemd v247) to restrict the
+# actions of the rest-server.
+
+# As a whole, the purpose of these are to provide an additional layer of
+# security by mitigating any unknown security vulnerabilities which may exist
+# in rest-server or in the libraries, tools and operating system components
+# which it relies upon.
+
+# IMPORTANT!
+# The following line must be customised to your individual requirements.
+ReadWritePaths=/path/to/backups
+
+# Makes created files group-readable, but inaccessible by others
+UMask=027
+
+# If your system doesn't support all of the features below (e.g. because of
+# the use of an older version of systemd), you may wish to comment-out
+# some of the lines below as appropriate.
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
 NoNewPrivileges=yes
 PrivateTmp=yes
+PrivateDevices=true
+PrivateUsers=true
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/path/to/backups
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectProc=invisible
+ProtectHostname=true
+RemoveIPC=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictSUIDSGID=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+# Additionally, you may wish to use some of the systemd options documented in
+# systemd.resource-control(5) to limit the CPU, memory, file-system I/O and
+# network I/O that the rest-server is permitted to consume according to the
+# individual requirements of your installation.
+#CPUQuota=25%
+#MemoryMax=bytes
+#MemorySwapMax=bytes
+#TasksMax=N
+#IOReadBandwidthMax=device bytes
+#IOWriteBandwidthMax=device bytes
+#IOReadIOPSMax=device IOPS, IOWriteIOPSMax=device IOPS
+#IPAccounting=true
+#IPAddressAllow=
 
 [Install]
 WantedBy=multi-user.target
