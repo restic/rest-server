@@ -21,10 +21,11 @@ import (
 
 // Options are options for the Handler accepted by New
 type Options struct {
-	AppendOnly bool // if set, delete actions are not allowed
-	Debug      bool
-	DirMode    os.FileMode
-	FileMode   os.FileMode
+	AppendOnly     bool // if set, delete actions are not allowed
+	Debug          bool
+	DirMode        os.FileMode
+	FileMode       os.FileMode
+	NoVerifyUpload bool
 
 	// If set, we will panic when an internal server error happens. This
 	// makes it easier to debug such errors.
@@ -571,13 +572,20 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// calculate hash for current request
-	hasher := sha256.New()
-	written, err := io.Copy(outFile, io.TeeReader(r.Body, hasher))
+	var written int64
 
-	// reject if file content doesn't match file name
-	if err == nil && hex.EncodeToString(hasher.Sum(nil)) != objectID {
-		err = fmt.Errorf("file content does not match hash")
+	if h.opt.NoVerifyUpload {
+		// just write the file without checking the contents
+		written, err = io.Copy(outFile, r.Body)
+	} else {
+		// calculate hash for current request
+		hasher := sha256.New()
+		written, err = io.Copy(outFile, io.TeeReader(r.Body, hasher))
+
+		// reject if file content doesn't match file name
+		if err == nil && hex.EncodeToString(hasher.Sum(nil)) != objectID {
+			err = fmt.Errorf("file content does not match hash")
+		}
 	}
 
 	if err != nil {
