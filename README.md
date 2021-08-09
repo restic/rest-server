@@ -126,7 +126,7 @@ or
 
 ## Prometheus support and Grafana dashboard
 
-The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`. If authenticaiton is enabled, this endpoint requires authentication for the 'metrics' user, but this can be overridden with the `--prometheus-no-auth` flag.
+The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`. If authentication is enabled, this endpoint requires authentication for the 'metrics' user, but this can be overridden with the `--prometheus-no-auth` flag.
 
 This repository contains an example full stack Docker Compose setup with a Grafana dashboard in [examples/compose-with-grafana/](examples/compose-with-grafana/).
 
