@@ -8,19 +8,35 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/restic/rest-server/config"
 	"github.com/restic/rest-server/quota"
 	"github.com/restic/rest-server/repo"
 )
 
+// NewServer creates a new Server from a config.Config
+func NewServer(c config.Config) (*Server, error) {
+	s := &Server{
+		Path:             c.Path,
+		Log:              c.AccessLog,
+		NoAuth:           c.Auth.Disabled,
+		AppendOnly:       c.AppendOnly,
+		PrivateRepos:     c.PrivateRepos,
+		Prometheus:       c.Metrics.Enabled,
+		PrometheusNoAuth: c.Metrics.NoAuth,
+		Debug:            c.Debug,
+		MaxRepoSize:      int64(c.Quota.MaxSize),
+
+		Config: c,
+	}
+	return s, nil
+}
+
 // Server encapsulates the rest-server's settings and repo management logic
 type Server struct {
+	// Old attributes
+	// TODO: Remove these before 1.0 and directly use Config instead
 	Path             string
-	Listen           string
 	Log              string
-	CPUProfile       string
-	TLSKey           string
-	TLSCert          string
-	TLS              bool
 	NoAuth           bool
 	AppendOnly       bool
 	PrivateRepos     bool
@@ -28,7 +44,9 @@ type Server struct {
 	PrometheusNoAuth bool
 	Debug            bool
 	MaxRepoSize      int64
-	PanicOnError     bool
+
+	PanicOnError bool
+	Config       config.Config
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
@@ -65,8 +83,20 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Allow per-user overrides
+	appendOnly := s.AppendOnly
+	privateRepos := s.PrivateRepos
+	if uc, ok := s.Config.Users[username]; ok {
+		if uc.AppendOnly != nil {
+			appendOnly = *uc.AppendOnly
+		}
+		if uc.PrivateRepos != nil {
+			privateRepos = *uc.PrivateRepos
+		}
+	}
+
 	// Check if the current user is allowed to access this path
-	if !s.NoAuth && s.PrivateRepos {
+	if !s.NoAuth && privateRepos {
 		if len(folderPath) == 0 || folderPath[0] != username {
 			httpDefaultError(w, http.StatusUnauthorized)
 			return
@@ -84,7 +114,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Pass the request to the repo.Handler
 	opt := repo.Options{
-		AppendOnly:   s.AppendOnly,
+		AppendOnly:   appendOnly,
 		Debug:        s.Debug,
 		QuotaManager: s.quotaManager, // may be nil
 		PanicOnError: s.PanicOnError,
