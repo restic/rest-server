@@ -93,9 +93,10 @@ func isHashed(objectType string) bool {
 	return objectType == "data"
 }
 
-// BlobOperation describe the current blob operation in the BlobMetricFunc callback
+// BlobOperation describe the current blob operation in the BlobMetricFunc callback.
 type BlobOperation byte
 
+// Define all valid operations.
 const (
 	BlobRead   = 'R' // A blob has been read
 	BlobWrite  = 'W' // A blob has been written
@@ -146,22 +147,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			default:
 				httpMethodNotAllowed(w, []string{"GET"})
 			}
-			return
-		} else {
-			switch r.Method {
-			case "HEAD":
-				h.checkBlob(w, r)
-			case "GET":
-				h.getBlob(w, r)
-			case "POST":
-				h.saveBlob(w, r)
-			case "DELETE":
-				h.deleteBlob(w, r)
-			default:
-				httpMethodNotAllowed(w, []string{"HEAD", "GET", "POST", "DELETE"})
-			}
+
 			return
 		}
+
+		switch r.Method {
+		case "HEAD":
+			h.checkBlob(w, r)
+		case "GET":
+			h.getBlob(w, r)
+		case "POST":
+			h.saveBlob(w, r)
+		case "DELETE":
+			h.deleteBlob(w, r)
+		default:
+			httpMethodNotAllowed(w, []string{"HEAD", "GET", "POST", "DELETE"})
+		}
+
+		return
 	}
 	httpDefaultError(w, http.StatusNotFound)
 }

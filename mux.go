@@ -12,10 +12,6 @@ import (
 	"github.com/restic/rest-server/quota"
 )
 
-const (
-	GiB = 1024 * 1024 * 1024
-)
-
 func (s *Server) debugHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +65,8 @@ func NewHandler(server *Server) (http.Handler, error) {
 			return nil, fmt.Errorf("cannot load .htpasswd (use --no-auth to disable): %v", err)
 		}
 	}
+
+	const GiB = 1024 * 1024 * 1024
 
 	if server.MaxRepoSize > 0 {
 		log.Printf("Initializing quota (can take a while)...")
