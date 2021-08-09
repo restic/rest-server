@@ -3,6 +3,9 @@ Description=Rest Server
 After=syslog.target
 After=network.target
 
+# if you want to use socket activation, make sure to require the socket here
+#Requires=rest-server.socket
+
 [Service]
 Type=simple
 # You may prefer to use a different user or group on your system.

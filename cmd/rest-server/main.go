@@ -129,16 +129,17 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if !enabledTLS {
-		log.Printf("Starting server on %s\n", server.Listen)
-		err = http.ListenAndServe(server.Listen, handler)
-	} else {
 
-		log.Println("TLS enabled")
-		log.Printf("Private key: %s", privateKey)
-		log.Printf("Public key(certificate): %s", publicKey)
-		log.Printf("Starting server on %s\n", server.Listen)
-		err = http.ListenAndServeTLS(server.Listen, publicKey, privateKey, handler)
+	listener, err := findListener(server.Listen)
+	if err != nil {
+		return fmt.Errorf("unable to listen: %w", err)
+	}
+
+	if !enabledTLS {
+		err = http.Serve(listener, handler)
+	} else {
+		log.Printf("TLS enabled, private key %s, pubkey %v", privateKey, publicKey)
+		err = http.ServeTLS(listener, handler, publicKey, privateKey)
 	}
 
 	return err
