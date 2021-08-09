@@ -21,8 +21,7 @@ var cmdRoot = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE:          runRoot,
-	// Use this instead of other --version code when the Cobra dependency can be updated.
-	//Version:       fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
+	Version:       fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 }
 
 var server = restserver.Server{
@@ -31,8 +30,7 @@ var server = restserver.Server{
 }
 
 var (
-	showVersion bool
-	cpuProfile  string
+	cpuProfile string
 )
 
 func init() {
@@ -51,7 +49,6 @@ func init() {
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&server.Prometheus, "prometheus", server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&server.Prometheus, "prometheus-no-auth", server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
-	flags.BoolVarP(&showVersion, "version", "V", showVersion, "output version and exit")
 }
 
 var version = "0.10.0-dev"
@@ -77,11 +74,6 @@ func tlsSettings() (bool, string, string, error) {
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
-	if showVersion {
-		fmt.Printf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
-		os.Exit(0)
-	}
-
 	log.SetFlags(0)
 
 	log.Printf("Data directory: %s", server.Path)
