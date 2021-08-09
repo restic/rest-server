@@ -15,7 +15,6 @@ require (
 	github.com/prometheus/procfs v0.0.0-20180212145926-282c8707aa21 // indirect
 	github.com/spf13/cobra v0.0.1
 	github.com/spf13/pflag v1.0.0 // indirect
-	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20180214000028-650f4a345ab4
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 )
