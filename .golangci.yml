@@ -24,7 +24,7 @@ linters:
     - govet
 
     # make sure names and comments are used according to the conventions
-    - golint
+    - revive
 
     # detect when assignments to existing variables are not used
     - ineffassign
