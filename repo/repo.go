@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -569,7 +571,15 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	written, err := io.Copy(outFile, r.Body)
+	// calculate hash for current request
+	hasher := sha256.New()
+	written, err := io.Copy(outFile, io.TeeReader(r.Body, hasher))
+
+	// reject if file content doesn't match file name
+	if err == nil && hex.EncodeToString(hasher.Sum(nil)) != objectID {
+		err = fmt.Errorf("file content does not match hash")
+	}
+
 	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(path)
