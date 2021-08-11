@@ -97,8 +97,11 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		go func() {
 			for range sigintCh {
 				pprof.StopCPUProfile()
-				f.Close()
 				log.Println("Stopped CPU profiling")
+				err := f.Close()
+				if err != nil {
+					log.Printf("error closing CPU profile file: %v", err)
+				}
 				os.Exit(130)
 			}
 		}()
