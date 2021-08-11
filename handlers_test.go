@@ -3,6 +3,7 @@ package restserver
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -103,47 +104,58 @@ type TestRequest struct {
 
 // createOverwriteDeleteSeq returns a sequence which will create a new file at
 // path, and then try to overwrite and delete it.
-func createOverwriteDeleteSeq(t testing.TB, path string) []TestRequest {
+func createOverwriteDeleteSeq(t testing.TB, path string, data string) []TestRequest {
 	// add a file, try to overwrite and delete it
 	req := []TestRequest{
 		{
 			req:  newRequest(t, "GET", path, nil),
 			want: []wantFunc{wantCode(http.StatusNotFound)},
 		},
-		{
-			req:  newRequest(t, "POST", path, strings.NewReader("foobar test config")),
+	}
+
+	if !strings.HasSuffix(path, "/config") {
+		req = append(req, TestRequest{
+			// broken upload must fail
+			req:  newRequest(t, "POST", path, strings.NewReader(data+"broken")),
+			want: []wantFunc{wantCode(http.StatusBadRequest)},
+		})
+	}
+
+	req = append(req,
+		TestRequest{
+			req:  newRequest(t, "POST", path, strings.NewReader(data)),
 			want: []wantFunc{wantCode(http.StatusOK)},
 		},
-		{
+		TestRequest{
 			req: newRequest(t, "GET", path, nil),
 			want: []wantFunc{
 				wantCode(http.StatusOK),
-				wantBody("foobar test config"),
+				wantBody(data),
 			},
 		},
-		{
-			req:  newRequest(t, "POST", path, strings.NewReader("other config")),
+		TestRequest{
+			req:  newRequest(t, "POST", path, strings.NewReader(data+"other stuff")),
 			want: []wantFunc{wantCode(http.StatusForbidden)},
 		},
-		{
+		TestRequest{
 			req: newRequest(t, "GET", path, nil),
 			want: []wantFunc{
 				wantCode(http.StatusOK),
-				wantBody("foobar test config"),
+				wantBody(data),
 			},
 		},
-		{
+		TestRequest{
 			req:  newRequest(t, "DELETE", path, nil),
 			want: []wantFunc{wantCode(http.StatusForbidden)},
 		},
-		{
+		TestRequest{
 			req: newRequest(t, "GET", path, nil),
 			want: []wantFunc{
 				wantCode(http.StatusOK),
-				wantBody("foobar test config"),
+				wantBody(data),
 			},
 		},
-	}
+	)
 	return req
 }
 
@@ -154,53 +166,59 @@ func TestResticHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	randomID := hex.EncodeToString(buf)
+	data := "random data file " + hex.EncodeToString(buf)
+	dataHash := sha256.Sum256([]byte(data))
+	fileID := hex.EncodeToString(dataHash[:])
 
 	var tests = []struct {
 		seq []TestRequest
 	}{
-		{createOverwriteDeleteSeq(t, "/config")},
-		{createOverwriteDeleteSeq(t, "/data/"+randomID)},
+		{createOverwriteDeleteSeq(t, "/config", data)},
+		{createOverwriteDeleteSeq(t, "/data/"+fileID, data)},
 		{
 			// ensure we can add and remove lock files
 			[]TestRequest{
 				{
-					req:  newRequest(t, "GET", "/locks/"+randomID, nil),
+					req:  newRequest(t, "GET", "/locks/"+fileID, nil),
 					want: []wantFunc{wantCode(http.StatusNotFound)},
 				},
 				{
-					req:  newRequest(t, "POST", "/locks/"+randomID, strings.NewReader("lock file")),
+					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data+"broken")),
+					want: []wantFunc{wantCode(http.StatusBadRequest)},
+				},
+				{
+					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data)),
 					want: []wantFunc{wantCode(http.StatusOK)},
 				},
 				{
-					req: newRequest(t, "GET", "/locks/"+randomID, nil),
+					req: newRequest(t, "GET", "/locks/"+fileID, nil),
 					want: []wantFunc{
 						wantCode(http.StatusOK),
-						wantBody("lock file"),
+						wantBody(data),
 					},
 				},
 				{
-					req:  newRequest(t, "POST", "/locks/"+randomID, strings.NewReader("other lock file")),
+					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data+"other data")),
 					want: []wantFunc{wantCode(http.StatusForbidden)},
 				},
 				{
-					req:  newRequest(t, "DELETE", "/locks/"+randomID, nil),
+					req:  newRequest(t, "DELETE", "/locks/"+fileID, nil),
 					want: []wantFunc{wantCode(http.StatusOK)},
 				},
 				{
-					req:  newRequest(t, "GET", "/locks/"+randomID, nil),
+					req:  newRequest(t, "GET", "/locks/"+fileID, nil),
 					want: []wantFunc{wantCode(http.StatusNotFound)},
 				},
 			},
 		},
 
 		// Test subrepos
-		{createOverwriteDeleteSeq(t, "/parent1/sub1/config")},
-		{createOverwriteDeleteSeq(t, "/parent1/sub1/data/"+randomID)},
-		{createOverwriteDeleteSeq(t, "/parent1/config")},
-		{createOverwriteDeleteSeq(t, "/parent1/data/"+randomID)},
-		{createOverwriteDeleteSeq(t, "/parent2/config")},
-		{createOverwriteDeleteSeq(t, "/parent2/data/"+randomID)},
+		{createOverwriteDeleteSeq(t, "/parent1/sub1/config", "foobar")},
+		{createOverwriteDeleteSeq(t, "/parent1/sub1/data/"+fileID, data)},
+		{createOverwriteDeleteSeq(t, "/parent1/config", "foobar")},
+		{createOverwriteDeleteSeq(t, "/parent1/data/"+fileID, data)},
+		{createOverwriteDeleteSeq(t, "/parent2/config", "foobar")},
+		{createOverwriteDeleteSeq(t, "/parent2/data/"+fileID, data)},
 	}
 
 	// setup rclone with a local backend in a temporary directory

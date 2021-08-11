@@ -1,0 +1,9 @@
+Enhancement: Verify uploaded files
+
+The rest-server now by default verifies that the hash of content of uploaded
+files matches their filename. This ensures that transmission errors are
+detected and forces restic to retry the upload. On low-power devices it can
+make sense to disable this check by passing the `--no-verify-upload` flag.
+
+https://github.com/restic/rest-server/issues/122
+https://github.com/restic/rest-server/pull/130

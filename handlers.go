@@ -29,6 +29,7 @@ type Server struct {
 	Debug            bool
 	MaxRepoSize      int64
 	PanicOnError     bool
+	NoVerifyUpload   bool
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
@@ -84,10 +85,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Pass the request to the repo.Handler
 	opt := repo.Options{
-		AppendOnly:   s.AppendOnly,
-		Debug:        s.Debug,
-		QuotaManager: s.quotaManager, // may be nil
-		PanicOnError: s.PanicOnError,
+		AppendOnly:     s.AppendOnly,
+		Debug:          s.Debug,
+		QuotaManager:   s.quotaManager, // may be nil
+		PanicOnError:   s.PanicOnError,
+		NoVerifyUpload: s.NoVerifyUpload,
 	}
 	if s.Prometheus {
 		opt.BlobMetricFunc = makeBlobMetricFunc(username, folderPath)
