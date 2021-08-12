@@ -553,7 +553,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tf, err := ioutil.TempFile(filepath.Dir(path), ".rest-server-temp")
+	tmpFn := objectID + ".rest-server-temp"
+	tf, err := ioutil.TempFile(filepath.Dir(path), tmpFn)
 	if os.IsNotExist(err) {
 		// the error is caused by a missing directory, create it and retry
 		mkdirErr := os.MkdirAll(filepath.Dir(path), h.opt.DirMode)
@@ -561,7 +562,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 			log.Print(mkdirErr)
 		} else {
 			// try again
-			tf, err = ioutil.TempFile(filepath.Dir(path), ".rest-server-temp")
+			tf, err = ioutil.TempFile(filepath.Dir(path), tmpFn)
 		}
 	}
 	if err != nil {
