@@ -3,6 +3,7 @@ module github.com/restic/rest-server
 go 1.14
 
 require (
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/miolini/datacounter v1.0.2

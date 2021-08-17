@@ -1,0 +1,7 @@
+Feature: Allow running rest-server via systemd socket activation
+
+We've added the option to have systemd create the listening socket and start the rest-server on demand.
+
+https://github.com/restic/rest-server/issues/126
+https://github.com/restic/rest-server/pull/151
+https://github.com/restic/rest-server/pull/127
