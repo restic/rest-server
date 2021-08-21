@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/miolini/datacounter"
@@ -603,7 +605,12 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		if h.opt.Debug {
 			log.Print(err)
 		}
-		httpDefaultError(w, http.StatusBadRequest)
+		var pathError *os.PathError
+		if errors.As(err, &pathError) && (pathError.Err == syscall.ENOSPC || pathError.Err == syscall.EDQUOT) {
+			httpDefaultError(w, http.StatusInsufficientStorage)
+		} else {
+			httpDefaultError(w, http.StatusInternalServerError)
+		}
 		return
 	}
 
