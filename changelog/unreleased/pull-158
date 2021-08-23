@@ -1,0 +1,8 @@
+Bugfix: Use platform-specific temporary directory in default path
+
+Instead of using hardcoded value for temporary directory, rest-server now uses
+Go standard library functions to retrieve the temporary directory path for the
+current platform.
+
+https://github.com/restic/rest-server/issues/157
+https://github.com/restic/rest-server/pull/158

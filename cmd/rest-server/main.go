@@ -27,7 +27,7 @@ var cmdRoot = &cobra.Command{
 }
 
 var server = restserver.Server{
-	Path:   "/tmp/restic",
+	Path:   filepath.Join(os.TempDir(), "restic"),
 	Listen: ":8000",
 }
 
