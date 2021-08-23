@@ -151,9 +151,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err := h.RepoHealth()
 			if err != nil {
 				if h.opt.Debug {
-					log.Println("health check error: ", err)
+					log.Println("health check error:", err)
 				}
-				w.WriteHeader(http.StatusInternalServerError)
+				h.internalServerError(w, err)
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -773,13 +773,31 @@ func (h *Handler) RepoHealth() error {
 	// Check if the repo is writable [Linux/UNIX only code]
 	pathIsWritable, err := isWritable(h.path)
 	if err != nil {
+		if h.opt.Debug {
+			log.Println("repository path check error:", err)
+		}
 		return err
 	} else if !pathIsWritable {
-		return errors.New("Repository path is not writable")
+		return errors.New("repository path is not writable")
+	}
+	if h.opt.Debug {
+		log.Println("repository path is writable")
 	}
 
-	// Check if there is free space left
-	// TODO
+	// Check if there is some free space left
+	freeBytes, err := getFreeSpace(h.path)
+	if err != nil {
+		if h.opt.Debug {
+			log.Println("free space check error:", err)
+		}
+		return err
+	}
+	if h.opt.Debug {
+		log.Println("free space in bytes:", freeBytes)
+	}
+	if freeBytes < 8*1024*1024 {
+		return errors.New("free space is too low")
+	}
 
 	return nil
 }
