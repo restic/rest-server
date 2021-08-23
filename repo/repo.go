@@ -3,6 +3,7 @@ package repo
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -142,6 +143,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpMethodNotAllowed(w, []string{"HEAD", "GET", "POST", "DELETE"})
 		}
 		return
+	} else if urlPath == "/health" {
+		switch r.Method {
+		case "HEAD":
+			fallthrough
+		case "GET":
+			err := h.RepoHealth()
+			if err != nil {
+				if h.opt.Debug {
+					log.Println("health check error: ", err)
+				}
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+			return
+		default:
+			httpMethodNotAllowed(w, []string{"HEAD", "GET"})
+		}
 	} else if objectType, objectID := h.getObject(urlPath); objectType != "" {
 		if objectID == "" {
 			// TODO: add HEAD
@@ -742,4 +761,25 @@ func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
 		panic(fmt.Sprintf("internal server error: %v", err))
 	}
 	httpDefaultError(w, http.StatusInternalServerError)
+}
+
+// RepoHealth checks the repository health: writable path, free space, etc
+// Returns an error when the health is not OK
+func (h *Handler) RepoHealth() error {
+	if h.opt.Debug {
+		log.Println("RepoHealth()")
+	}
+
+	// Check if the repo is writable [Linux/UNIX only code]
+	pathIsWritable, err := isWritable(h.path)
+	if err != nil {
+		return err
+	} else if !pathIsWritable {
+		return errors.New("Repository path is not writable")
+	}
+
+	// Check if there is free space left
+	// TODO
+
+	return nil
 }
