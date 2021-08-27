@@ -94,8 +94,7 @@ By default the server uses HTTP protocol.  This is not very secure since with Ba
 Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
 
 ```sh
-openssl genrsa -out private_key 2048
-openssl req -new -x509 -key private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
+openssl req -newkey rsa:2048 -x509 -keyout private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
 ```
 
 Omit the `IP:127.0.0.1` if you don't need your server be accessed via SSH Tunnels. No need to change default values in the openssl dialog, hitting enter every time is sufficient. To access this server via restic use `--cacert public_key`, meaning with a self-signed certificate you have to distribute your `public_key` file to every restic client.
