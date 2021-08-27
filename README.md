@@ -107,7 +107,18 @@ Rest Server uses exactly the same directory structure as local backend, so you s
 
 ### Systemd
 
-There's an example [systemd service file][systemd-service-file] included with the source, so you can get Rest Server up & running as a proper Systemd service in no time.  Before installing, adapt paths and options to your environment.
+There's an example [systemd service file][systemd-service-file] included with the source, so you can get Rest Server up & running as a proper Systemd service in no time.
+
+The service file can directly be copied (typically in `/usr/lib/systemd/system`) and customised before starting the service with for example:
+
+```sh
+sudo install -D -m644 examples/systemd/rest-server.service /usr/lib/systemd/system
+sudo EDITOR=$EDITOR systemctl edit rest-server --full
+```
+
+In particular, `User`, `Group`, `ExecStart` and `ReadWritePaths` likely need adjustments.
+
+**Note**: setting a path into the temporary directory (`/tmp`) will not work due to current security settings of the service.
 
 [systemd-service-file]: /examples/systemd/rest-server.service
 
