@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -16,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/minio/sha256-simd"
 	"github.com/miolini/datacounter"
 	"github.com/restic/rest-server/quota"
 )

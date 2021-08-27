@@ -3,7 +3,6 @@ package restserver
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/minio/sha256-simd"
 )
 
 func TestJoin(t *testing.T) {
