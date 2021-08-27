@@ -29,50 +29,60 @@ a usable container.
 
 To build the binary along with the container run:
 
-    docker build -t restic/rest-server:latest .
+```sh
+docker build -t restic/rest-server:latest .
+```
 
 
 ### Pull image
 
-    docker pull restic/rest-server
+```sh
+docker pull restic/rest-server
+```
 
 
 ## Usage
 
 To learn how to use restic backup client with REST backend, please consult [restic manual](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
 
-    $ rest-server --help
+```console
+$ rest-server --help
 
-    Run a REST server for use with restic
+Run a REST server for use with restic
 
-    Usage:
-      rest-server [flags]
+Usage:
+  rest-server [flags]
 
-    Flags:
-          --append-only          enable append only mode
-          --cpu-profile string   write CPU profile to file
-          --debug                output debug messages
-      -h, --help                 help for rest-server
-          --listen string        listen address (default ":8000")
-          --log string           log HTTP requests in the combined log format
-          --max-size int         the maximum size of the repository in bytes
-          --no-auth              disable .htpasswd authentication
-          --path string          data directory (default "/tmp/restic")
-          --private-repos        users can only access their private repo
-          --prometheus           enable Prometheus metrics
-          --prometheus-no-auth   disable auth for Prometheus /metrics endpoint
-          --tls                  turn on TLS support
-          --tls-cert string      TLS certificate path
-          --tls-key string       TLS key path
-      -V, --version              output version and exit
+Flags:
+      --append-only          enable append only mode
+      --cpu-profile string   write CPU profile to file
+      --debug                output debug messages
+  -h, --help                 help for rest-server
+      --listen string        listen address (default ":8000")
+      --log string           log HTTP requests in the combined log format
+      --max-size int         the maximum size of the repository in bytes
+      --no-auth              disable .htpasswd authentication
+      --path string          data directory (default "/tmp/restic")
+      --private-repos        users can only access their private repo
+      --prometheus           enable Prometheus metrics
+      --prometheus-no-auth   disable auth for Prometheus /metrics endpoint
+      --tls                  turn on TLS support
+      --tls-cert string      TLS certificate path
+      --tls-key string       TLS key path
+  -V, --version              output version and exit
+```
 
 By default the server persists backup data in `/tmp/restic`.  To start the server with a custom persistence directory and with authentication disabled:
 
-    rest-server --path /user/home/backup --no-auth
+```sh
+rest-server --path /user/home/backup --no-auth
+```
 
 To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
 
-    htpasswd -B -c .htpasswd username
+```sh
+htpasswd -B -c .htpasswd username
+```
 
 If you want to disable authentication, you must add the `--no-auth` flag. If this flag is not specified and the `.htpasswd` cannot be opened, rest-server will refuse to start.
 
@@ -82,8 +92,10 @@ By default the server uses HTTP protocol.  This is not very secure since with Ba
 
 Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
 
-    openssl genrsa -out private_key 2048
-    openssl req -new -x509 -key private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
+```sh
+openssl genrsa -out private_key 2048
+openssl req -new -x509 -key private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
+```
     
 Omit the `IP:127.0.0.1` if you don't need your server be accessed via SSH Tunnels. No need to change default values in the openssl dialog, hitting enter every time is sufficient. To access this server via restic use `--cacert public_key`, meaning with a self-signed certificate you have to distribute your `public_key` file to every restic client.  
 
@@ -105,7 +117,9 @@ Persistent data volume is located to `/data`.
 
 #### Start server
 
-    docker run -p 8000:8000 -v /my/data:/data --name rest_server restic/rest-server
+```sh
+docker run -p 8000:8000 -v /my/data:/data --name rest_server restic/rest-server
+```
 
 It's suggested to set a container name to more easily manage users (see next section).
 
@@ -115,15 +129,21 @@ You can set environment variable `OPTIONS` to any extra flags you'd like to pass
 
 ##### Add user
 
-    docker exec -it rest_server create_user myuser
+```sh
+docker exec -it rest_server create_user myuser
+```
 
 or
 
-    docker exec -it rest_server create_user myuser mypassword
+```sh
+docker exec -it rest_server create_user myuser mypassword
+```
 
 ##### Delete user
 
-    docker exec -it rest_server delete_user myuser
+```sh
+docker exec -it rest_server delete_user myuser
+```
 
 
 ## Prometheus support and Grafana dashboard
