@@ -62,6 +62,7 @@ Flags:
       --log string           log HTTP requests in the combined log format
       --max-size int         the maximum size of the repository in bytes
       --no-auth              disable .htpasswd authentication
+      --no-verify-upload     do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
       --path string          data directory (default "/tmp/restic")
       --private-repos        users can only access their private repo
       --prometheus           enable Prometheus metrics
@@ -69,7 +70,7 @@ Flags:
       --tls                  turn on TLS support
       --tls-cert string      TLS certificate path
       --tls-key string       TLS key path
-  -V, --version              output version and exit
+  -v, --version              version for rest-server
 ```
 
 By default the server persists backup data in `/tmp/restic`.  To start the server with a custom persistence directory and with authentication disabled:
