@@ -85,6 +85,10 @@ func httpMethodNotAllowed(w http.ResponseWriter, allowed []string) {
 	httpDefaultError(w, http.StatusMethodNotAllowed)
 }
 
+// errFileContentDoesntMatchHash is the error raised when the file content hash
+// doesn't match the hash provided in the URL
+var errFileContentDoesntMatchHash = errors.New("file content does not match hash")
+
 // BlobPathRE matches valid blob URI paths with optional object IDs
 var BlobPathRE = regexp.MustCompile(`^/(data|index|keys|locks|snapshots)/([0-9a-f]{64})?$`)
 
@@ -594,7 +598,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 
 		// reject if file content doesn't match file name
 		if err == nil && hex.EncodeToString(hasher.Sum(nil)) != objectID {
-			err = fmt.Errorf("file content does not match hash")
+			err = errFileContentDoesntMatchHash
 		}
 	}
 
@@ -606,10 +610,21 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 		}
 		var pathError *os.PathError
-		if errors.As(err, &pathError) && (pathError.Err == syscall.ENOSPC || pathError.Err == syscall.EDQUOT) {
+		if errors.As(err, &pathError) && (pathError.Err == syscall.ENOSPC ||
+			pathError.Err == syscall.EDQUOT) {
+			// The error is disk-related (no space left, no quota left),
+			// notify the client using the correct HTTP status
 			httpDefaultError(w, http.StatusInsufficientStorage)
+		} else if errors.Is(err, errFileContentDoesntMatchHash) ||
+			errors.Is(err, io.ErrUnexpectedEOF) ||
+			errors.Is(err, http.ErrMissingBoundary) ||
+			errors.Is(err, http.ErrNotMultipart) {
+			// The error is connection-related, send a client-side HTTP status
+			httpDefaultError(w, http.StatusBadRequest)
 		} else {
-			httpDefaultError(w, http.StatusInternalServerError)
+			// Otherwise we have a different internal error, reply with
+			// server-side HTTP status
+			h.internalServerError(w, err)
 		}
 		return
 	}
