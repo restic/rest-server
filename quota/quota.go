@@ -75,7 +75,7 @@ func (m *Manager) WrapWriter(req *http.Request, w io.Writer) (io.Writer, int, er
 		if currentSize+contentLen > m.maxRepoSize {
 			err := fmt.Errorf("incoming blob (%d bytes) would exceed maximum size of repository (%d bytes)",
 				contentLen, m.maxRepoSize)
-			return nil, http.StatusRequestEntityTooLarge, err
+			return nil, http.StatusInsufficientStorage, err
 		}
 	}
 

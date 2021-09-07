@@ -1,0 +1,13 @@
+Bugfix: Reply "insufficient storage" on disk full or over-quota
+
+When there was no space left on disk, or any other write-related error,
+rest-server was replying with HTTP status code 400 (Bad request). This is
+misleading (restic client will dump the status code to the user).
+
+This has been fixed changing the behaviour so two different statuses are used:
+* HTTP 507 "Insufficient storage" is the status on disk full or repository
+  over-quota
+* HTTP 500 "Internal server error" on other disk-related errors
+
+https://github.com/restic/rest-server/issues/155
+https://github.com/restic/rest-server/pull/160

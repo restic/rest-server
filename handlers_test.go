@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -398,7 +397,7 @@ func TestAbortedRequest(t *testing.T) {
 
 	// the first request is an upload to a file which blocks while reading the
 	// body and then after some data returns an error
-	rd := newDelayedErrorReader(errors.New("injected"))
+	rd := newDelayedErrorReader(io.ErrUnexpectedEOF)
 
 	wg.Add(1)
 	go func() {
