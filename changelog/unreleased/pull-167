@@ -1,0 +1,11 @@
+Feature: Logging of unauthorized requests
+
+Two new command line flags have been added in order to support logging of
+unauthorized requests to the server. The flag `--log-auth-failure` enables
+the logging and uses the remote address of the request as the default for
+the logged ip. If the server is used behind a reverse proxy for, `--header-for-ip`
+can be used to specify a header like "X-Forwarded-For" to be used for logging
+the ip.
+
+https://github.com/restic/rest-server/pull/167
+https://forum.restic.net/t/rest-server-and-fail2ban/2569
