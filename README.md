@@ -73,7 +73,7 @@ Flags:
   -v, --version              version for rest-server
 ```
 
-By default the server persists backup data in the O.S. temporary directory (`/tmp/restic` on Linux/BSD and others, in `%TEMP%\\restic` in Windows, etc). **If `rest-server` is launched using the default path, all backups will be lost**. To start the server with a custom persistence directory and with authentication disabled:
+By default the server persists backup data in the OS temporary directory (`/tmp/restic` on Linux/BSD and others, in `%TEMP%\\restic` in Windows, etc). **If `rest-server` is launched using the default path, all backups will be lost**. To start the server with a custom persistence directory and with authentication disabled:
 
 ```sh
 rest-server --path /user/home/backup --no-auth
