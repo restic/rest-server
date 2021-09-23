@@ -11,6 +11,11 @@ RUN go build -o rest-server ./cmd/rest-server
 
 FROM alpine
 
+
+LABEL org.opencontainers.image.source="https://github.com/0xERR0R/rest-server" \
+      org.opencontainers.image.url="https://github.com/0xERR0R/rest-server" \
+      org.opencontainers.image.title="Rest Server is a high performance HTTP server that implements restic's REST backend API."
+
 ENV DATA_DIRECTORY /data
 ENV PASSWORD_FILE /data/.htpasswd
 
