@@ -19,28 +19,6 @@ The required version of restic backup client to use with `rest-server` is [v0.7.
 
 For building the `rest-server` binary run `CGO_ENABLED=0 go build -o rest-server ./cmd/rest-server`
 
-
-## Docker
-
-### Build image
-
-The docker image build process will build a fresh version of the rest-server and package that into
-a usable container.
-
-To build the binary along with the container run:
-
-```sh
-docker build -t restic/rest-server:latest .
-```
-
-
-### Pull image
-
-```sh
-docker pull restic/rest-server
-```
-
-
 ## Usage
 
 To learn how to use restic backup client with REST backend, please consult [restic manual](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server).
@@ -111,19 +89,33 @@ There's an example [systemd service file](https://github.com/restic/rest-server/
 
 ### Docker
 
-By default, image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
-
-Persistent data volume is located to `/data`.
+Rest Server works well inside a container, images are [published to Docker Hub](https://hub.docker.com/r/restic/rest-server). 
 
 #### Start server
 
+You can run the server with any container runtime, like Docker:
+
 ```sh
-docker run -p 8000:8000 -v /my/data:/data --name rest_server restic/rest-server
+    docker pull restic/rest-server:latest
+    docker run -p 8000:8000 -v /my/data:/data --name rest_server restic/rest-server
 ```
 
-It's suggested to set a container name to more easily manage users (see next section).
+Note that:
 
-You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
+- **contrary to the defaults** of `rest-server`, the persistent data volume is located to `/data`.
+- By default, the image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
+- It's suggested to set a container name to more easily manage users (`--name` parameter to `docker run`).
+- You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
+
+#### Customize the image
+
+The [published image](https://hub.docker.com/r/restic/rest-server) is built from the `Dockerfile` available on this repository, which you may use as a basis for building your own customized images.
+
+```sh
+    git clone https://github.com/restic/rest-server.git 
+    cd rest-server
+    docker build -t restic/rest-server:latest .
+```
 
 #### Manage users
 
