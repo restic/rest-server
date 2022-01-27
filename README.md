@@ -69,10 +69,10 @@ NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist a
 
 By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, user name and passwords will be sent in clear text in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
 
-Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate unsigned keys with the following commands:
+Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate password-less unsigned keys with the following command:
 
 ```sh
-openssl req -newkey rsa:2048 -x509 -keyout private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
+openssl req -newkey rsa:2048 -nodes -x509 -keyout private_key -out public_key -days 365 -addext "subjectAltName = IP:127.0.0.1,DNS:yourdomain.com"
 ```
 
 Omit the `IP:127.0.0.1` if you don't need your server be accessed via SSH Tunnels. No need to change default values in the openssl dialog, hitting enter every time is sufficient. To access this server via restic use `--cacert public_key`, meaning with a self-signed certificate you have to distribute your `public_key` file to every restic client.
