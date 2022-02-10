@@ -8,11 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -559,8 +561,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpFn := objectID + ".rest-server-temp"
-	tf, err := ioutil.TempFile(filepath.Dir(path), tmpFn)
+	tmpFn := filepath.Join(filepath.Dir(path), objectID+".rest-server-temp")
+	tf, err := tempFile(tmpFn, h.opt.FileMode)
 	if os.IsNotExist(err) {
 		// the error is caused by a missing directory, create it and retry
 		mkdirErr := os.MkdirAll(filepath.Dir(path), h.opt.DirMode)
@@ -568,7 +570,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 			log.Print(mkdirErr)
 		} else {
 			// try again
-			tf, err = ioutil.TempFile(filepath.Dir(path), tmpFn)
+			tf, err = tempFile(tmpFn, h.opt.FileMode)
 		}
 	}
 	if err != nil {
@@ -658,6 +660,19 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sendMetric(objectType, BlobWrite, uint64(written))
+}
+
+// tempFile implements a custom version of ioutil.TempFile which allows modifying the file permissions
+func tempFile(fn string, perm os.FileMode) (f *os.File, err error) {
+	for i := 0; i < 10; i++ {
+		name := fn + strconv.FormatInt(rand.Int63(), 10)
+		f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, perm)
+		if os.IsExist(err) {
+			continue
+		}
+		break
+	}
+	return
 }
 
 func syncDir(dirname string) error {
