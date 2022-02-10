@@ -148,6 +148,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpMethodNotAllowed(w, []string{"HEAD", "GET", "POST", "DELETE"})
 		}
 		return
+	} else if urlPath == "/health" {
+		switch r.Method {
+		case "HEAD":
+			fallthrough
+		case "GET":
+			err := h.RepoHealth()
+			if err != nil {
+				if h.opt.Debug {
+					log.Println("health check error:", err)
+				}
+				h.internalServerError(w, err)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+			return
+		default:
+			httpMethodNotAllowed(w, []string{"HEAD", "GET"})
+		}
 	} else if objectType, objectID := h.getObject(urlPath); objectType != "" {
 		if objectID == "" {
 			// TODO: add HEAD
@@ -764,4 +782,43 @@ func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
 		panic(fmt.Sprintf("internal server error: %v", err))
 	}
 	httpDefaultError(w, http.StatusInternalServerError)
+}
+
+// RepoHealth checks the repository health: writable path, free space, etc
+// Returns an error when the health is not OK
+func (h *Handler) RepoHealth() error {
+	if h.opt.Debug {
+		log.Println("RepoHealth()")
+	}
+
+	// Check if the repo is writable [Linux/UNIX only code]
+	pathIsWritable, err := isWritable(h.path)
+	if err != nil {
+		if h.opt.Debug {
+			log.Println("repository path check error:", err)
+		}
+		return err
+	} else if !pathIsWritable {
+		return errors.New("repository path is not writable")
+	}
+	if h.opt.Debug {
+		log.Println("repository path is writable")
+	}
+
+	// Check if there is some free space left
+	freeBytes, err := getFreeSpace(h.path)
+	if err != nil {
+		if h.opt.Debug {
+			log.Println("free space check error:", err)
+		}
+		return err
+	}
+	if h.opt.Debug {
+		log.Println("free space in bytes:", freeBytes)
+	}
+	if freeBytes < 8*1024*1024 {
+		return errors.New("free space is too low")
+	}
+
+	return nil
 }
