@@ -14,4 +14,3 @@ curl -v  -X DELETE -u foo/config:attack  http://localhost:8000/foo/config
 https://github.com/restic/rest-server/issues/131
 https://github.com/restic/rest-server/pull/132
 https://github.com/restic/rest-server/pull/137
-
