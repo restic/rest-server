@@ -3,7 +3,7 @@
 // This program aims to make building Go programs for end users easier by just
 // calling it with `go run`, without having to setup a GOPATH.
 //
-// This program needs Go >= 1.11. It'll use Go modules for compilation. It
+// This program needs Go >= 1.12. It'll use Go modules for compilation. It
 // builds the package configured as Main in the Config struct.
 
 // BSD 2-Clause License
@@ -35,6 +35,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+//go:build ignore_build_go
 // +build ignore_build_go
 
 package main
@@ -57,7 +58,7 @@ var config = Config{
 	Namespace:  "github.com/restic/rest-server",                 // subdir of GOPATH, e.g. "github.com/foo/bar"
 	Main:       "github.com/restic/rest-server/cmd/rest-server", // package name for the main package
 	Tests:      []string{"./..."},                               // tests to run
-	MinVersion: GoVersion{Major: 1, Minor: 11, Patch: 0},        // minimum Go version supported
+	MinVersion: GoVersion{Major: 1, Minor: 14, Patch: 0},        // minimum Go version supported
 }
 
 // Config configures the build.
@@ -122,17 +123,8 @@ func printEnv(env []string) {
 
 // build runs "go build args..." with GOPATH set to gopath.
 func build(cwd string, env map[string]string, args ...string) error {
-	a := []string{"build"}
-
-	// try to remove all absolute paths from resulting binary
-	if goVersion.AtLeast(GoVersion{1, 13, 0}) {
-		// use the new flag introduced by Go 1.13
-		a = append(a, "-trimpath")
-	} else {
-		// otherwise try to trim as many paths as possible
-		a = append(a, "-asmflags", fmt.Sprintf("all=-trimpath=%s", cwd))
-		a = append(a, "-gcflags", fmt.Sprintf("all=-trimpath=%s", cwd))
-	}
+	// -trimpath removes all absolute paths from the binary.
+	a := []string{"build", "-trimpath"}
 
 	if enablePIE {
 		a = append(a, "-buildmode=pie")
@@ -326,8 +318,8 @@ func (v GoVersion) String() string {
 }
 
 func main() {
-	if !goVersion.AtLeast(GoVersion{1, 11, 0}) {
-		die("Go version (%v) is too old, Go <= 1.11 does not support Go Modules\n", goVersion)
+	if !goVersion.AtLeast(GoVersion{1, 12, 0}) {
+		die("Go version (%v) is too old, restic requires Go >= 1.12\n", goVersion)
 	}
 
 	if !goVersion.AtLeast(config.MinVersion) {
@@ -394,8 +386,12 @@ func main() {
 
 	verbosePrintf("detected Go version %v\n", goVersion)
 
+	preserveSymbols := false
 	for i := range buildTags {
 		buildTags[i] = strings.TrimSpace(buildTags[i])
+		if buildTags[i] == "debug" || buildTags[i] == "profile" {
+			preserveSymbols = true
+		}
 	}
 
 	verbosePrintf("build tags: %s\n", buildTags)
@@ -422,7 +418,11 @@ func main() {
 	if version != "" {
 		constants["main.version"] = version
 	}
-	ldflags := "-s -w " + constants.LDFlags()
+	ldflags := constants.LDFlags()
+	if !preserveSymbols {
+		// Strip debug symbols.
+		ldflags = "-s -w " + ldflags
+	}
 	verbosePrintf("ldflags: %s\n", ldflags)
 
 	var (
