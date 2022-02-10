@@ -55,7 +55,7 @@ func init() {
 	flags.BoolVar(&server.PrometheusNoAuth, "prometheus-no-auth", server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
 }
 
-var version = "0.10.0-dev"
+var version = "0.11.0"
 
 func tlsSettings() (bool, string, string, error) {
 	var key, cert string
