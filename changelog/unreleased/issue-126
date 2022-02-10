@@ -1,4 +1,4 @@
-Feature: Allow running rest-server via systemd socket activation
+Enhancement: Allow running rest-server via systemd socket activation
 
 We've added the option to have systemd create the listening socket and start the rest-server on demand.
 
