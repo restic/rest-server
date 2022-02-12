@@ -1,0 +1,8 @@
+Bugfix: Allow usernames containing underscore
+
+The security fix in rest-server 0.11.0 (#131) disallowed usernames containing
+and underscore "_". We have changed the list of allowed characters to now include
+unicode characters, numbers, "_", "-", "." and "@".
+
+https://github.com/restic/restic/issues/183
+https://github.com/restic/restic/pull/184
