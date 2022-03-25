@@ -16,4 +16,4 @@ else
     fi
 fi
 
-exec rest-server --path "$DATA_DIRECTORY" $OPTIONS
+exec rest-server --path "$DATA_DIRECTORY" --htpasswd-file "$PASSWORD_FILE" $OPTIONS

@@ -47,6 +47,7 @@ func init() {
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
+	flags.StringVar(&server.HtpasswdPath, "htpasswd-file", server.HtpasswdPath, "location of .htpasswd file (default: \"<data directory>/.htpasswd)\"")
 	flags.BoolVar(&server.NoVerifyUpload, "no-verify-upload", server.NoVerifyUpload,
 		"do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device")
 	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode")
