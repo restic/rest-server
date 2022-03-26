@@ -58,7 +58,7 @@ By default the server persists backup data in the OS temporary directory (`/tmp/
 rest-server --path /user/home/backup --no-auth
 ```
 
-To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. By default, the server looks for this file at the root of the persistence directory. You can create such a file by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
+To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. By default, the server looks for this file at the root of the persistence directory, but this can be changed using the `--htpasswd-file` option. You can create such a file by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
 
 ```sh
 htpasswd -B -c .htpasswd username

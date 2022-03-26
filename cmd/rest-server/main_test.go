@@ -100,7 +100,7 @@ func TestGetHandler(t *testing.T) {
 		t.Errorf("NoAuth=true: expected no error, got %v", err)
 	}
 
-	// With NoAuth = true and custom .htpasswd
+	// With NoAuth = false and custom .htpasswd
 	htpFile, err := ioutil.TempFile(dir, "custom")
 	if err != nil {
 		t.Fatal(err)

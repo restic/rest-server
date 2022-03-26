@@ -67,7 +67,7 @@ func NewHandler(server *Server) (http.Handler, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot load %s (use --no-auth to disable): %v", server.HtpasswdPath, err)
 		}
-		log.Printf("Loaded htpasswd file: %s", server.HtpasswdPath)
+		log.Printf("Loaded htpasswd file %s", server.HtpasswdPath)
 	}
 
 	const GiB = 1024 * 1024 * 1024
