@@ -105,7 +105,7 @@ Note that:
 
 - **contrary to the defaults** of `rest-server`, the persistent data volume is located to `/data`.
 - By default, the image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
-- By default, the image loads the `.htpasswd` file from the persistent data volume (i.e. from `/data/.htpasswd`). To change the location of this file, set the environment variable `PASSWORD_FILE` to the path of the `.htpasswd` file.
+- By default, the image loads the `.htpasswd` file from the persistent data volume (i.e. from `/data/.htpasswd`). To change the location of this file, set the environment variable `PASSWORD_FILE` to the path of the `.htpasswd` file. Please note that this path must be accessible from inside the container and should be persisted. This is normally done by bind-mounting a path into the container or with another docker volume.
 - It's suggested to set a container name to more easily manage users (`--name` parameter to `docker run`).
 - You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
 
