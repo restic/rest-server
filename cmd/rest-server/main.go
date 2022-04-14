@@ -53,6 +53,7 @@ func init() {
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&server.Prometheus, "prometheus", server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&server.PrometheusNoAuth, "prometheus-no-auth", server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
+	flags.BoolVar(&server.GroupAccessibleRepos, "group-accessible-repositories", server.GroupAccessibleRepos, "filesyste repo files group readableCosi` ")
 }
 
 var version = "0.11.0"
@@ -123,6 +124,10 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		log.Println("Private repositories enabled")
 	} else {
 		log.Println("Private repositories disabled")
+	}
+
+	if server.GroupAccessibleRepos {
+		log.Println("Repositories are group accessible")
 	}
 
 	enabledTLS, privateKey, publicKey, err := tlsSettings()

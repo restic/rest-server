@@ -1,0 +1,8 @@
+Feature: Expose command line option to configure FileMode and DirMode
+
+Just expose a CLI option to configure Server FileMode and DirMode to
+be able to have files stored in the repo shared with other processes
+(maybe just read only)
+
+https://github.com/restic/rest-server/issues/189
+https://github.com/restic/rest-server/pull/190
