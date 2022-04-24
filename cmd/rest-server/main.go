@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -46,6 +49,8 @@ func init() {
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
+	flags.BoolVar(&server.MTLS, "mtls", server.MTLS, "turn on client certificate support")
+	flags.StringVar(&server.CACert, "cacert", server.CACert, "mTLS CA certificate path")
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
 	flags.BoolVar(&server.NoVerifyUpload, "no-verify-upload", server.NoVerifyUpload,
 		"do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device")
@@ -57,12 +62,12 @@ func init() {
 
 var version = "0.11.0"
 
-func tlsSettings() (bool, string, string, error) {
+func tlsSettings() (bool, bool, string, string, string, error) {
 	var key, cert string
-	if !server.TLS && (server.TLSKey != "" || server.TLSCert != "") {
-		return false, "", "", errors.New("requires enabled TLS")
+	if (!server.TLS && !server.MTLS) && (server.TLSKey != "" || server.TLSCert != "") {
+		return false, false, "", "", "", errors.New("requires enabled TLS or mTLS")
 	} else if !server.TLS {
-		return false, "", "", nil
+		return false, false, "", "", "", nil
 	}
 	if server.TLSKey != "" {
 		key = server.TLSKey
@@ -74,7 +79,11 @@ func tlsSettings() (bool, string, string, error) {
 	} else {
 		cert = filepath.Join(server.Path, "public_key")
 	}
-	return server.TLS, key, cert, nil
+
+	if server.MTLS && server.CACert == "" {
+		return false, false, "", "", "", errors.New("missing cacert")
+	}
+	return server.TLS, server.MTLS, server.CACert, key, cert, nil
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -125,7 +134,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		log.Println("Private repositories disabled")
 	}
 
-	enabledTLS, privateKey, publicKey, err := tlsSettings()
+	enabledTLS, enabledMTLS, caCert, privateKey, publicKey, err := tlsSettings()
 	if err != nil {
 		return err
 	}
@@ -138,8 +147,31 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	if !enabledTLS {
 		err = http.Serve(listener, handler)
 	} else {
-		log.Printf("TLS enabled, private key %s, pubkey %v", privateKey, publicKey)
-		err = http.ServeTLS(listener, handler, publicKey, privateKey)
+		if enabledMTLS {
+			log.Printf("mTLS enabled, private key %s, pubkey %s, cacert %s", privateKey, publicKey, caCert)
+			caCertPool := x509.NewCertPool()
+			caCertPem, err := ioutil.ReadFile(caCert)
+			if err != nil {
+				return errors.New("unable to read cacert")
+			}
+			caCertPool.AppendCertsFromPEM(caCertPem)
+
+			tlsConfig := &tls.Config{
+				ClientCAs:  caCertPool,
+				ClientAuth: tls.VerifyClientCertIfGiven,
+			}
+			tlsConfig.BuildNameToCertificate()
+
+			server := &http.Server{
+				Addr:      server.Listen,
+				TLSConfig: tlsConfig,
+			}
+			server.Handler = handler
+			err = server.ServeTLS(listener, publicKey, privateKey)
+		} else {
+			log.Printf("TLS enabled, private key %s, pubkey %v", privateKey, publicKey)
+			err = http.ServeTLS(listener, handler, publicKey, privateKey)
+		}
 	}
 
 	return err
