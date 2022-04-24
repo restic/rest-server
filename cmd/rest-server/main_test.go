@@ -13,6 +13,7 @@ func TestTLSSettings(t *testing.T) {
 	type expected struct {
 		TLSKey  string
 		TLSCert string
+		CAcert  string
 		Error   bool
 	}
 	type passed struct {
@@ -20,30 +21,29 @@ func TestTLSSettings(t *testing.T) {
 		TLS     bool
 		TLSKey  string
 		TLSCert string
+		MTLS    bool
+		CACert  string
 	}
 
 	var tests = []struct {
 		passed   passed
 		expected expected
 	}{
-		{passed{TLS: false}, expected{"", "", false}},
-		{passed{TLS: true}, expected{
-			filepath.Join(os.TempDir(), "restic/private_key"),
-			filepath.Join(os.TempDir(), "restic/public_key"),
-			false,
-		}},
-		{passed{
-			Path: os.TempDir(),
-			TLS:  true,
-		}, expected{
-			filepath.Join(os.TempDir(), "private_key"),
-			filepath.Join(os.TempDir(), "public_key"),
-			false,
-		}},
-		{passed{Path: os.TempDir(), TLS: true, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert"}, expected{"/etc/restic/key", "/etc/restic/cert", false}},
-		{passed{Path: os.TempDir(), TLS: false, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert"}, expected{"", "", true}},
-		{passed{Path: os.TempDir(), TLS: false, TLSKey: "/etc/restic/key"}, expected{"", "", true}},
-		{passed{Path: os.TempDir(), TLS: false, TLSCert: "/etc/restic/cert"}, expected{"", "", true}},
+		{passed{TLS: false}, expected{"", "", "", false}},
+		{passed{TLS: true}, expected{"/tmp/restic/private_key", "/tmp/restic/public_key", "", false}},
+		{passed{Path: "/tmp", TLS: true}, expected{"/tmp/private_key", "/tmp/public_key", "", false}},
+		{passed{Path: "/tmp", TLS: true, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert"}, expected{"/etc/restic/key", "/etc/restic/cert", "", false}},
+		{passed{Path: "/tmp", TLS: false, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert"}, expected{"", "", "", true}},
+		{passed{Path: "/tmp", TLS: false, TLSKey: "/etc/restic/key"}, expected{"", "", "", true}},
+		{passed{Path: "/tmp", TLS: false, TLSCert: "/etc/restic/cert"}, expected{"", "", "", true}},
+
+		{passed{TLS: false, MTLS: true}, expected{"/tmp/private_key", "/tmp/public_key", "/etc/restic/cacert", false}},
+		{passed{TLS: true, MTLS: true}, expected{"/tmp/restic/private_key", "/tmp/restic/public_key", "", false}},
+		{passed{Path: "/tmp", TLS: true, MTLS: true}, expected{"/tmp/private_key", "/tmp/public_key", "", false}},
+		{passed{Path: "/tmp", TLS: true, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert", MTLS: true}, expected{"/etc/restic/key", "/etc/restic/cert", "", false}},
+		{passed{Path: "/tmp", TLS: false, TLSKey: "/etc/restic/key", TLSCert: "/etc/restic/cert"}, expected{"", "", "", true}},
+		{passed{Path: "/tmp", TLS: false, TLSKey: "/etc/restic/key"}, expected{"", "", "", true}},
+		{passed{Path: "/tmp", TLS: false, TLSCert: "/etc/restic/cert"}, expected{"", "", "", true}},
 	}
 
 	for _, test := range tests {
@@ -57,7 +57,7 @@ func TestTLSSettings(t *testing.T) {
 			server.TLSKey = test.passed.TLSKey
 			server.TLSCert = test.passed.TLSCert
 
-			gotTLS, gotKey, gotCert, err := tlsSettings()
+			gotTLS, gotMTLS, gotCAcert, gotKey, gotCert, err := tlsSettings()
 			if err != nil && !test.expected.Error {
 				t.Fatalf("tls_settings returned err (%v)", err)
 			}
@@ -71,6 +71,7 @@ func TestTLSSettings(t *testing.T) {
 			if gotTLS != test.passed.TLS {
 				t.Errorf("TLS enabled, want (%v), got (%v)", test.passed.TLS, gotTLS)
 			}
+
 			wantKey := test.expected.TLSKey
 			if gotKey != wantKey {
 				t.Errorf("wrong TLSPrivPath path, want (%v), got (%v)", wantKey, gotKey)
@@ -81,6 +82,14 @@ func TestTLSSettings(t *testing.T) {
 				t.Errorf("wrong TLSCertPath path, want (%v), got (%v)", wantCert, gotCert)
 			}
 
+			if gotMTLS != test.passed.MTLS {
+				t.Errorf("mTLS enabled, want (%v), got (%v)", test.passed.MTLS, gotMTLS)
+			}
+
+			wantCAcert := test.expected.CAcert
+			if gotCAcert != wantCAcert {
+				t.Errorf("wrong CACertPath path, want (%v), got (%v)", wantCAcert, gotCAcert)
+			}
 		})
 	}
 }

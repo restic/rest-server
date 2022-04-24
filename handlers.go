@@ -18,9 +18,11 @@ type Server struct {
 	Listen           string
 	Log              string
 	CPUProfile       string
+	CACert           string
 	TLSKey           string
 	TLSCert          string
 	TLS              bool
+	MTLS             bool
 	NoAuth           bool
 	AppendOnly       bool
 	PrivateRepos     bool

@@ -1,7 +1,6 @@
 package restserver
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -33,12 +32,35 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	if s.NoAuth {
 		return username, true
 	}
-	var password string
-	username, password, ok = r.BasicAuth()
-	if !ok || !s.htpasswdFile.Validate(username, password) {
-		return "", false
+
+	username, ok = s.validateBasicAuth(r)
+	if ok {
+		return username, true
 	}
-	return username, true
+
+	username, ok = validateClientCert(r)
+	if ok {
+		return username, true
+	}
+
+	return username, false
+}
+
+func (s *Server) validateBasicAuth(r *http.Request) (string, bool) {
+	username, password, ok := r.BasicAuth()
+	return username, ok && s.htpasswdFile.Validate(username, password)
+}
+
+func validateClientCert(r *http.Request) (string, bool) {
+	if r.TLS != nil {
+		for _, cert := range r.TLS.PeerCertificates {
+			username := cert.Subject.CommonName
+			if username != "" {
+				return username, true
+			}
+		}
+	}
+	return "", false
 }
 
 func (s *Server) wrapMetricsAuth(f http.HandlerFunc) http.HandlerFunc {
@@ -62,7 +84,7 @@ func NewHandler(server *Server) (http.Handler, error) {
 		var err error
 		server.htpasswdFile, err = NewHtpasswdFromFile(filepath.Join(server.Path, ".htpasswd"))
 		if err != nil {
-			return nil, fmt.Errorf("cannot load .htpasswd (use --no-auth to disable): %v", err)
+			// return nil, fmt.Errorf("cannot load .htpasswd (use --no-auth to disable): %v", err)
 		}
 	}
 
