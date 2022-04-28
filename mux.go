@@ -36,6 +36,14 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	var password string
 	username, password, ok = r.BasicAuth()
 	if !ok || !s.htpasswdFile.Validate(username, password) {
+		if s.LogAuthFailure {
+			if s.IPHeader != "" {
+				log.Printf("unauthorized: %s", r.Header.Get(s.IPHeader))
+			} else {
+				log.Printf("unauthorized: %s", r.RemoteAddr)
+			}
+		}
+
 		return "", false
 	}
 	return username, true

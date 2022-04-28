@@ -39,6 +39,8 @@ func init() {
 	flags := cmdRoot.Flags()
 	flags.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "write CPU profile to file")
 	flags.BoolVar(&server.Debug, "debug", server.Debug, "output debug messages")
+	flags.BoolVar(&server.LogAuthFailure, "log-auth-failure", server.LogAuthFailure, "log the ip address of unauthorized requests")
+	flags.StringVar(&server.IPHeader, "ip-header", server.IPHeader, "use a header to obtain the ip for unauthorized request logging")
 	flags.StringVar(&server.Listen, "listen", server.Listen, "listen address")
 	flags.StringVar(&server.Log, "log", server.Log, "write HTTP requests in the combined log format to the specified `filename`")
 	flags.Int64Var(&server.MaxRepoSize, "max-size", server.MaxRepoSize, "the maximum size of the repository in bytes")

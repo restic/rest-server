@@ -36,8 +36,10 @@ Flags:
       --cpu-profile string   write CPU profile to file
       --debug                output debug messages
   -h, --help                 help for rest-server
+      --ip-header string     use a header to obtain the ip for unauthorized request logging
       --listen string        listen address (default ":8000")
       --log string           log HTTP requests in the combined log format
+      --log-auth-failure     log the ip address of unauthorized requests
       --max-size int         the maximum size of the repository in bytes
       --no-auth              disable .htpasswd authentication
       --no-verify-upload     do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device

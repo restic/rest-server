@@ -27,6 +27,8 @@ type Server struct {
 	Prometheus       bool
 	PrometheusNoAuth bool
 	Debug            bool
+	LogAuthFailure   bool
+	IPHeader         string
 	MaxRepoSize      int64
 	PanicOnError     bool
 	NoVerifyUpload   bool
