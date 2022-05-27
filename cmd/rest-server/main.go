@@ -49,7 +49,8 @@ func init() {
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
 	flags.BoolVar(&server.NoVerifyUpload, "no-verify-upload", server.NoVerifyUpload,
 		"do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device")
-	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode")
+	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode (disables delete)")
+	flags.BoolVar(&server.WriteOnly, "write-only", server.WriteOnly, "enable write only mode (disables delete and restore)")
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&server.Prometheus, "prometheus", server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&server.PrometheusNoAuth, "prometheus-no-auth", server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")

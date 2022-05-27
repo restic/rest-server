@@ -107,65 +107,105 @@ type TestRequest struct {
 	want []wantFunc
 }
 
+// TestSuite is a group of TestRequest that covers some functionality
+type TestSuite []struct {
+	seq []TestRequest
+}
+
+const (
+	GetForbidden = 1 << iota
+	PostForbidden
+	PostBrokenForbidden
+	DeleteForbidden
+)
+
 // createOverwriteDeleteSeq returns a sequence which will create a new file at
-// path, and then try to overwrite and delete it.
-func createOverwriteDeleteSeq(t testing.TB, path string, data string) []TestRequest {
+// path, and then try to overwrite and delete it if allowed by flags
+func createOverwriteDeleteSeq(t testing.TB, path string, data string, forbiddenFlags int) []TestRequest {
+	// path, read it and then try to overwrite and delete (if not forbidden by flags)
+	checkFlag := func(flag int, flagged []wantFunc, arg []wantFunc) []wantFunc {
+		if flag&forbiddenFlags == 0 {
+			return arg
+		}
+		return flagged
+	}
+
+	checkForbidden := func(flag int, arg []wantFunc) []wantFunc {
+		return checkFlag(flag, []wantFunc{
+			wantCode(http.StatusForbidden),
+		}, arg)
+	}
+
+	ifNotDeleted := func(arg []wantFunc) []wantFunc {
+		if forbiddenFlags&DeleteForbidden != 0 {
+			return arg
+		}
+		return []wantFunc{
+			wantCode(http.StatusNotFound),
+		}
+	}
+
+	brokenData := data + "_broken"
+	expectedData := data
+	if forbiddenFlags&PostBrokenForbidden == 0 {
+		expectedData = brokenData
+	}
+
 	// add a file, try to overwrite and delete it
 	req := []TestRequest{
 		{
 			req:  newRequest(t, "GET", path, nil),
-			want: []wantFunc{wantCode(http.StatusNotFound)},
+			want: checkForbidden(GetForbidden, []wantFunc{wantCode(http.StatusNotFound)}),
 		},
-	}
-
-	if !strings.HasSuffix(path, "/config") {
-		req = append(req, TestRequest{
-			// broken upload must fail
-			req:  newRequest(t, "POST", path, strings.NewReader(data+"broken")),
-			want: []wantFunc{wantCode(http.StatusBadRequest)},
-		})
-	}
-
-	req = append(req,
-		TestRequest{
-			req:  newRequest(t, "POST", path, strings.NewReader(data)),
-			want: []wantFunc{wantCode(http.StatusOK)},
+		{
+			// broken upload must fail if repo is configured to verify blobs
+			req: newRequest(t, "POST", path, strings.NewReader(brokenData)),
+			want: checkForbidden(PostForbidden,
+				checkFlag(PostBrokenForbidden,
+					[]wantFunc{wantCode(http.StatusBadRequest)},
+					[]wantFunc{wantCode(http.StatusOK)})),
 		},
-		TestRequest{
+		{ // if blob verification is not enabled, we'll get Forbidden here because broken data was uploaded before
+			req: newRequest(t, "POST", path, strings.NewReader(data)),
+			want: checkForbidden(PostForbidden,
+				checkFlag(PostBrokenForbidden,
+					[]wantFunc{wantCode(http.StatusOK)},
+					[]wantFunc{wantCode(http.StatusForbidden)})),
+		},
+		{
 			req: newRequest(t, "GET", path, nil),
-			want: []wantFunc{
+			want: checkForbidden(GetForbidden, []wantFunc{
 				wantCode(http.StatusOK),
-				wantBody(data),
-			},
+				wantBody(expectedData),
+			}),
 		},
-		TestRequest{
+		{ // always Forbidden because it's overwrite of existing data
 			req:  newRequest(t, "POST", path, strings.NewReader(data+"other stuff")),
 			want: []wantFunc{wantCode(http.StatusForbidden)},
 		},
-		TestRequest{
+		{
 			req: newRequest(t, "GET", path, nil),
-			want: []wantFunc{
+			want: checkForbidden(GetForbidden, []wantFunc{
 				wantCode(http.StatusOK),
-				wantBody(data),
-			},
+				wantBody(expectedData),
+			}),
 		},
-		TestRequest{
+		{
 			req:  newRequest(t, "DELETE", path, nil),
-			want: []wantFunc{wantCode(http.StatusForbidden)},
+			want: checkForbidden(DeleteForbidden, []wantFunc{wantCode(http.StatusOK)}),
 		},
-		TestRequest{
+		{
 			req: newRequest(t, "GET", path, nil),
-			want: []wantFunc{
+			want: checkForbidden(GetForbidden, ifNotDeleted([]wantFunc{
 				wantCode(http.StatusOK),
-				wantBody(data),
-			},
+				wantBody(expectedData),
+			})),
 		},
-	)
+	}
 	return req
 }
 
-// TestResticHandler runs tests on the restic handler code, especially in append-only mode.
-func TestResticHandler(t *testing.T) {
+func randomDataAndId(t *testing.T) (string, string) {
 	buf := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
@@ -174,58 +214,11 @@ func TestResticHandler(t *testing.T) {
 	data := "random data file " + hex.EncodeToString(buf)
 	dataHash := sha256.Sum256([]byte(data))
 	fileID := hex.EncodeToString(dataHash[:])
+	return data, fileID
+}
 
-	var tests = []struct {
-		seq []TestRequest
-	}{
-		{createOverwriteDeleteSeq(t, "/config", data)},
-		{createOverwriteDeleteSeq(t, "/data/"+fileID, data)},
-		{
-			// ensure we can add and remove lock files
-			[]TestRequest{
-				{
-					req:  newRequest(t, "GET", "/locks/"+fileID, nil),
-					want: []wantFunc{wantCode(http.StatusNotFound)},
-				},
-				{
-					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data+"broken")),
-					want: []wantFunc{wantCode(http.StatusBadRequest)},
-				},
-				{
-					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data)),
-					want: []wantFunc{wantCode(http.StatusOK)},
-				},
-				{
-					req: newRequest(t, "GET", "/locks/"+fileID, nil),
-					want: []wantFunc{
-						wantCode(http.StatusOK),
-						wantBody(data),
-					},
-				},
-				{
-					req:  newRequest(t, "POST", "/locks/"+fileID, strings.NewReader(data+"other data")),
-					want: []wantFunc{wantCode(http.StatusForbidden)},
-				},
-				{
-					req:  newRequest(t, "DELETE", "/locks/"+fileID, nil),
-					want: []wantFunc{wantCode(http.StatusOK)},
-				},
-				{
-					req:  newRequest(t, "GET", "/locks/"+fileID, nil),
-					want: []wantFunc{wantCode(http.StatusNotFound)},
-				},
-			},
-		},
-
-		// Test subrepos
-		{createOverwriteDeleteSeq(t, "/parent1/sub1/config", "foobar")},
-		{createOverwriteDeleteSeq(t, "/parent1/sub1/data/"+fileID, data)},
-		{createOverwriteDeleteSeq(t, "/parent1/config", "foobar")},
-		{createOverwriteDeleteSeq(t, "/parent1/data/"+fileID, data)},
-		{createOverwriteDeleteSeq(t, "/parent2/config", "foobar")},
-		{createOverwriteDeleteSeq(t, "/parent2/data/"+fileID, data)},
-	}
-
+// testResticHandler creates repo in temporary dir and runs tests on the restic handler code
+func testResticHandler(t *testing.T, tests *TestSuite, server Server, pathsToCreate []string) {
 	// setup the server with a local backend in a temporary directory
 	tempdir, err := ioutil.TempDir("", "rest-server-test-")
 	if err != nil {
@@ -240,26 +233,20 @@ func TestResticHandler(t *testing.T) {
 		}
 	}()
 
-	// set append-only mode and configure path
-	mux, err := NewHandler(&Server{
-		AppendOnly:   true,
-		Path:         tempdir,
-		NoAuth:       true,
-		Debug:        true,
-		PanicOnError: true,
-	})
+	server.Path = tempdir
+	mux, err := NewHandler(&server)
 	if err != nil {
 		t.Fatalf("error from NewHandler: %v", err)
 	}
 
 	// create the repos
-	for _, path := range []string{"/", "/parent1/sub1/", "/parent1/", "/parent2/"} {
+	for _, path := range pathsToCreate {
 		checkRequest(t, mux.ServeHTTP,
 			newRequest(t, "POST", path+"?create=true", nil),
 			[]wantFunc{wantCode(http.StatusOK)})
 	}
 
-	for _, test := range tests {
+	for _, test := range *tests {
 		t.Run("", func(t *testing.T) {
 			for i, seq := range test.seq {
 				t.Logf("request %v: %v %v", i, seq.req.Method, seq.req.URL.Path)
@@ -267,6 +254,110 @@ func TestResticHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestResticHandler runs tests on the restic handler code, default mode (everything allowed)
+func TestResticDefaultHandler(t *testing.T) {
+	data, fileID := randomDataAndId(t)
+
+	var tests = TestSuite{
+		{createOverwriteDeleteSeq(t, "/config", data, 0)},
+		{createOverwriteDeleteSeq(t, "/keys/"+fileID, data, PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/index/"+fileID, data, PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/data/"+fileID, data, PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/snapshots/"+fileID, data, PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/locks/"+fileID, data, PostBrokenForbidden)},
+	}
+	// set append-only mode
+	testResticHandler(t, &tests, Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	}, []string{"/"})
+}
+
+// TestResticHandler runs tests on the restic handler code, disabled blob verification
+func TestResticNoVerifyUploadHandler(t *testing.T) {
+	data, fileID := randomDataAndId(t)
+
+	var tests = TestSuite{
+		{createOverwriteDeleteSeq(t, "/config", data, 0)},
+		{createOverwriteDeleteSeq(t, "/keys/"+fileID, data, 0)},
+		{createOverwriteDeleteSeq(t, "/index/"+fileID, data, 0)},
+		{createOverwriteDeleteSeq(t, "/data/"+fileID, data, 0)},
+		{createOverwriteDeleteSeq(t, "/snapshots/"+fileID, data, 0)},
+		{createOverwriteDeleteSeq(t, "/locks/"+fileID, data, 0)},
+	}
+	// set append-only mode
+	testResticHandler(t, &tests, Server{
+		NoAuth:         true,
+		Debug:          true,
+		PanicOnError:   true,
+		NoVerifyUpload: true,
+	}, []string{"/"})
+}
+
+// TestResticHandler runs tests on the restic handler code, default mode (everything allowed)
+func TestResticAppendOnlyUploadHandler(t *testing.T) {
+	data, fileID := randomDataAndId(t)
+
+	var tests = TestSuite{
+		{createOverwriteDeleteSeq(t, "/config", data, DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/keys/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/index/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/data/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/snapshots/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/locks/"+fileID, data, PostBrokenForbidden)},
+	}
+	// set append-only mode
+	testResticHandler(t, &tests, Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+		AppendOnly:   true,
+	}, []string{"/"})
+}
+
+// TestResticHandler runs tests on the restic handler code, default mode (everything allowed)
+func TestResticWriteOnlyUploadHandler(t *testing.T) {
+	data, fileID := randomDataAndId(t)
+
+	var tests = TestSuite{
+		{createOverwriteDeleteSeq(t, "/config", data, DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/keys/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/index/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/data/"+fileID, data, GetForbidden|PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/snapshots/"+fileID, data, PostBrokenForbidden|DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/locks/"+fileID, data, PostBrokenForbidden)},
+	}
+	// set append-only mode
+	testResticHandler(t, &tests, Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+		WriteOnly:    true,
+	}, []string{"/"})
+}
+
+// TestResticHandler runs tests on the restic handler code, default mode (everything allowed)
+func TestResticPrivateRepoUploadHandler(t *testing.T) {
+	data, fileID := randomDataAndId(t)
+
+	var tests = TestSuite{
+		{createOverwriteDeleteSeq(t, "/parent1/sub1/config", "foobar", DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/parent1/sub1/data/"+fileID, data, DeleteForbidden|PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/parent1/config", "foobar", DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/parent1/data/"+fileID, data, DeleteForbidden|PostBrokenForbidden)},
+		{createOverwriteDeleteSeq(t, "/parent2/config", "foobar", DeleteForbidden)},
+		{createOverwriteDeleteSeq(t, "/parent2/data/"+fileID, data, DeleteForbidden|PostBrokenForbidden)},
+	}
+	// set append-only mode
+	testResticHandler(t, &tests, Server{
+		AppendOnly:   true,
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	}, []string{"/", "/parent1/sub1/", "/parent1/", "/parent2/"})
 }
 
 func TestSplitURLPath(t *testing.T) {
