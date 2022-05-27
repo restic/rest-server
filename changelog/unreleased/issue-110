@@ -1,0 +1,8 @@
+Enhancement: Add write-only mode
+
+'write-only' mode is similar to 'append-only', but also disables 'restore'.  If
+enabled, attacker that got access to one of systems where restic is running
+will be unable download data from shared restic repository
+
+https://github.com/restic/rest-server/issues/110
+https://github.com/restic/rest-server/pull/192
