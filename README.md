@@ -32,23 +32,24 @@ Usage:
   rest-server [flags]
 
 Flags:
-      --append-only          enable append only mode
-      --cpu-profile string   write CPU profile to file
-      --debug                output debug messages
-  -h, --help                 help for rest-server
-      --listen string        listen address (default ":8000")
-      --log string           log HTTP requests in the combined log format
-      --max-size int         the maximum size of the repository in bytes
-      --no-auth              disable .htpasswd authentication
-      --no-verify-upload     do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
-      --path string          data directory (default "/tmp/restic")
-      --private-repos        users can only access their private repo
-      --prometheus           enable Prometheus metrics
-      --prometheus-no-auth   disable auth for Prometheus /metrics endpoint
-      --tls                  turn on TLS support
-      --tls-cert string      TLS certificate path
-      --tls-key string       TLS key path
-  -v, --version              version for rest-server
+      --append-only            enable append only mode
+      --cpu-profile string     write CPU profile to file
+      --debug                  output debug messages
+  -h, --help                   help for rest-server
+      --htpasswd-file string   location of .htpasswd file (default: "<data directory>/.htpasswd")
+      --listen string          listen address (default ":8000")
+      --log filename           write HTTP requests in the combined log format to the specified filename
+      --max-size int           the maximum size of the repository in bytes
+      --no-auth                disable .htpasswd authentication
+      --no-verify-upload       do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
+      --path string            data directory (default "/tmp/restic")
+      --private-repos          users can only access their private repo
+      --prometheus             enable Prometheus metrics
+      --prometheus-no-auth     disable auth for Prometheus /metrics endpoint
+      --tls                    turn on TLS support
+      --tls-cert string        TLS certificate path
+      --tls-key string         TLS key path
+  -v, --version                version for rest-server
 ```
 
 By default the server persists backup data in the OS temporary directory (`/tmp/restic` on Linux/BSD and others, in `%TEMP%\\restic` in Windows, etc). **If `rest-server` is launched using the default path, all backups will be lost**. To start the server with a custom persistence directory and with authentication disabled:
@@ -57,7 +58,7 @@ By default the server persists backup data in the OS temporary directory (`/tmp/
 rest-server --path /user/home/backup --no-auth
 ```
 
-To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. You can create such a file at the root of the persistence directory by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
+To authenticate users (for access to the rest-server), the server supports using a `.htpasswd` file to specify users. By default, the server looks for this file at the root of the persistence directory, but this can be changed using the `--htpasswd-file` option. You can create such a file by executing the following command (note that you need the `htpasswd` program from Apache's http-tools).  In order to append new user to the file, just omit the `-c` argument.  Only bcrypt and SHA encryption methods are supported, so use -B (very secure) or -s (insecure by today's standards) when adding/changing passwords.
 
 ```sh
 htpasswd -B -c .htpasswd username
@@ -104,6 +105,7 @@ Note that:
 
 - **contrary to the defaults** of `rest-server`, the persistent data volume is located to `/data`.
 - By default, the image uses authentication.  To turn it off, set environment variable `DISABLE_AUTHENTICATION` to any value.
+- By default, the image loads the `.htpasswd` file from the persistent data volume (i.e. from `/data/.htpasswd`). To change the location of this file, set the environment variable `PASSWORD_FILE` to the path of the `.htpasswd` file. Please note that this path must be accessible from inside the container and should be persisted. This is normally done by bind-mounting a path into the container or with another docker volume.
 - It's suggested to set a container name to more easily manage users (`--name` parameter to `docker run`).
 - You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
 

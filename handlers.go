@@ -15,6 +15,7 @@ import (
 // Server encapsulates the rest-server's settings and repo management logic
 type Server struct {
 	Path             string
+	HtpasswdPath     string
 	Listen           string
 	Log              string
 	CPUProfile       string
