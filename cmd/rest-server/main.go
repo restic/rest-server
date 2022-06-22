@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -44,6 +47,7 @@ func init() {
 	flags.Int64Var(&server.MaxRepoSize, "max-size", server.MaxRepoSize, "the maximum size of the repository in bytes")
 	flags.StringVar(&server.Path, "path", server.Path, "data directory")
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
+	flags.StringVar(&server.TLSCACert, "tls-cacert", server.TLSCACert, "TLS CA certificate path")
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
@@ -140,7 +144,29 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		err = http.Serve(listener, handler)
 	} else {
 		log.Printf("TLS enabled, private key %s, pubkey %v", privateKey, publicKey)
-		err = http.ServeTLS(listener, handler, publicKey, privateKey)
+
+		httpServer := &http.Server{
+			Handler: handler,
+		}
+
+		if server.TLSCACert != "" {
+			log.Printf("TLS Client Authentication enabled, CA cert %s", server.TLSCACert)
+
+			caCert, err := ioutil.ReadFile(server.TLSCACert)
+			if err != nil {
+				return fmt.Errorf("unable to read CA certificate: %w", err)
+			}
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(caCert)
+
+			tlsConfig := &tls.Config{
+				ClientAuth: tls.RequireAndVerifyClientCert,
+				ClientCAs:  caCertPool,
+			}
+			httpServer.TLSConfig = tlsConfig
+		}
+
+		err = httpServer.ServeTLS(listener, publicKey, privateKey)
 	}
 
 	return err
