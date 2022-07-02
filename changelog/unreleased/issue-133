@@ -1,0 +1,9 @@
+Enhancement: Cache basic auth credentials
+
+To speed up the verification of basic auth credentials, rest-server now caches
+passwords for a minute in memory. That way the expensive verification of basic
+auth credentials can be skipped for most requests issued by a single restic
+run. The password is kept in memory in a hashed form and not as plaintext.
+
+https://github.com/restic/rest-server/issues/133
+https://github.com/restic/rest-server/pull/138
