@@ -27,6 +27,7 @@ import (
 // Options are options for the Handler accepted by New
 type Options struct {
 	AppendOnly     bool // if set, delete actions are not allowed
+	WriteOnly      bool // if set, delete and get blob actions are not allowed
 	Debug          bool
 	DirMode        os.FileMode
 	FileMode       os.FileMode
@@ -38,6 +39,10 @@ type Options struct {
 
 	BlobMetricFunc BlobMetricFunc
 	QuotaManager   *quota.Manager
+}
+
+func (o *Options) deleteDataForbidden() bool {
+	return o.AppendOnly || o.WriteOnly
 }
 
 // DefaultDirMode is the file mode used for directory creation if not
@@ -323,7 +328,7 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println("deleteConfig()")
 	}
 
-	if h.opt.AppendOnly {
+	if h.opt.deleteDataForbidden() {
 		httpDefaultError(w, http.StatusForbidden)
 		return
 	}
@@ -515,6 +520,12 @@ func (h *Handler) getBlob(w http.ResponseWriter, r *http.Request) {
 			"cannot determine object type or id: %s", r.URL.Path))
 		return
 	}
+
+	if h.opt.WriteOnly && objectType == "data" {
+		httpDefaultError(w, http.StatusForbidden)
+		return
+	}
+
 	path := h.getObjectPath(objectType, objectID)
 
 	file, err := os.Open(path)
@@ -705,7 +716,7 @@ func (h *Handler) deleteBlob(w http.ResponseWriter, r *http.Request) {
 			"cannot determine object type or id: %s", r.URL.Path))
 		return
 	}
-	if h.opt.AppendOnly && objectType != "locks" {
+	if h.opt.deleteDataForbidden() && objectType != "locks" {
 		httpDefaultError(w, http.StatusForbidden)
 		return
 	}

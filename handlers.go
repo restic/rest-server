@@ -24,6 +24,7 @@ type Server struct {
 	TLS              bool
 	NoAuth           bool
 	AppendOnly       bool
+	WriteOnly        bool
 	PrivateRepos     bool
 	Prometheus       bool
 	PrometheusNoAuth bool
@@ -87,6 +88,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Pass the request to the repo.Handler
 	opt := repo.Options{
 		AppendOnly:     s.AppendOnly,
+		WriteOnly:      s.WriteOnly,
 		Debug:          s.Debug,
 		QuotaManager:   s.quotaManager, // may be nil
 		PanicOnError:   s.PanicOnError,
