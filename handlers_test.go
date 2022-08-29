@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -257,6 +258,74 @@ func TestResticHandler(t *testing.T) {
 		checkRequest(t, mux.ServeHTTP,
 			newRequest(t, "POST", path+"?create=true", nil),
 			[]wantFunc{wantCode(http.StatusOK)})
+	}
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			for i, seq := range test.seq {
+				t.Logf("request %v: %v %v", i, seq.req.Method, seq.req.URL.Path)
+				checkRequest(t, mux.ServeHTTP, seq.req, seq.want)
+			}
+		})
+	}
+}
+
+// TestResticErrorHandler runs tests on the restic handler error handling.
+func TestResticErrorHandler(t *testing.T) {
+	var tests = []struct {
+		seq []TestRequest
+	}{
+		// Test inaccessible file
+		{
+			[]TestRequest{{
+				req:  newRequest(t, "GET", "/config", nil),
+				want: []wantFunc{wantCode(http.StatusInternalServerError)},
+			}},
+		},
+		{
+			[]TestRequest{{
+				req:  newRequest(t, "GET", "/parent4/config", nil),
+				want: []wantFunc{wantCode(http.StatusNotFound)},
+			}},
+		},
+	}
+
+	// setup the server with a local backend in a temporary directory
+	tempdir, err := ioutil.TempDir("", "rest-server-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure the tempdir is properly removed
+	defer func() {
+		err := os.RemoveAll(tempdir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	// set append-only mode and configure path
+	mux, err := NewHandler(&Server{
+		AppendOnly: true,
+		Path:       tempdir,
+		NoAuth:     true,
+		Debug:      true,
+	})
+	if err != nil {
+		t.Fatalf("error from NewHandler: %v", err)
+	}
+
+	// create the repo
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+	// create inaccessible config
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/config", strings.NewReader("example")),
+		[]wantFunc{wantCode(http.StatusOK)})
+	err = os.Chmod(path.Join(tempdir, "config"), 0o000)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, test := range tests {
