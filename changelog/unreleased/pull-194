@@ -1,0 +1,13 @@
+Bugfix: Return "internal server error" if files cannot be read
+
+When files in a repository cannot be read by rest-server, for example after
+running `restic prune` directly on the server hosting the repositories, then
+rest-server returned "Not Found" as status code. This is extremely confusing
+for users.
+
+The error handling has been fixed to only return "Not Found" if the file
+actually does not exist. Otherwise an internal server error is reported to the
+user and the underlying error is logged at the server side.
+
+https://github.com/restic/restic/issues/1871
+https://github.com/restic/rest-server/pull/194
