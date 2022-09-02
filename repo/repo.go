@@ -325,7 +325,11 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := h.getSubPath("config")
 
 	if err := os.Remove(cfg); err != nil {
-		h.fileAccessError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
+		}
 		return
 	}
 }
@@ -690,7 +694,11 @@ func (h *Handler) deleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := os.Remove(path); err != nil {
-		h.fileAccessError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
+		}
 		return
 	}
 

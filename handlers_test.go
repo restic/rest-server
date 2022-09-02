@@ -165,8 +165,8 @@ func createOverwriteDeleteSeq(t testing.TB, path string, data string) []TestRequ
 	return req
 }
 
-// TestResticHandler runs tests on the restic handler code, especially in append-only mode.
-func TestResticHandler(t *testing.T) {
+// TestResticAppendOnlyHandler runs tests on the restic handler code, especially in append-only mode.
+func TestResticAppendOnlyHandler(t *testing.T) {
 	buf := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
@@ -259,6 +259,87 @@ func TestResticHandler(t *testing.T) {
 			newRequest(t, "POST", path+"?create=true", nil),
 			[]wantFunc{wantCode(http.StatusOK)})
 	}
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			for i, seq := range test.seq {
+				t.Logf("request %v: %v %v", i, seq.req.Method, seq.req.URL.Path)
+				checkRequest(t, mux.ServeHTTP, seq.req, seq.want)
+			}
+		})
+	}
+}
+
+// createOverwriteDeleteSeq returns a sequence which will create a new file at
+// path, and then deletes it twice.
+func createIdempotentDeleteSeq(t testing.TB, path string, data string) []TestRequest {
+	return []TestRequest{
+		{
+			req:  newRequest(t, "POST", path, strings.NewReader(data)),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "DELETE", path, nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "GET", path, nil),
+			want: []wantFunc{wantCode(http.StatusNotFound)},
+		},
+		{
+			req:  newRequest(t, "DELETE", path, nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+	}
+}
+
+// TestResticHandler runs tests on the restic handler code, especially in append-only mode.
+func TestResticHandler(t *testing.T) {
+	buf := make([]byte, 32)
+	_, err := io.ReadFull(rand.Reader, buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := "random data file " + hex.EncodeToString(buf)
+	dataHash := sha256.Sum256([]byte(data))
+	fileID := hex.EncodeToString(dataHash[:])
+
+	var tests = []struct {
+		seq []TestRequest
+	}{
+		{createIdempotentDeleteSeq(t, "/config", data)},
+		{createIdempotentDeleteSeq(t, "/data/"+fileID, data)},
+	}
+
+	// setup the server with a local backend in a temporary directory
+	tempdir, err := ioutil.TempDir("", "rest-server-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure the tempdir is properly removed
+	defer func() {
+		err := os.RemoveAll(tempdir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	// set append-only mode and configure path
+	mux, err := NewHandler(&Server{
+		Path:         tempdir,
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	})
+	if err != nil {
+		t.Fatalf("error from NewHandler: %v", err)
+	}
+
+	// create the repo
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
