@@ -257,10 +257,7 @@ func (h *Handler) checkConfig(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(cfg)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -276,10 +273,7 @@ func (h *Handler) getConfig(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -331,13 +325,10 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := h.getSubPath("config")
 
 	if err := os.Remove(cfg); err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		if os.IsNotExist(err) {
-			httpDefaultError(w, http.StatusNotFound)
-		} else {
-			h.internalServerError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
 		}
 		return
 	}
@@ -378,10 +369,7 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -392,10 +380,7 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if h.opt.Debug {
-					log.Print(err)
-				}
-				httpDefaultError(w, http.StatusNotFound)
+				h.fileAccessError(w, err)
 				return
 			}
 			for _, f := range subitems {
@@ -439,10 +424,7 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -453,10 +435,7 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if h.opt.Debug {
-					log.Print(err)
-				}
-				httpDefaultError(w, http.StatusNotFound)
+				h.fileAccessError(w, err)
 				return
 			}
 			for _, f := range subitems {
@@ -493,10 +472,7 @@ func (h *Handler) checkBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -519,10 +495,7 @@ func (h *Handler) getBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -721,13 +694,10 @@ func (h *Handler) deleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := os.Remove(path); err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		if os.IsNotExist(err) {
-			httpDefaultError(w, http.StatusNotFound)
-		} else {
-			h.internalServerError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
 		}
 		return
 	}
@@ -770,7 +740,7 @@ func (h *Handler) createRepo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// internalServerError is called to repot an internal server error.
+// internalServerError is called to report an internal server error.
 // The error message will be reported in the server logs. If PanicOnError
 // is set, this will panic instead, which makes debugging easier.
 func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
@@ -779,4 +749,19 @@ func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
 		panic(fmt.Sprintf("internal server error: %v", err))
 	}
 	httpDefaultError(w, http.StatusInternalServerError)
+}
+
+// internalServerError is called to report an error that occurred while
+// accessing a file. If the does not exist, the corresponding http status code
+// will be returned to the client. All other errors are passed on to
+// internalServerError
+func (h *Handler) fileAccessError(w http.ResponseWriter, err error) {
+	if h.opt.Debug {
+		log.Print(err)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		httpDefaultError(w, http.StatusNotFound)
+	} else {
+		h.internalServerError(w, err)
+	}
 }

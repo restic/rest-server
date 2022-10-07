@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -164,8 +165,7 @@ func createOverwriteDeleteSeq(t testing.TB, path string, data string) []TestRequ
 	return req
 }
 
-// TestResticHandler runs tests on the restic handler code, especially in append-only mode.
-func TestResticHandler(t *testing.T) {
+func createTestHandler(t *testing.T, conf Server) (http.Handler, string, string, string, func()) {
 	buf := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
@@ -174,6 +174,38 @@ func TestResticHandler(t *testing.T) {
 	data := "random data file " + hex.EncodeToString(buf)
 	dataHash := sha256.Sum256([]byte(data))
 	fileID := hex.EncodeToString(dataHash[:])
+
+	// setup the server with a local backend in a temporary directory
+	tempdir, err := ioutil.TempDir("", "rest-server-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure the tempdir is properly removed
+	cleanup := func() {
+		err := os.RemoveAll(tempdir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	conf.Path = tempdir
+	mux, err := NewHandler(&conf)
+	if err != nil {
+		t.Fatalf("error from NewHandler: %v", err)
+	}
+	return mux, data, fileID, tempdir, cleanup
+}
+
+// TestResticAppendOnlyHandler runs tests on the restic handler code, especially in append-only mode.
+func TestResticAppendOnlyHandler(t *testing.T) {
+	mux, data, fileID, _, cleanup := createTestHandler(t, Server{
+		AppendOnly:   true,
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	})
+	defer cleanup()
 
 	var tests = []struct {
 		seq []TestRequest
@@ -226,37 +258,115 @@ func TestResticHandler(t *testing.T) {
 		{createOverwriteDeleteSeq(t, "/parent2/data/"+fileID, data)},
 	}
 
-	// setup the server with a local backend in a temporary directory
-	tempdir, err := ioutil.TempDir("", "rest-server-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// make sure the tempdir is properly removed
-	defer func() {
-		err := os.RemoveAll(tempdir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	// set append-only mode and configure path
-	mux, err := NewHandler(&Server{
-		AppendOnly:   true,
-		Path:         tempdir,
-		NoAuth:       true,
-		Debug:        true,
-		PanicOnError: true,
-	})
-	if err != nil {
-		t.Fatalf("error from NewHandler: %v", err)
-	}
-
 	// create the repos
 	for _, path := range []string{"/", "/parent1/sub1/", "/parent1/", "/parent2/"} {
 		checkRequest(t, mux.ServeHTTP,
 			newRequest(t, "POST", path+"?create=true", nil),
 			[]wantFunc{wantCode(http.StatusOK)})
+	}
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			for i, seq := range test.seq {
+				t.Logf("request %v: %v %v", i, seq.req.Method, seq.req.URL.Path)
+				checkRequest(t, mux.ServeHTTP, seq.req, seq.want)
+			}
+		})
+	}
+}
+
+// createOverwriteDeleteSeq returns a sequence which will create a new file at
+// path, and then deletes it twice.
+func createIdempotentDeleteSeq(t testing.TB, path string, data string) []TestRequest {
+	return []TestRequest{
+		{
+			req:  newRequest(t, "POST", path, strings.NewReader(data)),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "DELETE", path, nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "GET", path, nil),
+			want: []wantFunc{wantCode(http.StatusNotFound)},
+		},
+		{
+			req:  newRequest(t, "DELETE", path, nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+	}
+}
+
+// TestResticHandler runs tests on the restic handler code, especially in append-only mode.
+func TestResticHandler(t *testing.T) {
+	mux, data, fileID, _, cleanup := createTestHandler(t, Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	})
+	defer cleanup()
+
+	var tests = []struct {
+		seq []TestRequest
+	}{
+		{createIdempotentDeleteSeq(t, "/config", data)},
+		{createIdempotentDeleteSeq(t, "/data/"+fileID, data)},
+	}
+
+	// create the repo
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			for i, seq := range test.seq {
+				t.Logf("request %v: %v %v", i, seq.req.Method, seq.req.URL.Path)
+				checkRequest(t, mux.ServeHTTP, seq.req, seq.want)
+			}
+		})
+	}
+}
+
+// TestResticErrorHandler runs tests on the restic handler error handling.
+func TestResticErrorHandler(t *testing.T) {
+	mux, _, _, tempdir, cleanup := createTestHandler(t, Server{
+		AppendOnly: true,
+		NoAuth:     true,
+		Debug:      true,
+	})
+	defer cleanup()
+
+	var tests = []struct {
+		seq []TestRequest
+	}{
+		// Test inaccessible file
+		{
+			[]TestRequest{{
+				req:  newRequest(t, "GET", "/config", nil),
+				want: []wantFunc{wantCode(http.StatusInternalServerError)},
+			}},
+		},
+		{
+			[]TestRequest{{
+				req:  newRequest(t, "GET", "/parent4/config", nil),
+				want: []wantFunc{wantCode(http.StatusNotFound)},
+			}},
+		},
+	}
+
+	// create the repo
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+	// create inaccessible config
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/config", strings.NewReader("example")),
+		[]wantFunc{wantCode(http.StatusOK)})
+	err := os.Chmod(path.Join(tempdir, "config"), 0o000)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, test := range tests {
@@ -359,31 +469,13 @@ func (d *delayErrorReader) Read(p []byte) (int, error) {
 
 // TestAbortedRequest runs tests with concurrent upload requests for the same file.
 func TestAbortedRequest(t *testing.T) {
-	// setup the server with a local backend in a temporary directory
-	tempdir, err := ioutil.TempDir("", "rest-server-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// make sure the tempdir is properly removed
-	defer func() {
-		err := os.RemoveAll(tempdir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	// configure path, the race condition doesn't happen for append-only repositories
-	mux, err := NewHandler(&Server{
-		AppendOnly:   false,
-		Path:         tempdir,
+	// the race condition doesn't happen for append-only repositories
+	mux, _, _, _, cleanup := createTestHandler(t, Server{
 		NoAuth:       true,
 		Debug:        true,
 		PanicOnError: true,
 	})
-	if err != nil {
-		t.Fatalf("error from NewHandler: %v", err)
-	}
+	defer cleanup()
 
 	// create the repo
 	checkRequest(t, mux.ServeHTTP,
