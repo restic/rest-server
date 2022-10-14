@@ -32,24 +32,25 @@ Usage:
   rest-server [flags]
 
 Flags:
-      --append-only            enable append only mode
-      --cpu-profile string     write CPU profile to file
-      --debug                  output debug messages
-  -h, --help                   help for rest-server
-      --htpasswd-file string   location of .htpasswd file (default: "<data directory>/.htpasswd")
-      --listen string          listen address (default ":8000")
-      --log filename           write HTTP requests in the combined log format to the specified filename
-      --max-size int           the maximum size of the repository in bytes
-      --no-auth                disable .htpasswd authentication
-      --no-verify-upload       do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
-      --path string            data directory (default "/tmp/restic")
-      --private-repos          users can only access their private repo
-      --prometheus             enable Prometheus metrics
-      --prometheus-no-auth     disable auth for Prometheus /metrics endpoint
-      --tls                    turn on TLS support
-      --tls-cert string        TLS certificate path
-      --tls-key string         TLS key path
-  -v, --version                version for rest-server
+      --append-only             enable append only mode
+      --cpu-profile string      write CPU profile to file
+      --debug                   output debug messages
+  -h, --help                    help for rest-server
+      --htpasswd-file string    location of .htpasswd file (default: "<data directory>/.htpasswd)"
+      --listen string           listen address (default ":8000")
+      --log filename            write HTTP requests in the combined log format to the specified filename
+      --max-size int            the maximum size of the repository in bytes
+      --no-auth                 disable .htpasswd authentication
+      --no-verify-upload        do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
+      --path string             data directory (default "/tmp/restic")
+      --private-repos           users can only access their private repo
+      --prometheus              enable Prometheus metrics
+      --prometheus-no-auth      disable auth for Prometheus /metrics endpoint
+      --prometheus-no-preload   disable preloading Prometheus metrics during startup
+      --tls                     turn on TLS support
+      --tls-cert string         TLS certificate path
+      --tls-key string          TLS key path
+  -v, --version                 version for rest-server
 ```
 
 By default the server persists backup data in the OS temporary directory (`/tmp/restic` on Linux/BSD and others, in `%TEMP%\\restic` in Windows, etc). **If `rest-server` is launched using the default path, all backups will be lost**. To start the server with a custom persistence directory and with authentication disabled:

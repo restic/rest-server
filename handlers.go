@@ -2,8 +2,11 @@ package restserver
 
 import (
 	"errors"
+	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -14,23 +17,24 @@ import (
 
 // Server encapsulates the rest-server's settings and repo management logic
 type Server struct {
-	Path             string
-	HtpasswdPath     string
-	Listen           string
-	Log              string
-	CPUProfile       string
-	TLSKey           string
-	TLSCert          string
-	TLS              bool
-	NoAuth           bool
-	AppendOnly       bool
-	PrivateRepos     bool
-	Prometheus       bool
-	PrometheusNoAuth bool
-	Debug            bool
-	MaxRepoSize      int64
-	PanicOnError     bool
-	NoVerifyUpload   bool
+	Path                string
+	HtpasswdPath        string
+	Listen              string
+	Log                 string
+	CPUProfile          string
+	TLSKey              string
+	TLSCert             string
+	TLS                 bool
+	NoAuth              bool
+	AppendOnly          bool
+	PrivateRepos        bool
+	Prometheus          bool
+	PrometheusNoAuth    bool
+	PrometheusNoPreload bool
+	Debug               bool
+	MaxRepoSize         int64
+	PanicOnError        bool
+	NoVerifyUpload      bool
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
@@ -44,6 +48,98 @@ const MaxFolderDepth = 2
 // httpDefaultError write a HTTP error with the default description
 func httpDefaultError(w http.ResponseWriter, code int) {
 	http.Error(w, http.StatusText(code), code)
+}
+
+// PreloadMetrics for Prometheus for each available repository.
+func (s *Server) PreloadMetrics() error {
+	// No need to preload metrics if those are disabled.
+	if !s.Prometheus || s.PrometheusNoPreload {
+		return nil
+	}
+
+	if _, statErr := os.Lstat(s.Path); errors.Is(statErr, os.ErrNotExist) {
+		log.Print("PreloadMetrics: skipping preloading as repo does not exists yet")
+		return nil
+	}
+
+	var repoPaths []string
+
+	walkFunc := func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			return nil
+		}
+
+		// Verify that we're in an allowed directory.
+		for _, objectType := range repo.ObjectTypes {
+			if d.Name() == objectType {
+				return filepath.SkipDir
+			}
+		}
+
+		// Verify that we're also a valid repository.
+		for _, objectType := range repo.ObjectTypes {
+			stat, statErr := os.Lstat(filepath.Join(path, objectType))
+			if errors.Is(statErr, os.ErrNotExist) || !stat.IsDir() {
+				if s.Debug {
+					log.Printf("PreloadMetrics: %s misses directory %s; skip", path, objectType)
+				}
+				return nil
+			}
+		}
+		for _, fileType := range repo.FileTypes {
+			stat, statErr := os.Lstat(filepath.Join(path, fileType))
+			if errors.Is(statErr, os.ErrNotExist) || !stat.Mode().IsRegular() {
+				if s.Debug {
+					log.Printf("PreloadMetrics: %s misses file %s; skip", path, fileType)
+				}
+				return nil
+			}
+		}
+
+		if s.Debug {
+			log.Printf("PreloadMetrics: found repository %s", path)
+		}
+		repoPaths = append(repoPaths, path)
+		return nil
+	}
+
+	if err := filepath.WalkDir(s.Path, walkFunc); err != nil {
+		return err
+	}
+
+	for _, repoPath := range repoPaths {
+		// Remove leading path prefix.
+		relPath := repoPath[len(s.Path):]
+		if strings.HasPrefix(relPath, string(os.PathSeparator)) {
+			relPath = relPath[1:]
+		}
+		folderPath := strings.Split(relPath, string(os.PathSeparator))
+
+		if !folderPathValid(folderPath) {
+			return fmt.Errorf("invalid foder path %s for preloading",
+				strings.Join(folderPath, string(os.PathSeparator)))
+		}
+
+		opt := repo.Options{
+			Debug:          s.Debug,
+			PanicOnError:   s.PanicOnError,
+			BlobMetricFunc: makeBlobMetricFunc("", folderPath),
+		}
+
+		handler, err := repo.New(repoPath, opt)
+		if err != nil {
+			return err
+		}
+
+		if err := handler.PreloadMetrics(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ServeHTTP makes this server an http.Handler. It handlers the administrative
