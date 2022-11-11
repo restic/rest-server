@@ -604,7 +604,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tf.Sync(); err != nil {
+	syncNotSup, err := syncFile(tf)
+	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(tf.Name())
 		h.incrementRepoSpaceUsage(-written)
@@ -626,10 +627,12 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := syncDir(filepath.Dir(path)); err != nil {
-		// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
-		h.internalServerError(w, err)
-		return
+	if !syncNotSup {
+		if err := syncDir(filepath.Dir(path)); err != nil {
+			// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
+			h.internalServerError(w, err)
+			return
+		}
 	}
 
 	h.sendMetric(objectType, BlobWrite, uint64(written))
@@ -648,6 +651,16 @@ func tempFile(fn string, perm os.FileMode) (f *os.File, err error) {
 	return
 }
 
+func syncFile(f *os.File) (bool, error) {
+	err := f.Sync()
+	// Ignore error if filesystem does not support fsync.
+	syncNotSup := err != nil && (errors.Is(err, syscall.ENOTSUP) || isMacENOTTY(err))
+	if syncNotSup {
+		err = nil
+	}
+	return syncNotSup, err
+}
+
 func syncDir(dirname string) error {
 	if runtime.GOOS == "windows" {
 		// syncing a directory is not possible on windows
@@ -659,6 +672,10 @@ func syncDir(dirname string) error {
 		return err
 	}
 	err = dir.Sync()
+	// Ignore error if filesystem does not support fsync.
+	if errors.Is(err, syscall.ENOTSUP) || errors.Is(err, syscall.ENOENT) || errors.Is(err, syscall.EINVAL) {
+		err = nil
+	}
 	if err != nil {
 		_ = dir.Close()
 		return err
