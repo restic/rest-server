@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -73,6 +74,8 @@ func New(path string, opt Options) (*Handler, error) {
 type Handler struct {
 	path string // filesystem path of repo
 	opt  Options
+
+	fsyncWarning sync.Once
 }
 
 // httpDefaultError write a HTTP error with the default description
@@ -633,6 +636,9 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 			h.internalServerError(w, err)
 			return
 		}
+		h.fsyncWarning.Do(func() {
+			log.Print("WARNING: fsync is not supported by the data storage. This can lead to data loss, if the system crashes or the storage is unexpectedly disconnected.")
+		})
 	}
 
 	h.sendMetric(objectType, BlobWrite, uint64(written))
