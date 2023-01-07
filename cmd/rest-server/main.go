@@ -23,7 +23,13 @@ var cmdRoot = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE:          runRoot,
-	Version:       fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 0 {
+			return fmt.Errorf("rest-server expects no arguments - unknown argument: %s", args[0])
+		}
+		return nil
+	},
+	Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 }
 
 var server = restserver.Server{

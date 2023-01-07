@@ -1,0 +1,5 @@
+Change: Return error if command-line arguments are specified
+
+The rest-server ignores command-line arguments. To prevent usage errors it not fails with an error instead of silently ignoring the arguments.
+
+https://github.com/restic/rest-server/pull/207
