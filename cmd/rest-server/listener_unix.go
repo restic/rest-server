@@ -8,7 +8,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/coreos/go-systemd/activation"
+	"github.com/coreos/go-systemd/v22/activation"
 )
 
 // findListener tries to find a listener via systemd socket activation. If that
