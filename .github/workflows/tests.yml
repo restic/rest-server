@@ -9,7 +9,7 @@ on:
   pull_request:
 
 env:
-  latest_go: "1.18.x"
+  latest_go: "1.19.x"
   GO111MODULE: on
 
 jobs:
@@ -17,10 +17,9 @@ jobs:
     strategy:
       matrix:
         go:
-          - 1.15.x
-          - 1.16.x
           - 1.17.x
           - 1.18.x
+          - 1.19.x
     runs-on: ubuntu-latest
     name: Go ${{ matrix.go }}
 
@@ -29,12 +28,12 @@ jobs:
 
     steps:
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build
         run: |
@@ -55,22 +54,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ${{ env.latest_go }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.latest_go }}
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.45
+          version: v1.49
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           only-new-issues: true
           args: --verbose --timeout 5m
-          skip-go-installation: true
 
         # only run golangci-lint for pull requests, otherwise ALL hints get
         # reported. We need to slowly address all issues until we can enable
