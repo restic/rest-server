@@ -62,6 +62,7 @@ SystemCallFilter=@system-service
 # network I/O that the rest-server is permitted to consume according to the
 # individual requirements of your installation.
 #CPUQuota=25%
+#MemoryHigh=bytes
 #MemoryMax=bytes
 #MemorySwapMax=bytes
 #TasksMax=N
