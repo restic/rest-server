@@ -1,0 +1,8 @@
+Enhancement: Add MemoryHigh to example systemd unit file
+
+Added #MemoryHigh=bytes next to #MemoryMax=Bytes, since this is the preferred way to handle memory according to the systemd manual pages.
+
+https://github.com/restic/rest-server/issues/209
+https://github.com/restic/rest-server/pull/210
+https://github.com/restic/rest-server/blob/master/examples/systemd/rest-server.service
+https://www.man7.org/linux/man-pages/man5/systemd.resource-control.5.html
