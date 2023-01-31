@@ -54,6 +54,7 @@ RestrictNamespaces=true
 RestrictAddressFamilies=AF_INET AF_INET6
 RestrictSUIDSGID=true
 RestrictRealtime=true
+# if your service crashes with "code=killed, status=31/SYS", you probably tried to run linux_i386 (32bit) binary on a amd64 host
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 
