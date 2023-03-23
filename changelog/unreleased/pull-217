@@ -1,0 +1,13 @@
+Feature: Allows "-" as filename for the `--log` option.
+
+When (e.g. for debugging purpose) the rest server is invoked like
+
+	sudo -u restic rest-server … --log /dev/stdout
+
+it tries to open `/dev/stdout` (O_CREATE, O_WRITE, O_APPEND). This
+operation fails, as in the above invocation, `/dev/stdout` is owned by
+the caller (here: root) and only writable for the caller. Subprocesses
+get just the filedescriptor. Using `/proc/self/fd/1` didn't work either,
+for the same reasons.
+
+https://github.com/restic/rest-server/pull/217

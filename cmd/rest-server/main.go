@@ -46,7 +46,7 @@ func init() {
 	flags.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "write CPU profile to file")
 	flags.BoolVar(&server.Debug, "debug", server.Debug, "output debug messages")
 	flags.StringVar(&server.Listen, "listen", server.Listen, "listen address")
-	flags.StringVar(&server.Log, "log", server.Log, "write HTTP requests in the combined log format to the specified `filename`")
+	flags.StringVar(&server.Log, "log", server.Log, "write HTTP requests in the combined log format to the specified `filename` (use \"-\" for logging to stdout)")
 	flags.Int64Var(&server.MaxRepoSize, "max-size", server.MaxRepoSize, "the maximum size of the repository in bytes")
 	flags.StringVar(&server.Path, "path", server.Path, "data directory")
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
