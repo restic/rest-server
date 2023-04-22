@@ -379,6 +379,10 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 	var names []string
 	for _, i := range items {
 		if isHashed(objectType) {
+			if !i.IsDir() {
+				// ignore files in intermediate directories
+				continue
+			}
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
@@ -434,6 +438,10 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 	var blobs []Blob
 	for _, i := range items {
 		if isHashed(objectType) {
+			if !i.IsDir() {
+				// ignore files in intermediate directories
+				continue
+			}
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)

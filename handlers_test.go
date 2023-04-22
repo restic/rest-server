@@ -379,6 +379,32 @@ func TestResticErrorHandler(t *testing.T) {
 	}
 }
 
+func TestListWithUnexpectedFiles(t *testing.T) {
+	mux, _, _, tempdir, cleanup := createTestHandler(t, Server{
+		AppendOnly: true,
+		NoAuth:     true,
+		Debug:      true,
+	})
+	defer cleanup()
+
+	// create the repo
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+	err := os.WriteFile(path.Join(tempdir, "data", "temp"), []byte{}, 0o666)
+	if err != nil {
+		t.Fatalf("creating unexpected file failed: %v", err)
+	}
+
+	for i := 1; i <= 2; i++ {
+		req := newRequest(t, "GET", "/data/", nil)
+		req.Header.Set("Accept", "application/vnd.x.restic.rest.v2")
+
+		checkRequest(t, mux.ServeHTTP, req,
+			[]wantFunc{wantCode(http.StatusOK)})
+	}
+}
+
 func TestSplitURLPath(t *testing.T) {
 	var tests = []struct {
 		// Params

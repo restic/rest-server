@@ -1,0 +1,9 @@
+Bugfix: Ignore unexpected files in the data/ folder
+
+If the data folder of a repository contained files, this would prevent restic
+from retrieving a list of file data files. This has been fixed. As a workaround
+remove the files that are directly contained in the data folder (e.g.,
+`.DS_Store` files).
+
+https://github.com/restic/rest-server/issues/219
+https://github.com/restic/rest-server/pull/221
