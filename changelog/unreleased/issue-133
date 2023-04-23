@@ -1,4 +1,4 @@
-Enhancement: Cache basic auth credentials
+Enhancement: Cache basic authentication credentials
 
 To speed up the verification of basic auth credentials, rest-server now caches
 passwords for a minute in memory. That way the expensive verification of basic

@@ -1,7 +1,7 @@
-Enhancement: Allow configurable location for .htpasswd file
+Enhancement: Allow configurable location for `.htpasswd` file
 
-It is now possible to change the location of the .htpasswd file using the
---htpasswd-file option.
+It is now possible to specify the location of the `.htpasswd`
+file using the `--htpasswd-file` option.
 
 https://github.com/restic/restic/issues/187
 https://github.com/restic/restic/pull/188
