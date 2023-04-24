@@ -1,5 +1,9 @@
 Change: Return error if command-line arguments are specified
 
-The rest-server ignores command-line arguments. To prevent usage errors it not fails with an error instead of silently ignoring the arguments.
+Command line arguments are ignored by rest-server, but there was previously
+no indication of this when they were supplied anyway.
+
+To prevent usage errors an error is now printed when command line arguments
+are supplied, instead of them being silently ignored.
 
 https://github.com/restic/rest-server/pull/207
