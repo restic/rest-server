@@ -1,3 +1,92 @@
+Changelog for rest-server unreleased (UNRELEASED)
+============================================
+
+The following sections list the changes in rest-server unreleased relevant
+to users. The changes are ordered by importance.
+
+Summary
+-------
+
+ * Fix #183: Allow usernames containing underscore and more
+ * Fix #219: Ignore unexpected files in the data/ folder
+ * Fix #1871: Return 500 "Internal server error" if files cannot be read
+ * Chg #207: Return error if command-line arguments are specified
+ * Chg #208: Update dependencies and require Go 1.17 or newer
+ * Enh #133: Cache basic authentication credentials
+ * Enh #187: Allow configurable location for `.htpasswd` file
+
+Details
+-------
+
+ * Bugfix #183: Allow usernames containing underscore and more
+
+   The security fix in rest-server 0.11.0 (#131) disallowed usernames containing and
+   underscore "_". The list of allowed characters has now been changed to include Unicode
+   characters, numbers, "_", "-", "." and "@".
+
+   https://github.com/restic/rest-server/issues/183
+   https://github.com/restic/rest-server/pull/184
+
+ * Bugfix #219: Ignore unexpected files in the data/ folder
+
+   If the data folder of a repository contained files, this would prevent restic from retrieving a
+   list of file data files. This has been fixed. As a workaround remove the files that are directly
+   contained in the data folder (e.g., `.DS_Store` files).
+
+   https://github.com/restic/rest-server/issues/219
+   https://github.com/restic/rest-server/pull/221
+
+ * Bugfix #1871: Return 500 "Internal server error" if files cannot be read
+
+   When files in a repository cannot be read by rest-server, for example after running `restic
+   prune` directly on the server hosting the repositories in a way that causes filesystem
+   permissions to be wrong, rest-server previously returned 404 "Not Found" as status code. This
+   was causing confusing for users.
+
+   The error handling has now been fixed to only return 404 "Not Found" if the file actually does not
+   exist. Otherwise a 500 "Internal server error" is reported to the client and the underlying
+   error is logged at the server side.
+
+   https://github.com/restic/rest-server/issues/1871
+   https://github.com/restic/rest-server/pull/195
+
+ * Change #207: Return error if command-line arguments are specified
+
+   Command line arguments are ignored by rest-server, but there was previously no indication of
+   this when they were supplied anyway.
+
+   To prevent usage errors an error is now printed when command line arguments are supplied,
+   instead of them being silently ignored.
+
+   https://github.com/restic/rest-server/pull/207
+
+ * Change #208: Update dependencies and require Go 1.17 or newer
+
+   Most dependencies have been updated. Since some libraries require newer language features,
+   support for Go 1.15-1.16 has been dropped, which means that rest-server now requires at least
+   Go 1.17 to build.
+
+   https://github.com/restic/rest-server/pull/208
+
+ * Enhancement #133: Cache basic authentication credentials
+
+   To speed up the verification of basic auth credentials, rest-server now caches passwords for a
+   minute in memory. That way the expensive verification of basic auth credentials can be skipped
+   for most requests issued by a single restic run. The password is kept in memory in a hashed form
+   and not as plaintext.
+
+   https://github.com/restic/rest-server/issues/133
+   https://github.com/restic/rest-server/pull/138
+
+ * Enhancement #187: Allow configurable location for `.htpasswd` file
+
+   It is now possible to specify the location of the `.htpasswd` file using the `--htpasswd-file`
+   option.
+
+   https://github.com/restic/rest-server/issues/187
+   https://github.com/restic/rest-server/pull/188
+
+
 Changelog for rest-server 0.11.0 (2022-02-10)
 ============================================
 
@@ -10,10 +99,10 @@ Summary
  * Sec #131: Prevent loading of usernames containing a slash
  * Fix #119: Fix Docker configuration for `DISABLE_AUTHENTICATION`
  * Fix #142: Fix possible data loss due to interrupted network connections
- * Fix #157: Use platform-specific temporary directory as default data directory
  * Fix #155: Reply "insufficient storage" on disk full or over-quota
- * Chg #146: Build rest-server at docker container build time
+ * Fix #157: Use platform-specific temporary directory as default data directory
  * Chg #112: Add subrepo support and refactor server code
+ * Chg #146: Build rest-server at docker container build time
  * Enh #122: Verify uploaded files
  * Enh #126: Allow running rest-server via systemd socket activation
  * Enh #148: Expand use of security features in example systemd unit file
@@ -62,14 +151,6 @@ Details
 
    https://github.com/restic/rest-server/pull/142
 
- * Bugfix #157: Use platform-specific temporary directory as default data directory
-
-   If no data directory is specificed, then rest-server now uses the Go standard library
-   functions to retrieve the standard temporary directory path for the current platform.
-
-   https://github.com/restic/rest-server/issues/157
-   https://github.com/restic/rest-server/pull/158
-
  * Bugfix #155: Reply "insufficient storage" on disk full or over-quota
 
    When there was no space left on disk, or any other write-related error occurred, rest-server
@@ -83,14 +164,13 @@ Details
    https://github.com/restic/rest-server/issues/155
    https://github.com/restic/rest-server/pull/160
 
- * Change #146: Build rest-server at docker container build time
+ * Bugfix #157: Use platform-specific temporary directory as default data directory
 
-   The Dockerfile now includes a build stage such that the latest rest-server is always built and
-   packaged. This is done in a standard golang container to ensure a clean build environment and
-   only the final binary is shipped rather than the whole build environment.
+   If no data directory is specificed, then rest-server now uses the Go standard library
+   functions to retrieve the standard temporary directory path for the current platform.
 
-   https://github.com/restic/rest-server/issues/146
-   https://github.com/restic/rest-server/pull/145
+   https://github.com/restic/rest-server/issues/157
+   https://github.com/restic/rest-server/pull/158
 
  * Change #112: Add subrepo support and refactor server code
 
@@ -110,6 +190,15 @@ Details
    https://github.com/restic/rest-server/issues/109
    https://github.com/restic/rest-server/issues/107
    https://github.com/restic/rest-server/pull/112
+
+ * Change #146: Build rest-server at docker container build time
+
+   The Dockerfile now includes a build stage such that the latest rest-server is always built and
+   packaged. This is done in a standard golang container to ensure a clean build environment and
+   only the final binary is shipped rather than the whole build environment.
+
+   https://github.com/restic/rest-server/issues/146
+   https://github.com/restic/rest-server/pull/145
 
  * Enhancement #122: Verify uploaded files
 
@@ -149,14 +238,31 @@ to users. The changes are ordered by importance.
 Summary
 -------
 
- * Sec #117: Stricter path sanitization
  * Sec #60: Require auth by default, add --no-auth flag
  * Sec #64: Refuse overwriting config file in append-only mode
+ * Sec #117: Stricter path sanitization
  * Chg #102: Remove vendored dependencies
  * Enh #44: Add changelog file
 
 Details
 -------
+
+ * Security #60: Require auth by default, add --no-auth flag
+
+   In order to prevent users from accidentally exposing rest-server without authentication,
+   rest-server now defaults to requiring a .htpasswd. If you want to disable authentication, you
+   need to explicitly pass the new --no-auth flag.
+
+   https://github.com/restic/rest-server/issues/60
+   https://github.com/restic/rest-server/pull/61
+
+ * Security #64: Refuse overwriting config file in append-only mode
+
+   While working on the `rclone serve restic` command we noticed that is currently possible to
+   overwrite the config file in a repo even if `--append-only` is specified. The first commit adds
+   proper tests, and the second commit fixes the issue.
+
+   https://github.com/restic/rest-server/pull/64
 
  * Security #117: Stricter path sanitization
 
@@ -176,23 +282,6 @@ Details
    feature in rest-server, we'd like to have it implemented properly and intentionally.
 
    https://github.com/restic/rest-server/issues/117
-
- * Security #60: Require auth by default, add --no-auth flag
-
-   In order to prevent users from accidentally exposing rest-server without authentication,
-   rest-server now defaults to requiring a .htpasswd. If you want to disable authentication, you
-   need to explicitly pass the new --no-auth flag.
-
-   https://github.com/restic/rest-server/issues/60
-   https://github.com/restic/rest-server/pull/61
-
- * Security #64: Refuse overwriting config file in append-only mode
-
-   While working on the `rclone serve restic` command we noticed that is currently possible to
-   overwrite the config file in a repo even if `--append-only` is specified. The first commit adds
-   proper tests, and the second commit fixes the issue.
-
-   https://github.com/restic/rest-server/pull/64
 
  * Change #102: Remove vendored dependencies
 
