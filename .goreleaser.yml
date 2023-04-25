@@ -102,6 +102,7 @@ dockers:
       - restic/rest-server:{{ .Version }}
     build_flag_templates:
       - "--pull"
+    dockerfile: "Dockerfile.goreleaser"
     extra_files:
       - docker/create_user
       - docker/delete_user
