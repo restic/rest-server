@@ -1,7 +1,7 @@
-Changelog for rest-server unreleased (UNRELEASED)
+Changelog for rest-server 0.12.0 (2023-04-24)
 ============================================
 
-The following sections list the changes in rest-server unreleased relevant
+The following sections list the changes in rest-server 0.12.0 relevant
 to users. The changes are ordered by importance.
 
 Summary
