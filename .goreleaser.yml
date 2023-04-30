@@ -31,6 +31,8 @@ builds:
       # don't include any paths to source files in the resulting binary
       - -trimpath
 
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
     ldflags:
       # set the version variable in the main package
       - "-s -w -X main.version={{ .Version }}"
@@ -66,11 +68,23 @@ archives:
     # package a directory which contains the source file
     wrap_in_directory: true
 
+    builds_info: &archive_file_info
+      owner: root
+      group: root
+      mtime: '{{ .CommitDate }}'
+      mode: 0644
+
     # add these files to all archives
     files:
-      - LICENSE
-      - README.md
-      - CHANGELOG.md
+      - src: LICENSE
+        dst: .
+        info: *archive_file_info
+      - src: README.md
+        dst: .
+        info: *archive_file_info
+      - src: CHANGELOG.md
+        dst: .
+        info: *archive_file_info
 
 # also build an archive of the source code
 source:
