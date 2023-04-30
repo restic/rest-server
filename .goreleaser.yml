@@ -98,12 +98,115 @@ changelog:
 # configure building the rest-server docker image
 dockers:
   - image_templates:
-      - restic/rest-server:latest
-      - restic/rest-server:{{ .Version }}
+      - restic/rest-server:{{ .Version }}-amd64
     build_flag_templates:
+      - "--platform=linux/amd64"
       - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
     dockerfile: "Dockerfile.goreleaser"
-    extra_files:
+    extra_files: &extra_files
       - docker/create_user
       - docker/delete_user
       - docker/entrypoint.sh
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-i386
+    goarch: 386
+    build_flag_templates:
+      - "--platform=linux/386"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm32v6
+    goarch: arm
+    goarm: 6
+    build_flag_templates:
+      - "--platform=linux/arm/v6"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm32v7
+    goarch: arm
+    goarm: 7
+    build_flag_templates:
+      - "--platform=linux/arm/v7"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm64v8
+    goarch: arm64
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-ppc64le
+    goarch: ppc64le
+    build_flag_templates:
+      - "--platform=linux/ppc64le"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+
+
+docker_manifests:
+- name_template: "restic/rest-server:{{ .Version }}"
+  image_templates:
+  - "restic/rest-server:{{ .Version }}-amd64"
+  - "restic/rest-server:{{ .Version }}-i386"
+  - "restic/rest-server:{{ .Version }}-arm32v6"
+  - "restic/rest-server:{{ .Version }}-arm32v7"
+  - "restic/rest-server:{{ .Version }}-arm64v8"
+  - "restic/rest-server:{{ .Version }}-ppc64le"
+- name_template: "restic/rest-server:latest"
+  image_templates:
+  - "restic/rest-server:{{ .Version }}-amd64"
+  - "restic/rest-server:{{ .Version }}-i386"
+  - "restic/rest-server:{{ .Version }}-arm32v6"
+  - "restic/rest-server:{{ .Version }}-arm32v7"
+  - "restic/rest-server:{{ .Version }}-arm64v8"
+  - "restic/rest-server:{{ .Version }}-ppc64le"
