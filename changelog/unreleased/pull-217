@@ -1,13 +1,13 @@
-Feature: Allows "-" as filename for the `--log` option.
+Feature: Log to stdout using the `--log -` option
 
-When (e.g. for debugging purpose) the rest server is invoked like
+Logging to stdout was possible using `--log /dev/stdout`. However,
+when the rest server is run as a different user, for example, using
 
-	sudo -u restic rest-server … --log /dev/stdout
+	`sudo -u restic rest-server [...] --log /dev/stdout`
 
-it tries to open `/dev/stdout` (O_CREATE, O_WRITE, O_APPEND). This
-operation fails, as in the above invocation, `/dev/stdout` is owned by
-the caller (here: root) and only writable for the caller. Subprocesses
-get just the filedescriptor. Using `/proc/self/fd/1` didn't work either,
-for the same reasons.
+this did not work due to permission issues.
+
+For logging to stdout, the `--log` option now supports the special
+filename `-` which also works in these cases.
 
 https://github.com/restic/rest-server/pull/217
