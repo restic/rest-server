@@ -638,15 +638,16 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !syncNotSup {
+	if syncNotSup {
+		h.fsyncWarning.Do(func() {
+			log.Print("WARNING: fsync is not supported by the data storage. This can lead to data loss, if the system crashes or the storage is unexpectedly disconnected.")
+		})
+	} else {
 		if err := syncDir(filepath.Dir(path)); err != nil {
 			// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
 			h.internalServerError(w, err)
 			return
 		}
-		h.fsyncWarning.Do(func() {
-			log.Print("WARNING: fsync is not supported by the data storage. This can lead to data loss, if the system crashes or the storage is unexpectedly disconnected.")
-		})
 	}
 
 	h.sendMetric(objectType, BlobWrite, uint64(written))
