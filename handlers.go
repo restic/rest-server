@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/restic/rest-server/quota"
 	"github.com/restic/rest-server/repo"
@@ -34,6 +35,7 @@ type Server struct {
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
+	fsyncWarning sync.Once
 }
 
 // MaxFolderDepth is the maxDepth param passed to splitURLPath.
@@ -91,6 +93,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		QuotaManager:   s.quotaManager, // may be nil
 		PanicOnError:   s.PanicOnError,
 		NoVerifyUpload: s.NoVerifyUpload,
+		FsyncWarning:   &s.fsyncWarning,
 	}
 	if s.Prometheus {
 		opt.BlobMetricFunc = makeBlobMetricFunc(username, folderPath)

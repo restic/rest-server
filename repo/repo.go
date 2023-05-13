@@ -39,6 +39,7 @@ type Options struct {
 
 	BlobMetricFunc BlobMetricFunc
 	QuotaManager   *quota.Manager
+	FsyncWarning   *sync.Once
 }
 
 // DefaultDirMode is the file mode used for directory creation if not
@@ -74,8 +75,6 @@ func New(path string, opt Options) (*Handler, error) {
 type Handler struct {
 	path string // filesystem path of repo
 	opt  Options
-
-	fsyncWarning sync.Once
 }
 
 // httpDefaultError write a HTTP error with the default description
@@ -639,7 +638,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if syncNotSup {
-		h.fsyncWarning.Do(func() {
+		h.opt.FsyncWarning.Do(func() {
 			log.Print("WARNING: fsync is not supported by the data storage. This can lead to data loss, if the system crashes or the storage is unexpectedly disconnected.")
 		})
 	} else {
