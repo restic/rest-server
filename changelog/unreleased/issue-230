@@ -1,0 +1,9 @@
+Bugfix: Fix erroneous warnings about unsupported fsync
+
+Due to a regression in rest-server 0.12.0, it continuously printed
+`WARNING: fsync is not supported by the data storage. This can lead to data loss,
+if the system crashes or the storage is unexpectedly disconnected.` for systems
+that support fsync. We have fixed the warning.
+
+https://github.com/restic/rest-server/issues/230
+https://github.com/restic/rest-server/pull/231
