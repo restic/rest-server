@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/gorilla/handlers v1.5.1
-	github.com/minio/sha256-simd v1.0.0
+	github.com/minio/sha256-simd v1.0.1
 	github.com/miolini/datacounter v1.0.3
 	github.com/prometheus/client_golang v1.15.1
 	github.com/spf13/cobra v1.7.0
