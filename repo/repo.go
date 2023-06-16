@@ -375,7 +375,7 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var names []string
+	names := []string{}
 	for _, i := range items {
 		if isHashed(objectType) {
 			if !i.IsDir() {
@@ -434,7 +434,7 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var blobs []Blob
+	blobs := []Blob{}
 	for _, i := range items {
 		if isHashed(objectType) {
 			if !i.IsDir() {
