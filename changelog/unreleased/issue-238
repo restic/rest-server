@@ -1,0 +1,8 @@
+Bugfix: API: Return empty array when listing empty folders
+
+Rest-server returned `null` when listing an empty folder. This has been changed
+to returning an empty array in accordance with the REST protocol specification.
+This change has no impact on restic users.
+
+https://github.com/restic/rest-server/issues/238
+https://github.com/restic/rest-server/pull/239
