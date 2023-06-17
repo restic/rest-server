@@ -422,7 +422,9 @@ func TestListWithUnexpectedFiles(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		req := newRequest(t, "GET", "/data/", nil)
-		req.Header.Set("Accept", "application/vnd.x.restic.rest.v2")
+		if i == 2 {
+			req.Header.Set("Accept", "application/vnd.x.restic.rest.v2")
+		}
 
 		checkRequest(t, mux.ServeHTTP, req,
 			[]wantFunc{wantCode(http.StatusOK)})
