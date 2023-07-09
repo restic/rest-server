@@ -1,3 +1,52 @@
+Changelog for rest-server 0.12.1 (2023-07-09)
+============================================
+
+The following sections list the changes in rest-server 0.12.1 relevant
+to users. The changes are ordered by importance.
+
+Summary
+-------
+
+ * Fix #230: Fix erroneous warnings about unsupported fsync
+ * Fix #238: API: Return empty array when listing empty folders
+ * Enh #217: Log to stdout using the `--log -` option
+
+Details
+-------
+
+ * Bugfix #230: Fix erroneous warnings about unsupported fsync
+
+   Due to a regression in rest-server 0.12.0, it continuously printed `WARNING: fsync is not
+   supported by the data storage. This can lead to data loss, if the system crashes or the storage is
+   unexpectedly disconnected.` for systems that support fsync. We have fixed the warning.
+
+   https://github.com/restic/rest-server/issues/230
+   https://github.com/restic/rest-server/pull/231
+
+ * Bugfix #238: API: Return empty array when listing empty folders
+
+   Rest-server returned `null` when listing an empty folder. This has been changed to returning
+   an empty array in accordance with the REST protocol specification. This change has no impact on
+   restic users.
+
+   https://github.com/restic/rest-server/issues/238
+   https://github.com/restic/rest-server/pull/239
+
+ * Enhancement #217: Log to stdout using the `--log -` option
+
+   Logging to stdout was possible using `--log /dev/stdout`. However, when the rest server is run
+   as a different user, for example, using
+
+   `sudo -u restic rest-server [...] --log /dev/stdout`
+
+   This did not work due to permission issues.
+
+   For logging to stdout, the `--log` option now supports the special filename `-` which also
+   works in these cases.
+
+   https://github.com/restic/rest-server/pull/217
+
+
 Changelog for rest-server 0.12.0 (2023-04-24)
 ============================================
 
