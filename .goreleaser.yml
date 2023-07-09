@@ -105,10 +105,6 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 
-# do not generate a changelog file, we're using calens for that
-changelog:
-  skip: true
-
 # configure building the rest-server docker image
 dockers:
   - image_templates:
