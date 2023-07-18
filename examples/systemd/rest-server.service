@@ -57,6 +57,8 @@ RestrictRealtime=true
 # if your service crashes with "code=killed, status=31/SYS", you probably tried to run linux_i386 (32bit) binary on a amd64 host
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
+SystemCallFilter=~@resources
+SystemCallFilter=~@privileged
 
 # Additionally, you may wish to use some of the systemd options documented in
 # systemd.resource-control(5) to limit the CPU, memory, file-system I/O and
