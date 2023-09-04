@@ -34,7 +34,7 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build
         run: |
@@ -68,7 +68,7 @@ jobs:
           go-version: ${{ env.latest_go }}
 
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
