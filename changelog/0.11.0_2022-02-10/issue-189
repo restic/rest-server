@@ -1,8 +1,6 @@
-Feature: Expose command line option to configure FileMode and DirMode
+Feature: Implement boolean flag "group-readable-repositores"
 
-Just expose a CLI option to configure Server FileMode and DirMode to
-be able to have files stored in the repo shared with other processes
-(maybe just read only)
+A CLI option to write dirs and files with a group readable permission grant
 
 https://github.com/restic/rest-server/issues/189
 https://github.com/restic/rest-server/pull/190
