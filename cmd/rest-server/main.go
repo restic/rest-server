@@ -53,7 +53,7 @@ func init() {
 	flags.BoolVar(&server.PrivateRepos, "private-repos", server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&server.Prometheus, "prometheus", server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&server.PrometheusNoAuth, "prometheus-no-auth", server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
-	flags.BoolVar(&server.GroupAccessibleRepos, "group-accessible-repositories", server.GroupAccessibleRepos, "filesyste repo files group readableCosi` ")
+	flags.BoolVar(&server.GroupAccessibleRepos, "group-accessible-repositories", server.GroupAccessibleRepos, "make filesystem repo files group readable")
 }
 
 var version = "0.11.0"
