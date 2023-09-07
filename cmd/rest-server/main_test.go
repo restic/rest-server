@@ -111,6 +111,22 @@ func TestGetHandler(t *testing.T) {
 		t.Errorf("NoAuth=true: expected no error, got %v", err)
 	}
 
+	// With NoAuth = false and custom .htpasswd
+	htpFile, err := ioutil.TempFile(dir, "custom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := os.Remove(htpFile.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	_, err = getHandler(&restserver.Server{HtpasswdPath: htpFile.Name()})
+	if err != nil {
+		t.Errorf("NoAuth=false with custom htpasswd: expected no error, got %v", err)
+	}
+
 	// Create .htpasswd
 	htpasswd := filepath.Join(dir, ".htpasswd")
 	err = ioutil.WriteFile(htpasswd, []byte(""), 0644)

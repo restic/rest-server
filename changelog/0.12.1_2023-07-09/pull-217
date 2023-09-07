@@ -1,0 +1,13 @@
+Enhancement: Log to stdout using the `--log -` option
+
+Logging to stdout was possible using `--log /dev/stdout`. However,
+when the rest server is run as a different user, for example, using
+
+	`sudo -u restic rest-server [...] --log /dev/stdout`
+
+this did not work due to permission issues.
+
+For logging to stdout, the `--log` option now supports the special
+filename `-` which also works in these cases.
+
+https://github.com/restic/rest-server/pull/217

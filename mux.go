@@ -2,6 +2,7 @@ package restserver
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -21,9 +22,16 @@ func (s *Server) debugHandler(next http.Handler) http.Handler {
 }
 
 func (s *Server) logHandler(next http.Handler) http.Handler {
-	accessLog, err := os.OpenFile(s.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("error: %v", err)
+	var accessLog io.Writer
+
+	if s.Log == "-" {
+		accessLog = os.Stdout
+	} else {
+		var err error
+		accessLog, err = os.OpenFile(s.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
 	}
 
 	return handlers.CombinedLoggingHandler(accessLog, next)
@@ -60,10 +68,14 @@ func (s *Server) wrapMetricsAuth(f http.HandlerFunc) http.HandlerFunc {
 func NewHandler(server *Server) (http.Handler, error) {
 	if !server.NoAuth {
 		var err error
-		server.htpasswdFile, err = NewHtpasswdFromFile(filepath.Join(server.Path, ".htpasswd"))
-		if err != nil {
-			return nil, fmt.Errorf("cannot load .htpasswd (use --no-auth to disable): %v", err)
+		if server.HtpasswdPath == "" {
+			server.HtpasswdPath = filepath.Join(server.Path, ".htpasswd")
 		}
+		server.htpasswdFile, err = NewHtpasswdFromFile(server.HtpasswdPath)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load %s (use --no-auth to disable): %v", server.HtpasswdPath, err)
+		}
+		log.Printf("Loaded htpasswd file %s", server.HtpasswdPath)
 	}
 
 	const GiB = 1024 * 1024 * 1024

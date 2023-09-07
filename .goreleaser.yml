@@ -31,6 +31,8 @@ builds:
       # don't include any paths to source files in the resulting binary
       - -trimpath
 
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
     ldflags:
       # set the version variable in the main package
       - "-s -w -X main.version={{ .Version }}"
@@ -66,11 +68,23 @@ archives:
     # package a directory which contains the source file
     wrap_in_directory: true
 
+    builds_info: &archive_file_info
+      owner: root
+      group: root
+      mtime: '{{ .CommitDate }}'
+      mode: 0644
+
     # add these files to all archives
     files:
-      - LICENSE
-      - README.md
-      - CHANGELOG.md
+      - src: LICENSE
+        dst: .
+        info: *archive_file_info
+      - src: README.md
+        dst: .
+        info: *archive_file_info
+      - src: CHANGELOG.md
+        dst: .
+        info: *archive_file_info
 
 # also build an archive of the source code
 source:
@@ -91,18 +105,118 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 
-# do not generate a changelog file, we're using calens for that
-changelog:
-  skip: true
-
 # configure building the rest-server docker image
 dockers:
   - image_templates:
-      - restic/rest-server:latest
-      - restic/rest-server:{{ .Version }}
+      - restic/rest-server:{{ .Version }}-amd64
     build_flag_templates:
+      - "--platform=linux/amd64"
       - "--pull"
-    extra_files:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: &extra_files
       - docker/create_user
       - docker/delete_user
       - docker/entrypoint.sh
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-i386
+    goarch: 386
+    build_flag_templates:
+      - "--platform=linux/386"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm32v6
+    goarch: arm
+    goarm: 6
+    build_flag_templates:
+      - "--platform=linux/arm/v6"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm32v7
+    goarch: arm
+    goarm: 7
+    build_flag_templates:
+      - "--platform=linux/arm/v7"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-arm64v8
+    goarch: arm64
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+  - image_templates:
+      - restic/rest-server:{{ .Version }}-ppc64le
+    goarch: ppc64le
+    build_flag_templates:
+      - "--platform=linux/ppc64le"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.source=https://github.com/restic/{{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.licenses=BSD-2-Clause"
+    use: buildx
+    dockerfile: "Dockerfile.goreleaser"
+    extra_files: *extra_files
+
+
+docker_manifests:
+- name_template: "restic/rest-server:{{ .Version }}"
+  image_templates:
+  - "restic/rest-server:{{ .Version }}-amd64"
+  - "restic/rest-server:{{ .Version }}-i386"
+  - "restic/rest-server:{{ .Version }}-arm32v6"
+  - "restic/rest-server:{{ .Version }}-arm32v7"
+  - "restic/rest-server:{{ .Version }}-arm64v8"
+  - "restic/rest-server:{{ .Version }}-ppc64le"
+- name_template: "restic/rest-server:latest"
+  image_templates:
+  - "restic/rest-server:{{ .Version }}-amd64"
+  - "restic/rest-server:{{ .Version }}-i386"
+  - "restic/rest-server:{{ .Version }}-arm32v6"
+  - "restic/rest-server:{{ .Version }}-arm32v7"
+  - "restic/rest-server:{{ .Version }}-arm64v8"
+  - "restic/rest-server:{{ .Version }}-ppc64le"

@@ -2,9 +2,8 @@
 Description=Rest Server
 After=syslog.target
 After=network.target
-
-# if you want to use socket activation, make sure to require the socket here
-#Requires=rest-server.socket
+Requires=rest-server.socket
+After=rest-server.socket
 
 [Service]
 Type=simple
@@ -37,6 +36,11 @@ CapabilityBoundingSet=
 LockPersonality=true
 MemoryDenyWriteExecute=true
 NoNewPrivileges=yes
+
+# As the listen socket is created by systemd via the rest-server.socket unit, it is
+# no longer necessary for rest-server to have access to the host network namespace.
+PrivateNetwork=yes
+
 PrivateTmp=yes
 PrivateDevices=true
 PrivateUsers=true
@@ -51,9 +55,10 @@ ProtectProc=invisible
 ProtectHostname=true
 RemoveIPC=true
 RestrictNamespaces=true
-RestrictAddressFamilies=AF_INET AF_INET6
+RestrictAddressFamilies=none
 RestrictSUIDSGID=true
 RestrictRealtime=true
+# if your service crashes with "code=killed, status=31/SYS", you probably tried to run linux_i386 (32bit) binary on a amd64 host
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 
@@ -62,6 +67,7 @@ SystemCallFilter=@system-service
 # network I/O that the rest-server is permitted to consume according to the
 # individual requirements of your installation.
 #CPUQuota=25%
+#MemoryHigh=bytes
 #MemoryMax=bytes
 #MemorySwapMax=bytes
 #TasksMax=N

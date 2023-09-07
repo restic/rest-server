@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -36,8 +37,9 @@ type Options struct {
 
 	BlobMetricFunc BlobMetricFunc
 	QuotaManager   *quota.Manager
+  FsyncWarning   *sync.Once
 
-	// If set, we will panic when an internal server error happens. This
+  // If set, we will panic when an internal server error happens. This
 	// makes it easier to debug such errors.
 	GroupReadable bool
 
@@ -277,10 +279,7 @@ func (h *Handler) checkConfig(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(cfg)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -296,10 +295,7 @@ func (h *Handler) getConfig(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := ioutil.ReadFile(cfg)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -351,13 +347,10 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := h.getSubPath("config")
 
 	if err := os.Remove(cfg); err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		if os.IsNotExist(err) {
-			httpDefaultError(w, http.StatusNotFound)
-		} else {
-			h.internalServerError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
 		}
 		return
 	}
@@ -398,24 +391,22 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
-	var names []string
+	names := []string{}
 	for _, i := range items {
 		if isHashed(objectType) {
+			if !i.IsDir() {
+				// ignore files in intermediate directories
+				continue
+			}
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if h.opt.Debug {
-					log.Print(err)
-				}
-				httpDefaultError(w, http.StatusNotFound)
+				h.fileAccessError(w, err)
 				return
 			}
 			for _, f := range subitems {
@@ -459,24 +450,22 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 
 	items, err := ioutil.ReadDir(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
-	var blobs []Blob
+	blobs := []Blob{}
 	for _, i := range items {
 		if isHashed(objectType) {
+			if !i.IsDir() {
+				// ignore files in intermediate directories
+				continue
+			}
 			subpath := filepath.Join(path, i.Name())
 			var subitems []os.FileInfo
 			subitems, err = ioutil.ReadDir(subpath)
 			if err != nil {
-				if h.opt.Debug {
-					log.Print(err)
-				}
-				httpDefaultError(w, http.StatusNotFound)
+				h.fileAccessError(w, err)
 				return
 			}
 			for _, f := range subitems {
@@ -513,10 +502,7 @@ func (h *Handler) checkBlob(w http.ResponseWriter, r *http.Request) {
 
 	st, err := os.Stat(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -539,10 +525,7 @@ func (h *Handler) getBlob(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		httpDefaultError(w, http.StatusNotFound)
+		h.fileAccessError(w, err)
 		return
 	}
 
@@ -651,7 +634,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tf.Sync(); err != nil {
+	syncNotSup, err := syncFile(tf)
+	if err != nil {
 		_ = tf.Close()
 		_ = os.Remove(tf.Name())
 		h.incrementRepoSpaceUsage(-written)
@@ -673,10 +657,16 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := syncDir(filepath.Dir(path)); err != nil {
-		// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
-		h.internalServerError(w, err)
-		return
+	if syncNotSup {
+		h.opt.FsyncWarning.Do(func() {
+			log.Print("WARNING: fsync is not supported by the data storage. This can lead to data loss, if the system crashes or the storage is unexpectedly disconnected.")
+		})
+	} else {
+		if err := syncDir(filepath.Dir(path)); err != nil {
+			// Don't call os.Remove(path) as this is prone to race conditions with parallel upload retries
+			h.internalServerError(w, err)
+			return
+		}
 	}
 
 	h.sendMetric(objectType, BlobWrite, uint64(written))
@@ -695,6 +685,16 @@ func tempFile(fn string, perm os.FileMode) (f *os.File, err error) {
 	return
 }
 
+func syncFile(f *os.File) (bool, error) {
+	err := f.Sync()
+	// Ignore error if filesystem does not support fsync.
+	syncNotSup := err != nil && (errors.Is(err, syscall.ENOTSUP) || isMacENOTTY(err))
+	if syncNotSup {
+		err = nil
+	}
+	return syncNotSup, err
+}
+
 func syncDir(dirname string) error {
 	if runtime.GOOS == "windows" {
 		// syncing a directory is not possible on windows
@@ -706,6 +706,10 @@ func syncDir(dirname string) error {
 		return err
 	}
 	err = dir.Sync()
+	// Ignore error if filesystem does not support fsync.
+	if errors.Is(err, syscall.ENOTSUP) || errors.Is(err, syscall.ENOENT) || errors.Is(err, syscall.EINVAL) {
+		err = nil
+	}
 	if err != nil {
 		_ = dir.Close()
 		return err
@@ -741,13 +745,10 @@ func (h *Handler) deleteBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := os.Remove(path); err != nil {
-		if h.opt.Debug {
-			log.Print(err)
-		}
-		if os.IsNotExist(err) {
-			httpDefaultError(w, http.StatusNotFound)
-		} else {
-			h.internalServerError(w, err)
+		// ignore not exist errors to make deleting idempotent, which is
+		// necessary to properly handle request retries
+		if !errors.Is(err, os.ErrNotExist) {
+			h.fileAccessError(w, err)
 		}
 		return
 	}
@@ -790,7 +791,7 @@ func (h *Handler) createRepo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// internalServerError is called to repot an internal server error.
+// internalServerError is called to report an internal server error.
 // The error message will be reported in the server logs. If PanicOnError
 // is set, this will panic instead, which makes debugging easier.
 func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
@@ -799,4 +800,19 @@ func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
 		panic(fmt.Sprintf("internal server error: %v", err))
 	}
 	httpDefaultError(w, http.StatusInternalServerError)
+}
+
+// internalServerError is called to report an error that occurred while
+// accessing a file. If the does not exist, the corresponding http status code
+// will be returned to the client. All other errors are passed on to
+// internalServerError
+func (h *Handler) fileAccessError(w http.ResponseWriter, err error) {
+	if h.opt.Debug {
+		log.Print(err)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		httpDefaultError(w, http.StatusNotFound)
+	} else {
+		h.internalServerError(w, err)
+	}
 }

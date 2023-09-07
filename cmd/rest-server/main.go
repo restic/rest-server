@@ -23,7 +23,13 @@ var cmdRoot = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE:          runRoot,
-	Version:       fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 0 {
+			return fmt.Errorf("rest-server expects no arguments - unknown argument: %s", args[0])
+		}
+		return nil
+	},
+	Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 }
 
 var server = restserver.Server{
@@ -40,13 +46,14 @@ func init() {
 	flags.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "write CPU profile to file")
 	flags.BoolVar(&server.Debug, "debug", server.Debug, "output debug messages")
 	flags.StringVar(&server.Listen, "listen", server.Listen, "listen address")
-	flags.StringVar(&server.Log, "log", server.Log, "write HTTP requests in the combined log format to the specified `filename`")
+	flags.StringVar(&server.Log, "log", server.Log, "write HTTP requests in the combined log format to the specified `filename` (use \"-\" for logging to stdout)")
 	flags.Int64Var(&server.MaxRepoSize, "max-size", server.MaxRepoSize, "the maximum size of the repository in bytes")
 	flags.StringVar(&server.Path, "path", server.Path, "data directory")
 	flags.BoolVar(&server.TLS, "tls", server.TLS, "turn on TLS support")
 	flags.StringVar(&server.TLSCert, "tls-cert", server.TLSCert, "TLS certificate path")
 	flags.StringVar(&server.TLSKey, "tls-key", server.TLSKey, "TLS key path")
 	flags.BoolVar(&server.NoAuth, "no-auth", server.NoAuth, "disable .htpasswd authentication")
+	flags.StringVar(&server.HtpasswdPath, "htpasswd-file", server.HtpasswdPath, "location of .htpasswd file (default: \"<data directory>/.htpasswd)\"")
 	flags.BoolVar(&server.NoVerifyUpload, "no-verify-upload", server.NoVerifyUpload,
 		"do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device")
 	flags.BoolVar(&server.AppendOnly, "append-only", server.AppendOnly, "enable append only mode")
@@ -56,7 +63,7 @@ func init() {
 	flags.BoolVar(&server.GroupAccessibleRepos, "group-accessible-repositories", server.GroupAccessibleRepos, "make filesystem repo files group readable")
 }
 
-var version = "0.11.0"
+var version = "0.12.1-dev"
 
 func tlsSettings() (bool, string, string, error) {
 	var key, cert string

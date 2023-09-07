@@ -1,0 +1,7 @@
+Change: Update dependencies and require Go 1.17 or newer
+
+Most dependencies have been updated. Since some libraries require newer language
+features, support for Go 1.15-1.16 has been dropped, which means that rest-server
+now requires at least Go 1.17 to build.
+
+https://github.com/restic/rest-server/pull/208
