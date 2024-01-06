@@ -1,6 +1,6 @@
 module github.com/restic/rest-server
 
-go 1.17
+go 1.18
 
 require (
 	github.com/coreos/go-systemd/v22 v22.5.0
