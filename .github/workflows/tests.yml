@@ -9,7 +9,7 @@ on:
   pull_request:
 
 env:
-  latest_go: "1.20.x"
+  latest_go: "1.21.x"
   GO111MODULE: on
 
 jobs:
@@ -17,10 +17,10 @@ jobs:
     strategy:
       matrix:
         go:
-          - 1.17.x
           - 1.18.x
           - 1.19.x
           - 1.20.x
+          - 1.21.x
     runs-on: ubuntu-latest
     name: Go ${{ matrix.go }}
 
