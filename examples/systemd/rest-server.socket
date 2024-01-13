@@ -1,5 +1,5 @@
 [Socket]
-ListenStream = 8080
+ListenStream = 8000
 
 [Install]
 WantedBy = sockets.target
