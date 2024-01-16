@@ -1,0 +1,6 @@
+Feature: Implement boolean flag "group-readable-repositores"
+
+A CLI option to write dirs and files with a group readable permission grant
+
+https://github.com/restic/rest-server/issues/189
+https://github.com/restic/rest-server/pull/190
