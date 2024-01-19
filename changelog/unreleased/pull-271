@@ -1,0 +1,17 @@
+Enhancement: after start-up, server served message now prints actual listen address
+
+For example, when started with `--listen :0`, previously the server would print:
+
+```
+start server on :0
+```
+
+Now it will print the actual address listened on, e.g.
+
+```
+start server on 0.0.0.0:37333
+```
+
+This is useful when starting a server with an auto-allocated free port number (port 0).
+
+https://github.com/restic/rest-server/pull/271
