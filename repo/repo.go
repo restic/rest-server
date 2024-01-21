@@ -115,6 +115,8 @@ const (
 	BlobRead   = 'R' // A blob has been read
 	BlobWrite  = 'W' // A blob has been written
 	BlobDelete = 'D' // A blob has been deleted
+
+	RepoPreloadLastUpdate = 'U' // Set last update timestamp for preloading
 )
 
 // BlobMetricFunc is the callback signature for blob metrics. Such a callback
@@ -124,6 +126,21 @@ const (
 // nBytes: the number of bytes affected, or 0 if not relevant
 // TODO: Perhaps add http.Request for the username so that this can be cached?
 type BlobMetricFunc func(objectType string, operation BlobOperation, nBytes uint64)
+
+// PreloadMetrics for Prometheus.
+func (h *Handler) PreloadMetrics() error {
+	if h.opt.Debug {
+		log.Printf("%v.PreloadMetrics()", h)
+	}
+
+	stat, err := os.Lstat(h.getSubPath("snapshots"))
+	if err != nil {
+		return err
+	}
+	h.sendMetric("", RepoPreloadLastUpdate, uint64(stat.ModTime().UnixMilli()))
+
+	return nil
+}
 
 // ServeHTTP performs strict matching on the repo part of the URL path and
 // dispatches the request to the appropriate handler.

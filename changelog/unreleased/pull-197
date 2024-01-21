@@ -1,0 +1,17 @@
+Enhancement: Prometheus metric for repository's last update
+
+A new gauge metric `rest_server_repo_last_update_timestamp` was added to
+monitor each repository's last write access. This allows a basic
+monitoring for each repository's freshness.
+
+This metric can be configured as an alerting rule. For example, to be
+notified if some repository is older than two days:
+> time() - rest_server_repo_last_update_timestamp >= 172800
+
+In order to have this metric available at startup, a basic preloading for
+Prometheus metrics has been implemented. This operates by scanning the file
+system for restic repositories and using their last modified time.
+Subsequently, each write access updates the last update time.
+
+If scanning each repository takes too long, it can be disabled through the
+`--prometheus-no-preload` flag.
