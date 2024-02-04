@@ -1,0 +1,7 @@
+Change: Server is now shutdown cleanly on TERM or INT signals
+
+Server now listens for TERM and INT signals and cleanly closes down the http.Server and listener.
+
+This is particularly useful when listening on a unix socket, as the server will remove the socket file from it shuts down.
+
+https://github.com/restic/rest-server/pull/273
