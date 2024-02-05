@@ -1,16 +1,9 @@
-Enhancement: after start-up, server served message now prints actual listen address
+Enhancement: print actual listen address after start-up
 
-For example, when started with `--listen :0`, previously the server would print:
+When started with `--listen :0` the server would print `start server on :0`
 
-```
-start server on :0
-```
-
-Now it will print the actual address listened on, e.g.
-
-```
-start server on 0.0.0.0:37333
-```
+Now the message includes the actual address listened on, for example
+`start server on 0.0.0.0:37333`.
 
 This is useful when starting a server with an auto-allocated free port number (port 0).
 
