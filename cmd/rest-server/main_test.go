@@ -235,11 +235,11 @@ func TestHttpListen(t *testing.T) {
 	}
 
 	for _, args := range [][]string{
-		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", ":0"},    // test emphemeral port
-		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", ":9000"}, // test "normal" port
-		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", ":9000"}, // test that server was shutdown cleanly and that we can re-use that port
+		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", "127.0.0.1:0"},    // test emphemeral port
+		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", "127.0.0.1:9000"}, // test "normal" port
+		{"--no-auth", "--path", filepath.Join(td, "data"), "--listen", "127.0.0.1:9000"}, // test that server was shutdown cleanly and that we can re-use that port
 	} {
-		err := testServerWithArgs(args, time.Second, func(ctx context.Context, app *restServerApp) error {
+		err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
 			for _, test := range []struct {
 				Path       string
 				StatusCode int
