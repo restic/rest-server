@@ -14,6 +14,6 @@ func findListener(addr string) (listener net.Listener, err error) {
 		return nil, fmt.Errorf("listen on %v failed: %w", addr, err)
 	}
 
-	log.Printf("start server on %v", addr)
+	log.Printf("start server on %v", listener.Addr())
 	return listener, nil
 }
