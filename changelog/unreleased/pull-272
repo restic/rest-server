@@ -1,12 +1,12 @@
-Enhancement: can now listen on a unix socket
+Enhancement: Support listening on a unix socket
 
-If `--listen unix:/tmp/foo` is passed, the server will listen on a unix socket. This is triggered by the prefix `unix:`.
+To let rest-server listen on a unix socket, prefix the socket filename with `unix:` and pass it to the `--listen` option, for example `--listen unix:/tmp/foo`.
 
-This is useful in combination with remote port portforwarding to enable remote server to backup locally, e.g.
+This is useful in combination with remote port forwarding to enable remote server to backup locally, e.g.
 
-```bash
+```
 rest-server --listen unix:/tmp/foo &
-ssh -R /tmp/foo:/tmp/foo user@host restic -r rest:http+unix:/tmp/foo:/repo backup
+ssh -R /tmp/foo:/tmp/foo user@host restic -r rest:http+unix:///tmp/foo:/repo backup
 ```
 
 https://github.com/restic/rest-server/pull/272
