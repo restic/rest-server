@@ -24,7 +24,7 @@ services:
       - "127.0.0.1:8020:9090"
     volumes:
       - prometheusdata:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus:/etc/prometheus:ro
     depends_on:
       - restserver
     networks:
