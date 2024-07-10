@@ -30,7 +30,7 @@
         git tag -a -s -m "v${VERSION}" "v${VERSION}"
         git push --tags
 
-6. Build the project (use `--skip-publish` for testing, or pass `--config` to
+6. Build the project (use `--snapshot` for testing, or pass `--config` to
    use another config file):
 
         goreleaser \
