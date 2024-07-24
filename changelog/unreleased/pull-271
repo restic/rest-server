@@ -1,10 +1,9 @@
-Enhancement: print actual listen address after start-up
+Enhancement: Print listening address after start-up
 
-When started with `--listen :0` the server would print `start server on :0`
+When started with `--listen :0`, rest-server would print `start server on :0`
 
-Now the message includes the actual address listened on, for example
-`start server on 0.0.0.0:37333`.
-
-This is useful when starting a server with an auto-allocated free port number (port 0).
+The message now also includes the actual address listened on, for example
+`start server on 0.0.0.0:37333`. This is useful when starting a server with
+an auto-allocated free port number (port 0).
 
 https://github.com/restic/rest-server/pull/271

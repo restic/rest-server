@@ -1,8 +1,11 @@
 Enhancement: Support listening on a unix socket
 
-To let rest-server listen on a unix socket, prefix the socket filename with `unix:` and pass it to the `--listen` option, for example `--listen unix:/tmp/foo`.
+It is now possible to make rest-server listen on a unix socket by prefixing
+the socket filename with `unix:` and passing it to the `--listen` option,
+for example `--listen unix:/tmp/foo`.
 
-This is useful in combination with remote port forwarding to enable remote server to backup locally, e.g.
+This is useful in combination with remote port forwarding to enable a remote
+server to backup locally, e.g.:
 
 ```
 rest-server --listen unix:/tmp/foo &
