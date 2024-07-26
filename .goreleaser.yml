@@ -1,4 +1,6 @@
 ---
+version: 2
+
 before:
   # Run a few commands to check the state of things. When anything is changed
   # in files commited to the repo, goreleaser will abort before building
