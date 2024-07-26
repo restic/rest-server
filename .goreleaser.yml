@@ -79,13 +79,13 @@ archives:
     # add these files to all archives
     files:
       - src: LICENSE
-        dst: .
+        dst: LICENSE
         info: *archive_file_info
       - src: README.md
-        dst: .
+        dst: README.md
         info: *archive_file_info
       - src: CHANGELOG.md
-        dst: .
+        dst: CHANGELOG.md
         info: *archive_file_info
 
 # also build an archive of the source code
