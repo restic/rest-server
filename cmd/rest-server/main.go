@@ -135,6 +135,12 @@ func (app *restServerApp) runRoot(cmd *cobra.Command, args []string) error {
 		log.Fatalf("error: %v", err)
 	}
 
+	if app.Server.AppendOnly {
+		log.Println("Append only mode enabled")
+	} else {
+		log.Println("Append only mode disabled")
+	}
+
 	if app.Server.PrivateRepos {
 		log.Println("Private repositories enabled")
 	} else {
