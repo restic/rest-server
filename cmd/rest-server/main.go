@@ -61,8 +61,9 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.TLS, "tls", rv.Server.TLS, "turn on TLS support")
 	flags.StringVar(&rv.Server.TLSCert, "tls-cert", rv.Server.TLSCert, "TLS certificate path")
 	flags.StringVar(&rv.Server.TLSKey, "tls-key", rv.Server.TLSKey, "TLS key path")
-	flags.BoolVar(&rv.Server.NoAuth, "no-auth", rv.Server.NoAuth, "disable .htpasswd authentication")
+	flags.BoolVar(&rv.Server.NoAuth, "no-auth", rv.Server.NoAuth, "disable authentication")
 	flags.StringVar(&rv.Server.HtpasswdPath, "htpasswd-file", rv.Server.HtpasswdPath, "location of .htpasswd file (default: \"<data directory>/.htpasswd)\"")
+	flags.StringVar(&rv.Server.ProxyAuthUsername, "proxy-auth-username", rv.Server.ProxyAuthUsername, "specifies the HTTP header containing the username for proxy-based authentication")
 	flags.BoolVar(&rv.Server.NoVerifyUpload, "no-verify-upload", rv.Server.NoVerifyUpload,
 		"do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device")
 	flags.BoolVar(&rv.Server.AppendOnly, "append-only", rv.Server.AppendOnly, "enable append only mode")
@@ -130,7 +131,11 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	if app.Server.NoAuth {
 		log.Println("Authentication disabled")
 	} else {
-		log.Println("Authentication enabled")
+		if app.Server.ProxyAuthUsername == "" {
+			log.Println("Authentication enabled")
+		} else {
+			log.Println("Proxy Authentication enabled.")
+		}
 	}
 
 	handler, err := restserver.NewHandler(&app.Server)
