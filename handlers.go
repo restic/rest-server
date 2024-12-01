@@ -15,23 +15,24 @@ import (
 
 // Server encapsulates the rest-server's settings and repo management logic
 type Server struct {
-	Path             string
-	HtpasswdPath     string
-	Listen           string
-	Log              string
-	CPUProfile       string
-	TLSKey           string
-	TLSCert          string
-	TLS              bool
-	NoAuth           bool
-	AppendOnly       bool
-	PrivateRepos     bool
-	Prometheus       bool
-	PrometheusNoAuth bool
-	Debug            bool
-	MaxRepoSize      int64
-	PanicOnError     bool
-	NoVerifyUpload   bool
+	Path              string
+	HtpasswdPath      string
+	Listen            string
+	Log               string
+	CPUProfile        string
+	TLSKey            string
+	TLSCert           string
+	TLS               bool
+	NoAuth            bool
+	ProxyAuthUsername string
+	AppendOnly        bool
+	PrivateRepos      bool
+	Prometheus        bool
+	PrometheusNoAuth  bool
+	Debug             bool
+	MaxRepoSize       int64
+	PanicOnError      bool
+	NoVerifyUpload    bool
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
@@ -158,7 +159,7 @@ func join(base string, names ...string) (string, error) {
 // splitURLPath splits the URL path into a folderPath of the subrepo, and
 // a remainder that can be passed to repo.Handler.
 // Example: /foo/bar/locks/0123... will be split into:
-//          ["foo", "bar"] and "/locks/0123..."
+// ["foo", "bar"] and "/locks/0123..."
 func splitURLPath(urlPath string, maxDepth int) (folderPath []string, remainder string) {
 	if !strings.HasPrefix(urlPath, "/") {
 		// Really should start with "/"
