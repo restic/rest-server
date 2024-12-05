@@ -1,0 +1,6 @@
+Enhancement: Hardened tls settings
+
+rest-server now uses a secure tls cipher suit set and the minimal TLS version
+can be set with the option `--tls-min-ver`
+
+https://github.com/restic/rest-server/pull/315
