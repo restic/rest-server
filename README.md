@@ -49,6 +49,7 @@ Flags:
       --tls                    turn on TLS support
       --tls-cert string        TLS certificate path
       --tls-key string         TLS key path
+      --tls-min-ver string     TLS min version (default: 1.2) (default "1.2")
   -v, --version                version for rest-server
 ```
 
@@ -68,7 +69,7 @@ If you want to disable authentication, you must add the `--no-auth` flag. If thi
 
 NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
 
-By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, user name and passwords will be sent in clear text in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key`.
+By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, user name and passwords will be sent in clear text in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key` and set the minimum TLS version by `--tls-min-ver`.
 
 Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate password-less unsigned keys with the following command:
 
