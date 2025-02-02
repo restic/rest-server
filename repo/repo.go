@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -251,7 +250,7 @@ func (h *Handler) wrapFileWriter(r *http.Request, w io.Writer) (io.Writer, int, 
 }
 
 // checkConfig checks whether a configuration exists.
-func (h *Handler) checkConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) checkConfig(w http.ResponseWriter, _ *http.Request) {
 	if h.opt.Debug {
 		log.Println("checkConfig()")
 	}
@@ -267,13 +266,13 @@ func (h *Handler) checkConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // getConfig allows for a config to be retrieved.
-func (h *Handler) getConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 	if h.opt.Debug {
 		log.Println("getConfig()")
 	}
 	cfg := h.getSubPath("config")
 
-	bytes, err := ioutil.ReadFile(cfg)
+	bytes, err := os.ReadFile(cfg)
 	if err != nil {
 		h.fileAccessError(w, err)
 		return
@@ -314,7 +313,7 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // deleteConfig removes a config.
-func (h *Handler) deleteConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteConfig(w http.ResponseWriter, _ *http.Request) {
 	if h.opt.Debug {
 		log.Println("deleteConfig()")
 	}
@@ -369,7 +368,7 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 	}
 	path := h.getSubPath(objectType)
 
-	items, err := ioutil.ReadDir(path)
+	items, err := os.ReadDir(path)
 	if err != nil {
 		h.fileAccessError(w, err)
 		return
@@ -383,8 +382,8 @@ func (h *Handler) listBlobsV1(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			subpath := filepath.Join(path, i.Name())
-			var subitems []os.FileInfo
-			subitems, err = ioutil.ReadDir(subpath)
+			var subitems []os.DirEntry
+			subitems, err = os.ReadDir(subpath)
 			if err != nil {
 				h.fileAccessError(w, err)
 				return
@@ -428,7 +427,7 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 	}
 	path := h.getSubPath(objectType)
 
-	items, err := ioutil.ReadDir(path)
+	items, err := os.ReadDir(path)
 	if err != nil {
 		h.fileAccessError(w, err)
 		return
@@ -442,17 +441,27 @@ func (h *Handler) listBlobsV2(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			subpath := filepath.Join(path, i.Name())
-			var subitems []os.FileInfo
-			subitems, err = ioutil.ReadDir(subpath)
+			var subitems []os.DirEntry
+			subitems, err = os.ReadDir(subpath)
 			if err != nil {
 				h.fileAccessError(w, err)
 				return
 			}
 			for _, f := range subitems {
-				blobs = append(blobs, Blob{Name: f.Name(), Size: f.Size()})
+				fi, err := f.Info()
+				if err != nil {
+					h.fileAccessError(w, err)
+					return
+				}
+				blobs = append(blobs, Blob{Name: f.Name(), Size: fi.Size()})
 			}
 		} else {
-			blobs = append(blobs, Blob{Name: i.Name(), Size: i.Size()})
+			fi, err := i.Info()
+			if err != nil {
+				h.fileAccessError(w, err)
+				return
+			}
+			blobs = append(blobs, Blob{Name: i.Name(), Size: fi.Size()})
 		}
 	}
 
@@ -652,7 +661,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	h.sendMetric(objectType, BlobWrite, uint64(written))
 }
 
-// tempFile implements a custom version of ioutil.TempFile which allows modifying the file permissions
+// tempFile implements a custom version of os.CreateTemp which allows modifying the file permissions
 func tempFile(fn string, perm os.FileMode) (f *os.File, err error) {
 	for i := 0; i < 10; i++ {
 		name := fn + strconv.FormatInt(rand.Int63(), 10)

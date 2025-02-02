@@ -61,7 +61,10 @@ func TestUnixSocket(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				resp.Body.Close()
+				err = resp.Body.Close()
+				if err != nil {
+					return err
+				}
 				if resp.StatusCode != test.StatusCode {
 					return fmt.Errorf("expected %d from server, instead got %d (path %s)", test.StatusCode, resp.StatusCode, test.Path)
 				}

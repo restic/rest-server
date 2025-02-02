@@ -158,7 +158,8 @@ func join(base string, names ...string) (string, error) {
 // splitURLPath splits the URL path into a folderPath of the subrepo, and
 // a remainder that can be passed to repo.Handler.
 // Example: /foo/bar/locks/0123... will be split into:
-//          ["foo", "bar"] and "/locks/0123..."
+//
+//	["foo", "bar"] and "/locks/0123..."
 func splitURLPath(urlPath string, maxDepth int) (folderPath []string, remainder string) {
 	if !strings.HasPrefix(urlPath, "/") {
 		// Really should start with "/"

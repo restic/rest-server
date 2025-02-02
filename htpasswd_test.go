@@ -1,7 +1,6 @@
 package restserver
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -12,7 +11,7 @@ func TestValidate(t *testing.T) {
 	rawPwd := "test"
 	wrongPwd := "wrong"
 
-	tmpfile, err := ioutil.TempFile("", "rest-validate-")
+	tmpfile, err := os.CreateTemp("", "rest-validate-")
 	if err != nil {
 		t.Fatal(err)
 	}

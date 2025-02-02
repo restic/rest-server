@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -165,7 +164,7 @@ func createOverwriteDeleteSeq(t testing.TB, path string, data string) []TestRequ
 	return req
 }
 
-func createTestHandler(t *testing.T, conf Server) (http.Handler, string, string, string, func()) {
+func createTestHandler(t *testing.T, conf *Server) (http.Handler, string, string, string, func()) {
 	buf := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
@@ -176,7 +175,7 @@ func createTestHandler(t *testing.T, conf Server) (http.Handler, string, string,
 	fileID := hex.EncodeToString(dataHash[:])
 
 	// setup the server with a local backend in a temporary directory
-	tempdir, err := ioutil.TempDir("", "rest-server-test-")
+	tempdir, err := os.MkdirTemp("", "rest-server-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +189,7 @@ func createTestHandler(t *testing.T, conf Server) (http.Handler, string, string,
 	}
 
 	conf.Path = tempdir
-	mux, err := NewHandler(&conf)
+	mux, err := NewHandler(conf)
 	if err != nil {
 		t.Fatalf("error from NewHandler: %v", err)
 	}
@@ -199,7 +198,7 @@ func createTestHandler(t *testing.T, conf Server) (http.Handler, string, string,
 
 // TestResticAppendOnlyHandler runs tests on the restic handler code, especially in append-only mode.
 func TestResticAppendOnlyHandler(t *testing.T) {
-	mux, data, fileID, _, cleanup := createTestHandler(t, Server{
+	mux, data, fileID, _, cleanup := createTestHandler(t, &Server{
 		AppendOnly:   true,
 		NoAuth:       true,
 		Debug:        true,
@@ -300,7 +299,7 @@ func createIdempotentDeleteSeq(t testing.TB, path string, data string) []TestReq
 
 // TestResticHandler runs tests on the restic handler code, especially in append-only mode.
 func TestResticHandler(t *testing.T) {
-	mux, data, fileID, _, cleanup := createTestHandler(t, Server{
+	mux, data, fileID, _, cleanup := createTestHandler(t, &Server{
 		NoAuth:       true,
 		Debug:        true,
 		PanicOnError: true,
@@ -331,7 +330,7 @@ func TestResticHandler(t *testing.T) {
 
 // TestResticErrorHandler runs tests on the restic handler error handling.
 func TestResticErrorHandler(t *testing.T) {
-	mux, _, _, tempdir, cleanup := createTestHandler(t, Server{
+	mux, _, _, tempdir, cleanup := createTestHandler(t, &Server{
 		AppendOnly: true,
 		NoAuth:     true,
 		Debug:      true,
@@ -380,7 +379,7 @@ func TestResticErrorHandler(t *testing.T) {
 }
 
 func TestEmptyList(t *testing.T) {
-	mux, _, _, _, cleanup := createTestHandler(t, Server{
+	mux, _, _, _, cleanup := createTestHandler(t, &Server{
 		AppendOnly: true,
 		NoAuth:     true,
 		Debug:      true,
@@ -404,7 +403,7 @@ func TestEmptyList(t *testing.T) {
 }
 
 func TestListWithUnexpectedFiles(t *testing.T) {
-	mux, _, _, tempdir, cleanup := createTestHandler(t, Server{
+	mux, _, _, tempdir, cleanup := createTestHandler(t, &Server{
 		AppendOnly: true,
 		NoAuth:     true,
 		Debug:      true,
@@ -510,7 +509,7 @@ func newDelayedErrorReader(err error) *delayErrorReader {
 	}
 }
 
-func (d *delayErrorReader) Read(p []byte) (int, error) {
+func (d *delayErrorReader) Read(_ []byte) (int, error) {
 	d.firstReadOnce.Do(func() {
 		// close the channel to signal that the first read has happened
 		close(d.FirstRead)
@@ -522,7 +521,7 @@ func (d *delayErrorReader) Read(p []byte) (int, error) {
 // TestAbortedRequest runs tests with concurrent upload requests for the same file.
 func TestAbortedRequest(t *testing.T) {
 	// the race condition doesn't happen for append-only repositories
-	mux, _, _, _, cleanup := createTestHandler(t, Server{
+	mux, _, _, _, cleanup := createTestHandler(t, &Server{
 		NoAuth:       true,
 		Debug:        true,
 		PanicOnError: true,

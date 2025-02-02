@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -94,7 +93,7 @@ func TestTLSSettings(t *testing.T) {
 }
 
 func TestGetHandler(t *testing.T) {
-	dir, err := ioutil.TempDir("", "rest-server-test")
+	dir, err := os.MkdirTemp("", "rest-server-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +119,7 @@ func TestGetHandler(t *testing.T) {
 	}
 
 	// With NoAuth = false and custom .htpasswd
-	htpFile, err := ioutil.TempFile(dir, "custom")
+	htpFile, err := os.CreateTemp(dir, "custom")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +136,7 @@ func TestGetHandler(t *testing.T) {
 
 	// Create .htpasswd
 	htpasswd := filepath.Join(dir, ".htpasswd")
-	err = ioutil.WriteFile(htpasswd, []byte(""), 0644)
+	err = os.WriteFile(htpasswd, []byte(""), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +261,10 @@ func TestHttpListen(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				resp.Body.Close()
+				err = resp.Body.Close()
+				if err != nil {
+					return err
+				}
 				if resp.StatusCode != test.StatusCode {
 					return fmt.Errorf("expected %d from server, instead got %d (path %s)", test.StatusCode, resp.StatusCode, test.Path)
 				}
