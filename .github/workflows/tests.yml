@@ -7,9 +7,13 @@ on:
 
   # run tests for all pull requests
   pull_request:
+  merge_group:
+
+permissions:
+  contents: read
 
 env:
-  latest_go: "1.21.x"
+  latest_go: "1.23.x"
   GO111MODULE: on
 
 jobs:
@@ -17,10 +21,8 @@ jobs:
     strategy:
       matrix:
         go:
-          - 1.18.x
-          - 1.19.x
-          - 1.20.x
-          - 1.21.x
+          - 1.23.x
+          - 1.22.x
     runs-on: ubuntu-latest
     name: Go ${{ matrix.go }}
 
@@ -28,17 +30,13 @@ jobs:
       GOPROXY: https://proxy.golang.org
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Build
-        run: |
-          go build ./cmd/rest-server
 
       - name: Build with build.go
         run: |
@@ -46,7 +44,7 @@ jobs:
           go run build.go --goos windows
           go run build.go --goos darwin
 
-      - name: Run tests
+      - name: Run local Tests
         run: |
           go test ./...
 
@@ -61,23 +59,25 @@ jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # allow annotating code in the PR
+      checks: write
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
       - name: Set up Go ${{ env.latest_go }}
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.latest_go }}
 
-      - name: Check out code
-        uses: actions/checkout@v4
-
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.51
-          # Optional: show only new issues if it's a pull request. The default value is `false`.
-          only-new-issues: true
-          args: --verbose --timeout 10m
+          version: v1.63.4
+          args: --verbose --timeout 5m
 
         # only run golangci-lint for pull requests, otherwise ALL hints get
         # reported. We need to slowly address all issues until we can enable
@@ -89,3 +89,18 @@ jobs:
           echo "check if go.mod and go.sum are up to date"
           go mod tidy
           git diff --exit-code go.mod go.sum
+
+  analyze:
+    name: Analyze results
+    needs: [test, lint]
+    if: always()
+
+    permissions: # no need to access code
+      contents: none
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+        with:
+          jobs: ${{ toJSON(needs) }}
