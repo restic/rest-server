@@ -1,42 +1,41 @@
 <!--
-Thank you very much for contributing code or documentation to rest-server!
-
-Please note that each PR should be preceded by an issue where the suggested
-change can be discussed in general and without focus on specific code. That
-way, work done in the PR will better match what's been agreed in the issue.
-
-Please fill out the following questions to make it easier for us to review
-your changes. You don't have to check all the checkboxes at once, instead
-feel free to add more commits over time.
+Thank you very much for contributing code or documentation to rest-server! Please
+fill out the following questions to make it easier for us to review your
+changes.
 -->
 
-
-What is the purpose of this change? What does it change?
---------------------------------------------------------
+What does this PR change? What problem does it solve?
+-----------------------------------------------------
 
 <!--
-Describe the changes here, as detailed as needed.
+Describe the changes and their purpose here, as detailed as needed.
 -->
 
-
-Was the change discussed in an issue or in the forum before?
-------------------------------------------------------------
+Was the change previously discussed in an issue or on the forum?
+----------------------------------------------------------------
 
 <!--
 Link issues and relevant forum posts here.
 
-If this PR resolves an issue on GitHub, write "Closes #1234" such
-that the issue is closed automatically when this PR is merged.
+If this PR resolves an issue on GitHub, use "Closes #1234" so that the issue
+is closed automatically when this PR is merged.
 -->
-
 
 Checklist
 ---------
 
-- [ ] I have enabled [maintainer edits for this PR](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork)
-- [ ] I have added tests for all changes in this PR
-- [ ] I have added documentation for the changes (in the manual)
-- [ ] There's a new file in `changelog/unreleased/` that describes the changes for our users (template [here](https://github.com/restic/rest-server/blob/master/changelog/TEMPLATE))
-- [ ] I have run `gofmt` on the code in all commits
-- [ ] All commit messages are formatted in the same style as [the other commits in the repo](https://github.com/restic/rest-server/commits/master)
-- [ ] I'm done, this Pull Request is ready for review
+<!--
+You do not need to check all the boxes below all at once. Feel free to take
+your time and add more commits. If you're done and ready for review, please
+check the last box. Enable a checkbox by replacing [ ] with [x].
+
+Please always follow these steps:
+- Enable [maintainer edits](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork).
+- Run `gofmt` on the code in all commits.
+- Format all commit messages in the same style as [the other commits in the repository](https://github.com/restic/rest-server/blob/master/CONTRIBUTING.md#git-commits).
+-->
+
+- [ ] I have added tests for all code changes.
+- [ ] I have added documentation for relevant changes (in the manual).
+- [ ] There's a new file in `changelog/unreleased/` that describes the changes for our users (see [template](https://github.com/restic/rest-server/blob/master/changelog/TEMPLATE)).
+- [ ] I'm done! This pull request is ready for review.

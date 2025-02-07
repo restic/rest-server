@@ -3,8 +3,8 @@ name: Bug report
 about: Report a problem with rest-server to help us resolve it and improve
 ---
 
-
 <!--
+
 Welcome! - We kindly ask that you:
 
   1. Fill out the issue template below - not doing so needs a good reason.
@@ -24,6 +24,7 @@ for tracking bugs and feature requests directly relating to the development of
 the software itself, rather than the project.
 
 Thanks for understanding, and for contributing to the project!
+
 -->
 
 
@@ -31,22 +32,24 @@ Output of `rest-server --version` <!-- If using docker, output of `docker images
 ---------------------------------
 
 
-How did you run rest-server exactly?
-------------------------------------
+
+Problem description / Steps to reproduce
+----------------------------------------
 
 <!--
 This section should include at least:
 
+ * A description of the problem you are having with rest-server.
+
  * The complete command line and any environment variables you used to
-   configure rest-server's backend access. Make sure to replace sensitive values!
+   configure rest-server. Make sure to replace sensitive values!
 
  * The output of the commands, what rest-server prints gives may give us much
    information to diagnose the problem!
+
+ * The more time you spend describing an easy way to reproduce the behavior (if
+   this is possible), the easier it is for the project developers to fix it!
 -->
-
-
-What backend/server/service did you use to store the repository?
-----------------------------------------------------------------
 
 
 Expected behavior
@@ -56,30 +59,20 @@ Expected behavior
 Describe what you'd like rest-server to do differently.
 -->
 
-
 Actual behavior
 ---------------
 
 <!--
-Please try to concentrate on observations, so only describe what you observed directly.
+In this section, please try to concentrate on observations, so only describe
+what you observed directly.
 -->
-
-
-Steps to reproduce the behavior
--------------------------------
-
-<!--
-The more time you spend describing an easy way to reproduce the behavior (if
-this is possible), the easier it is for the project developers to fix it!
--->
-
 
 Do you have any idea what may have caused this?
 -----------------------------------------------
 
-
-Do you have an idea how to solve the issue?
--------------------------------------------
+<!--
+Did something noteworthy happen on your system, Internet connection, backend services, etc?
+-->
 
 
 Did rest-server help you today? Did it make you happy in any way?
