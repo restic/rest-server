@@ -49,7 +49,7 @@ Flags:
       --tls                    turn on TLS support
       --tls-cert string        TLS certificate path
       --tls-key string         TLS key path
-      --tls-min-ver string     TLS min version (default: 1.2) (default "1.2")
+      --tls-min-ver string     TLS min version (default: 1.2)
   -v, --version                version for rest-server
 ```
 

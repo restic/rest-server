@@ -181,7 +181,6 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 
 	tlscfg := &tls.Config{
 		MinVersion:       tls.VersionTLS12,
-		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -192,18 +191,12 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		},
 	}
 	switch app.Server.TLSMinVer {
-	case "1.0":
-		// Only available with GODEBUG="tls10server=1"
-		tlscfg.MinVersion = tls.VersionTLS10
-	case "1.1":
-		// Only available with GODEBUG="tls10server=1"
-		tlscfg.MinVersion = tls.VersionTLS11
 	case "1.2":
 		tlscfg.MinVersion = tls.VersionTLS12
 	case "1.3":
 		tlscfg.MinVersion = tls.VersionTLS13
 	default:
-		tlscfg.MinVersion = tls.VersionTLS12
+		return fmt.Errorf("Unsupported TLS min version: %s", app.Server.TLSMinVer)
 	}
 
 	srv := &http.Server{
