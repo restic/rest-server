@@ -69,7 +69,7 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.PrivateRepos, "private-repos", rv.Server.PrivateRepos, "users can only access their private repo")
 	flags.BoolVar(&rv.Server.Prometheus, "prometheus", rv.Server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&rv.Server.PrometheusNoAuth, "prometheus-no-auth", rv.Server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
-	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to read repo files")
+	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to access repo files")
 
 	return rv
 }
