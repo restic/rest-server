@@ -139,6 +139,16 @@ docker exec -it rest_server create_user myuser mypassword
 docker exec -it rest_server delete_user myuser
 ```
 
+## Proxy Authentication
+
+See above for no authentication (`--no-auth`) and basic authentication.
+
+To delegate authentication to a proxy, use the `--proxy-auth-username` flag. The specified header name, for example `X-Forwarded-User`,
+must be present in the request headers and specifies the username. Basic authentication is disabled when this flag is set.
+
+Warning: rest-server trusts the username in the header. It is the responsibility of the proxy
+to ensure that the username is correct and cannot be forged by an attacker.
+
 
 ## Prometheus support and Grafana dashboard
 
