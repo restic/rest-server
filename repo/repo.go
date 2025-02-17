@@ -55,10 +55,12 @@ const DefaultDirMode os.FileMode = 0700
 // overridden in the Options
 const DefaultFileMode os.FileMode = 0600
 
-// File mode used for directory creation when group access is enabled
+// GroupAccessibleDirMode is the file mode used for directory creation when
+// group access is enabled
 const GroupAccessibleDirMode os.FileMode = 0770
 
-// File mode used for file creation when group access is enabled
+// GroupAccessibleFileMode is the file mode used for file creation when
+// group access is enabled
 const GroupAccessibleFileMode os.FileMode = 0660
 
 // New creates a new Handler for a single Restic backup repo.
