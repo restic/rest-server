@@ -51,6 +51,14 @@ func TestCheckAuth(t *testing.T) {
 			},
 			expectedOk: false,
 		},
+		{
+			name:   "Proxy Auth send but not enabled",
+			server: &Server{},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "restic",
+			},
+			expectedOk: false,
+		},
 	}
 
 	for _, tt := range tests {
