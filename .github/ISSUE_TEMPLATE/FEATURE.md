@@ -1,10 +1,10 @@
 ---
-name: Feature request/enhancement
+name: Feature request
 about: Suggest a new feature or enhancement for rest-server
 ---
 
-
 <!--
+
 Welcome! - We kindly ask that you:
 
   1. Fill out the issue template below - not doing so needs a good reason.
@@ -18,6 +18,7 @@ for tracking bugs and feature requests directly relating to the development of
 the software itself, rather than the project.
 
 Thanks for understanding, and for contributing to the project!
+
 -->
 
 
@@ -30,23 +31,21 @@ later to see what has changed in rest-server when we revisit this issue after so
 time.
 -->
 
-
-What should rest-server do differently?
----------------------------------------
+What should rest-server do differently? Which functionality do you think we should add?
+---------------------------------------------------------------------------------------
 
 <!--
-Please describe the feature you'd like to see added or changed here.
+Please describe the feature you'd like us to add here.
 -->
 
 
-What are you trying to do? What is your use case?
--------------------------------------------------
+What are you trying to do? What problem would this solve?
+---------------------------------------------------------
 
 <!--
 This section should contain a brief description what you're trying to do, which
 would be possible after implementing the new feature.
 -->
-
 
 Did rest-server help you today? Did it make you happy in any way?
 -----------------------------------------------------------------
