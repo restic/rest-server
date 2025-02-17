@@ -8,7 +8,7 @@ require (
 	github.com/minio/sha256-simd v1.0.1
 	github.com/miolini/datacounter v1.0.3
 	github.com/prometheus/client_golang v1.20.5
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/crypto v0.32.0
 )
 
