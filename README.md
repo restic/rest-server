@@ -11,7 +11,7 @@ Rest Server is a high performance HTTP server that implements restic's [REST bac
 
 ## Requirements
 
-Rest Server requires Go 1.18 or higher to build.  The only tested compiler is the official Go compiler.  Building server with `gccgo` may work, but is not supported.
+Rest Server requires Go 1.22 or higher to build.  The only tested compiler is the official Go compiler.
 
 The required version of restic backup client to use with `rest-server` is [v0.7.1](https://github.com/restic/restic/releases/tag/v0.7.1) or higher.
 
