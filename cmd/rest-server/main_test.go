@@ -118,6 +118,12 @@ func TestGetHandler(t *testing.T) {
 		t.Errorf("NoAuth=true: expected no error, got %v", err)
 	}
 
+	// With NoAuth = false, no .htpasswd and ProxyAuth = X-Remote-User
+	_, err = getHandler(&restserver.Server{Path: dir, ProxyAuthUsername: "X-Remote-User"})
+	if err != nil {
+		t.Errorf("NoAuth=false, ProxyAuthUsername = X-Remote-User: expected no error, got %v", err)
+	}
+
 	// With NoAuth = false and custom .htpasswd
 	htpFile, err := os.CreateTemp(dir, "custom")
 	if err != nil {
