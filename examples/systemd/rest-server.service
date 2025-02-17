@@ -26,8 +26,9 @@ RestartSec=5
 # The following line must be customised to your individual requirements.
 ReadWritePaths=/path/to/backups
 
-# Makes created files group-readable, but inaccessible by others
-UMask=027
+# Set to `UMask=007` and pass `--group-accessible-repos` to rest-server to
+# make created files group-readable
+UMask=077
 
 # If your system doesn't support all of the features below (e.g. because of
 # the use of an older version of systemd), you may wish to comment-out
