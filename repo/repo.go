@@ -28,8 +28,6 @@ import (
 type Options struct {
 	AppendOnly     bool // if set, delete actions are not allowed
 	Debug          bool
-	DirMode        os.FileMode
-	FileMode       os.FileMode
 	NoVerifyUpload bool
 
 	// If set, we will panic when an internal server error happens. This
@@ -39,6 +37,13 @@ type Options struct {
 	BlobMetricFunc BlobMetricFunc
 	QuotaManager   *quota.Manager
 	FsyncWarning   *sync.Once
+
+	// If set makes files group accessible
+	GroupAccessible bool
+
+	// Defaults dir and file mode
+	dirMode  os.FileMode
+	fileMode os.FileMode
 }
 
 // DefaultDirMode is the file mode used for directory creation if not
@@ -49,6 +54,14 @@ const DefaultDirMode os.FileMode = 0700
 // overridden in the Options
 const DefaultFileMode os.FileMode = 0600
 
+// GroupAccessibleDirMode is the file mode used for directory creation when
+// group access is enabled
+const GroupAccessibleDirMode os.FileMode = 0770
+
+// GroupAccessibleFileMode is the file mode used for file creation when
+// group access is enabled
+const GroupAccessibleFileMode os.FileMode = 0660
+
 // New creates a new Handler for a single Restic backup repo.
 // path is the full filesystem path to this repo directory.
 // opt is a set of options.
@@ -56,12 +69,15 @@ func New(path string, opt Options) (*Handler, error) {
 	if path == "" {
 		return nil, fmt.Errorf("path is required")
 	}
-	if opt.DirMode == 0 {
-		opt.DirMode = DefaultDirMode
+
+	opt.dirMode = DefaultDirMode
+	opt.fileMode = DefaultFileMode
+
+	if opt.GroupAccessible {
+		opt.dirMode = GroupAccessibleDirMode
+		opt.fileMode = GroupAccessibleFileMode
 	}
-	if opt.FileMode == 0 {
-		opt.FileMode = DefaultFileMode
-	}
+
 	h := Handler{
 		path: path,
 		opt:  opt,
@@ -288,7 +304,7 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg := h.getSubPath("config")
 
-	f, err := os.OpenFile(cfg, os.O_CREATE|os.O_WRONLY|os.O_EXCL, h.opt.FileMode)
+	f, err := os.OpenFile(cfg, os.O_CREATE|os.O_WRONLY|os.O_EXCL, h.opt.fileMode)
 	if err != nil && os.IsExist(err) {
 		if h.opt.Debug {
 			log.Print(err)
@@ -554,15 +570,15 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpFn := filepath.Join(filepath.Dir(path), objectID+".rest-server-temp")
-	tf, err := tempFile(tmpFn, h.opt.FileMode)
+	tf, err := tempFile(tmpFn, h.opt.fileMode)
 	if os.IsNotExist(err) {
 		// the error is caused by a missing directory, create it and retry
-		mkdirErr := os.MkdirAll(filepath.Dir(path), h.opt.DirMode)
+		mkdirErr := os.MkdirAll(filepath.Dir(path), h.opt.dirMode)
 		if mkdirErr != nil {
 			log.Print(mkdirErr)
 		} else {
 			// try again
-			tf, err = tempFile(tmpFn, h.opt.FileMode)
+			tf, err = tempFile(tmpFn, h.opt.fileMode)
 		}
 	}
 	if err != nil {
@@ -759,13 +775,13 @@ func (h *Handler) createRepo(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Creating repository directories in %s\n", h.path)
 
-	if err := os.MkdirAll(h.path, h.opt.DirMode); err != nil {
+	if err := os.MkdirAll(h.path, h.opt.dirMode); err != nil {
 		h.internalServerError(w, err)
 		return
 	}
 
 	for _, d := range ObjectTypes {
-		if err := os.Mkdir(filepath.Join(h.path, d), h.opt.DirMode); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(filepath.Join(h.path, d), h.opt.dirMode); err != nil && !os.IsExist(err) {
 			h.internalServerError(w, err)
 			return
 		}
@@ -773,7 +789,7 @@ func (h *Handler) createRepo(w http.ResponseWriter, r *http.Request) {
 
 	for i := 0; i < 256; i++ {
 		dirPath := filepath.Join(h.path, "data", fmt.Sprintf("%02x", i))
-		if err := os.Mkdir(dirPath, h.opt.DirMode); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(dirPath, h.opt.dirMode); err != nil && !os.IsExist(err) {
 			h.internalServerError(w, err)
 			return
 		}

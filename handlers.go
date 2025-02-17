@@ -15,23 +15,24 @@ import (
 
 // Server encapsulates the rest-server's settings and repo management logic
 type Server struct {
-	Path             string
-	HtpasswdPath     string
-	Listen           string
-	Log              string
-	CPUProfile       string
-	TLSKey           string
-	TLSCert          string
-	TLS              bool
-	NoAuth           bool
-	AppendOnly       bool
-	PrivateRepos     bool
-	Prometheus       bool
-	PrometheusNoAuth bool
-	Debug            bool
-	MaxRepoSize      int64
-	PanicOnError     bool
-	NoVerifyUpload   bool
+	Path                 string
+	HtpasswdPath         string
+	Listen               string
+	Log                  string
+	CPUProfile           string
+	TLSKey               string
+	TLSCert              string
+	TLS                  bool
+	NoAuth               bool
+	AppendOnly           bool
+	PrivateRepos         bool
+	Prometheus           bool
+	PrometheusNoAuth     bool
+	Debug                bool
+	MaxRepoSize          int64
+	PanicOnError         bool
+	NoVerifyUpload       bool
+	GroupAccessibleRepos bool
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager
@@ -88,12 +89,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Pass the request to the repo.Handler
 	opt := repo.Options{
-		AppendOnly:     s.AppendOnly,
-		Debug:          s.Debug,
-		QuotaManager:   s.quotaManager, // may be nil
-		PanicOnError:   s.PanicOnError,
-		NoVerifyUpload: s.NoVerifyUpload,
-		FsyncWarning:   &s.fsyncWarning,
+		AppendOnly:      s.AppendOnly,
+		Debug:           s.Debug,
+		QuotaManager:    s.quotaManager, // may be nil
+		PanicOnError:    s.PanicOnError,
+		NoVerifyUpload:  s.NoVerifyUpload,
+		FsyncWarning:    &s.fsyncWarning,
+		GroupAccessible: s.GroupAccessibleRepos,
 	}
 	if s.Prometheus {
 		opt.BlobMetricFunc = makeBlobMetricFunc(username, folderPath)
