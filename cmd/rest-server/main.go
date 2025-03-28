@@ -196,7 +196,7 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	case "1.3":
 		tlscfg.MinVersion = tls.VersionTLS13
 	default:
-		return fmt.Errorf("Unsupported TLS min version: %s", app.Server.TLSMinVer)
+		return fmt.Errorf("Unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
 	}
 
 	srv := &http.Server{
