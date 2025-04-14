@@ -1,6 +1,7 @@
 Enhancement: Hardened tls settings
 
-rest-server now uses a secure tls cipher suit set and the minimal TLS version
-can be set with the option `--tls-min-ver`
+Rest-server now uses a secure TLS cipher suite set by default. The minimum TLS
+version is now TLS 1.2 and can be further increased using the new `--tls-min-ver`
+option, allowing users to enforce stricter security requirements.
 
 https://github.com/restic/rest-server/pull/315
