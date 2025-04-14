@@ -1,0 +1,13 @@
+Security: Fix world-readable permissions on new `.htpasswd` files
+
+On startup the rest-server Docker container creates an empty `.htpasswd` file
+if none exists yet. This file was world-readable by default, which can be
+a security risk, even though the file only contains hashed passwords.
+
+This has been fixed such that new `.htpasswd` files are no longer world-readabble.
+
+The permissions of existing `.htpasswd` files must be manually changed
+if relevant in your setup.
+
+https://github.com/restic/rest-server/issues/318
+https://github.com/restic/rest-server/pull/340
