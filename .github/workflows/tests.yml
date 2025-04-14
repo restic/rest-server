@@ -13,18 +13,30 @@ permissions:
   contents: read
 
 env:
-  latest_go: "1.23.x"
+  latest_go: "1.24.x"
   GO111MODULE: on
 
 jobs:
   test:
     strategy:
       matrix:
-        go:
-          - 1.23.x
-          - 1.22.x
-    runs-on: ubuntu-latest
-    name: Go ${{ matrix.go }}
+        include:
+          - job_name: Linux
+            go: 1.24.x
+            os: ubuntu-latest
+            check_changelog: true
+
+          - job_name: Linux (race)
+            go: 1.24.x
+            os: ubuntu-latest
+            test_opts: "-race"
+
+          - job_name: Linux
+            go: 1.23.x
+            os: ubuntu-latest
+
+    name: ${{ matrix.job_name }} Go ${{ matrix.go }}
+    runs-on: ${{ matrix.os }}
 
     env:
       GOPROXY: https://proxy.golang.org
@@ -46,7 +58,7 @@ jobs:
 
       - name: Run local Tests
         run: |
-          go test ./...
+          go test -cover ${{matrix.test_opts}} ./...
 
       - name: Check changelog files with calens
         run: |
@@ -55,6 +67,7 @@ jobs:
 
           echo "check changelog files"
           calens
+        if: matrix.check_changelog
 
   lint:
     name: lint
@@ -76,7 +89,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.63.4
+          version: v1.64.8
           args: --verbose --timeout 5m
 
         # only run golangci-lint for pull requests, otherwise ALL hints get
