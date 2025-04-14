@@ -5,4 +5,4 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-htpasswd -D $PASSWORD_FILE $1
+htpasswd -D "$PASSWORD_FILE" "$1"
