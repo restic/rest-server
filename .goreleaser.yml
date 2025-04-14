@@ -21,8 +21,7 @@ before:
 
 # build a single binary
 builds:
-  -
-    # make sure everything is statically linked by disabling cgo altogether
+  - # make sure everything is statically linked by disabling cgo altogether
     env:
       - CGO_ENABLED=0
 
@@ -33,7 +32,7 @@ builds:
       # don't include any paths to source files in the resulting binary
       - -trimpath
 
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
 
     ldflags:
       # set the version variable in the main package
@@ -66,14 +65,13 @@ builds:
 
 # configure the resulting archives to create
 archives:
-  -
-    # package a directory which contains the source file
+  - # package a directory which contains the source file
     wrap_in_directory: true
 
     builds_info: &archive_file_info
       owner: root
       group: root
-      mtime: '{{ .CommitDate }}'
+      mtime: "{{ .CommitDate }}"
       mode: 0644
 
     # add these files to all archives
@@ -94,7 +92,7 @@ source:
 
 # build a file containing the SHA256 hashes
 checksum:
-  name_template: 'SHA256SUMS'
+  name_template: "SHA256SUMS"
 
 # sign the checksum file
 signs:
@@ -204,21 +202,20 @@ dockers:
     dockerfile: "Dockerfile.goreleaser"
     extra_files: *extra_files
 
-
 docker_manifests:
-- name_template: "restic/rest-server:{{ .Version }}"
-  image_templates:
-  - "restic/rest-server:{{ .Version }}-amd64"
-  - "restic/rest-server:{{ .Version }}-i386"
-  - "restic/rest-server:{{ .Version }}-arm32v6"
-  - "restic/rest-server:{{ .Version }}-arm32v7"
-  - "restic/rest-server:{{ .Version }}-arm64v8"
-  - "restic/rest-server:{{ .Version }}-ppc64le"
-- name_template: "restic/rest-server:latest"
-  image_templates:
-  - "restic/rest-server:{{ .Version }}-amd64"
-  - "restic/rest-server:{{ .Version }}-i386"
-  - "restic/rest-server:{{ .Version }}-arm32v6"
-  - "restic/rest-server:{{ .Version }}-arm32v7"
-  - "restic/rest-server:{{ .Version }}-arm64v8"
-  - "restic/rest-server:{{ .Version }}-ppc64le"
+  - name_template: "restic/rest-server:{{ .Version }}"
+    image_templates:
+      - "restic/rest-server:{{ .Version }}-amd64"
+      - "restic/rest-server:{{ .Version }}-i386"
+      - "restic/rest-server:{{ .Version }}-arm32v6"
+      - "restic/rest-server:{{ .Version }}-arm32v7"
+      - "restic/rest-server:{{ .Version }}-arm64v8"
+      - "restic/rest-server:{{ .Version }}-ppc64le"
+  - name_template: "restic/rest-server:latest"
+    image_templates:
+      - "restic/rest-server:{{ .Version }}-amd64"
+      - "restic/rest-server:{{ .Version }}-i386"
+      - "restic/rest-server:{{ .Version }}-arm32v6"
+      - "restic/rest-server:{{ .Version }}-arm32v7"
+      - "restic/rest-server:{{ .Version }}-arm64v8"
+      - "restic/rest-server:{{ .Version }}-ppc64le"
