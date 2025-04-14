@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -45,8 +46,9 @@ func newRestServerApp() *restServerApp {
 			Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		},
 		Server: restserver.Server{
-			Path:   filepath.Join(os.TempDir(), "restic"),
-			Listen: ":8000",
+			Path:      filepath.Join(os.TempDir(), "restic"),
+			Listen:    ":8000",
+			TLSMinVer: "1.2",
 		},
 	}
 	rv.CmdRoot.RunE = rv.runRoot
@@ -61,6 +63,7 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.TLS, "tls", rv.Server.TLS, "turn on TLS support")
 	flags.StringVar(&rv.Server.TLSCert, "tls-cert", rv.Server.TLSCert, "TLS certificate path")
 	flags.StringVar(&rv.Server.TLSKey, "tls-key", rv.Server.TLSKey, "TLS key path")
+	flags.StringVar(&rv.Server.TLSMinVer, "tls-min-ver", rv.Server.TLSMinVer, "TLS min version, one of (1.2|1.3)")
 	flags.BoolVar(&rv.Server.NoAuth, "no-auth", rv.Server.NoAuth, "disable authentication")
 	flags.StringVar(&rv.Server.HtpasswdPath, "htpasswd-file", rv.Server.HtpasswdPath, "location of .htpasswd file (default: \"<data directory>/.htpasswd)\"")
 	flags.StringVar(&rv.Server.ProxyAuthUsername, "proxy-auth-username", rv.Server.ProxyAuthUsername, "specifies the HTTP header containing the username for proxy-based authentication")
@@ -176,8 +179,29 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	app.listenerAddress = listener.Addr()
 	app.listenerAddressMu.Unlock()
 
+	tlscfg := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+		},
+	}
+	switch app.Server.TLSMinVer {
+	case "1.2":
+		tlscfg.MinVersion = tls.VersionTLS12
+	case "1.3":
+		tlscfg.MinVersion = tls.VersionTLS13
+	default:
+		return fmt.Errorf("Unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
+	}
+
 	srv := &http.Server{
-		Handler: handler,
+		Handler:   handler,
+		TLSConfig: tlscfg,
 	}
 
 	// run server in background
