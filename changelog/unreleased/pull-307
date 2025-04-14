@@ -1,0 +1,8 @@
+Enhancement: Add support for proxy-based authentication
+
+The server now supports authentication via a proxy header specified with the `--proxy-auth-username` flag (e.g., `--proxy-auth-username=X-Forwarded-User`).
+When this flag is set, the server will authenticate users based on the given header and disable BasicAuth.
+Note that `--proxy-auth-username` is ignored if `--no-auth` is set, as `--no-auth` disables all authentication.
+
+https://github.com/restic/rest-server/issues/174
+https://github.com/restic/rest-server/pull/307

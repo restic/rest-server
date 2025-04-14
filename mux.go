@@ -41,10 +41,17 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	if s.NoAuth {
 		return username, true
 	}
-	var password string
-	username, password, ok = r.BasicAuth()
-	if !ok || !s.htpasswdFile.Validate(username, password) {
-		return "", false
+	if s.ProxyAuthUsername != "" {
+		username = r.Header.Get(s.ProxyAuthUsername)
+		if username == "" {
+			return "", false
+		}
+	} else {
+		var password string
+		username, password, ok = r.BasicAuth()
+		if !ok || !s.htpasswdFile.Validate(username, password) {
+			return "", false
+		}
 	}
 	return username, true
 }
@@ -66,7 +73,7 @@ func (s *Server) wrapMetricsAuth(f http.HandlerFunc) http.HandlerFunc {
 
 // NewHandler returns the master HTTP multiplexer/router.
 func NewHandler(server *Server) (http.Handler, error) {
-	if !server.NoAuth {
+	if !server.NoAuth && server.ProxyAuthUsername == "" {
 		var err error
 		if server.HtpasswdPath == "" {
 			server.HtpasswdPath = filepath.Join(server.Path, ".htpasswd")
