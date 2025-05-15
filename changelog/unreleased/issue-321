@@ -1,0 +1,7 @@
+Enhancement: Add zip archive format for Windows releases
+
+Windows users can now download rest-server binaries in zip archive format (.zip)
+in addition to the existing tar.gz archives.
+
+https://github.com/restic/rest-server/issues/321
+https://github.com/restic/rest-server/pull/346
