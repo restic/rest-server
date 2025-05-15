@@ -21,28 +21,27 @@ before:
 
 # build a single binary
 builds:
-  - # make sure everything is statically linked by disabling cgo altogether
-    env:
+  - id: default
+    # make sure everything is statically linked by disabling cgo altogether
+    env: &build_env
       - CGO_ENABLED=0
 
     # set the package for the main binary
     main: ./cmd/rest-server
 
     flags:
-      # don't include any paths to source files in the resulting binary
+      &build_flags # don't include any paths to source files in the resulting binary
       - -trimpath
 
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-    ldflags:
-      # set the version variable in the main package
+    ldflags: &build_ldflags # set the version variable in the main package
       - "-s -w -X main.version={{ .Version }}"
 
     # list all operating systems and architectures we build binaries for
     goos:
       - linux
       - darwin
-      - windows
       - freebsd
       - netbsd
       - openbsd
@@ -51,7 +50,7 @@ builds:
 
     goarch:
       - amd64
-      - 386
+      - "386"
       - arm
       - arm64
       - mips
@@ -60,12 +59,29 @@ builds:
       - ppc64
       - ppc64le
     goarm:
-      - 6
-      - 7
+      - "6"
+      - "7"
+
+  - id: windows-only
+    env: *build_env
+    main: ./cmd/rest-server
+    flags: *build_flags
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags: *build_ldflags
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - "386"
+      - arm
+      - arm64
 
 # configure the resulting archives to create
 archives:
-  - # package a directory which contains the source file
+  - id: default
+    builds: [default, windows-only]
+    format: tar.gz
+    # package a directory which contains the source file
     wrap_in_directory: true
 
     builds_info: &archive_file_info
@@ -75,7 +91,7 @@ archives:
       mode: 0644
 
     # add these files to all archives
-    files:
+    files: &archive_files
       - src: LICENSE
         dst: LICENSE
         info: *archive_file_info
@@ -85,6 +101,13 @@ archives:
       - src: CHANGELOG.md
         dst: CHANGELOG.md
         info: *archive_file_info
+
+  - id: windows-only
+    builds: [windows-only]
+    formats: [zip]
+    wrap_in_directory: true
+    builds_info: *archive_file_info
+    files: *archive_files
 
 # also build an archive of the source code
 source:
@@ -126,7 +149,7 @@ dockers:
       - docker/entrypoint.sh
   - image_templates:
       - restic/rest-server:{{ .Version }}-i386
-    goarch: 386
+    goarch: "386"
     build_flag_templates:
       - "--platform=linux/386"
       - "--pull"
