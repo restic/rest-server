@@ -34,7 +34,7 @@
    use another config file):
 
         goreleaser \
-          release \
+          release --parallelism 4 \
           --release-notes <(calens --template changelog/CHANGELOG-GitHub.tmpl --version "${VERSION}")
 
 7. Set a new version in `main.go` and commit the result:
