@@ -1,6 +1,7 @@
 Change: Update dependencies and require Go 1.23 or newer
 
-We have updated all dependencies. Rest-server now requires Go 1.23 or newer to build.
+All dependencies have been updated. Rest-server now requires Go 1.23 or newer
+to build.
 
 This also disables support for TLS versions older than TLS 1.2. On Windows,
 rest-server now requires at least Windows 10 or Windows Server 2016. On macOS,

@@ -2,9 +2,11 @@ Enhancement: Support proxy-based authentication
 
 Rest-server now supports authentication via HTTP proxy headers. This feature can
 be enabled by specifying the username header using the `--proxy-auth-username`
-option (e.g., `--proxy-auth-username=X-Forwarded-User`). When enabled, the server
-authenticates users based on the specified header and disables BasicAuth.
-Note that proxy authentication is disabled when `--no-auth` is set.
+option (e.g., `--proxy-auth-username=X-Forwarded-User`).
+
+When enabled, the server authenticates users based on the specified header and
+disables Basic Auth. Note that proxy authentication is disabled when `--no-auth`
+is set.
 
 https://github.com/restic/rest-server/issues/174
 https://github.com/restic/rest-server/pull/307
