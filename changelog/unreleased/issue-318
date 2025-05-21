@@ -6,8 +6,8 @@ a security risk, even though the file only contains hashed passwords.
 
 This has been fixed such that new `.htpasswd` files are no longer world-readabble.
 
-The permissions of existing `.htpasswd` files must be manually changed
-if relevant in your setup.
+The permissions of existing `.htpasswd` files must be manually changed if
+relevant in your setup.
 
 https://github.com/restic/rest-server/issues/318
 https://github.com/restic/rest-server/pull/340

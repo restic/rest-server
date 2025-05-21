@@ -1,4 +1,4 @@
-Enhancement: Output status of append only mode on startup
+Enhancement: Output status of append-only mode on startup
 
 Rest-server now displays the status of append-only mode during startup.
 
