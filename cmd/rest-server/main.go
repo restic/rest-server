@@ -15,6 +15,7 @@ import (
 	"runtime/pprof"
 	"sync"
 	"syscall"
+	"time"
 
 	restserver "github.com/restic/rest-server"
 	"github.com/spf13/cobra"
@@ -46,9 +47,10 @@ func newRestServerApp() *restServerApp {
 			Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		},
 		Server: restserver.Server{
-			Path:      filepath.Join(os.TempDir(), "restic"),
-			Listen:    ":8000",
-			TLSMinVer: "1.2",
+			Path:          filepath.Join(os.TempDir(), "restic"),
+			Listen:        ":8000",
+			TLSMinVer:     "1.2",
+			TLSReloadTime: time.Minute,
 		},
 	}
 	rv.CmdRoot.RunE = rv.runRoot
@@ -63,6 +65,9 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.TLS, "tls", rv.Server.TLS, "turn on TLS support")
 	flags.StringVar(&rv.Server.TLSCert, "tls-cert", rv.Server.TLSCert, "TLS certificate path")
 	flags.StringVar(&rv.Server.TLSKey, "tls-key", rv.Server.TLSKey, "TLS key path")
+	flags.BoolVar(&rv.Server.TLSDynamicReload, "tls-load-dyn", rv.Server.TLSDynamicReload, "dynamically reload TLS key and cert file from disk if they change")
+	flags.DurationVar(&rv.Server.TLSReloadTime, "tls-load-dyn-poll", rv.Server.TLSReloadTime, "poll at most once per interval when tls-load-dyn is enabled")
+
 	flags.StringVar(&rv.Server.TLSMinVer, "tls-min-ver", rv.Server.TLSMinVer, "TLS min version, one of (1.2|1.3)")
 	flags.BoolVar(&rv.Server.NoAuth, "no-auth", rv.Server.NoAuth, "disable authentication")
 	flags.StringVar(&rv.Server.HtpasswdPath, "htpasswd-file", rv.Server.HtpasswdPath, "location of .htpasswd file (default: \"<data directory>/.htpasswd)\"")
@@ -198,10 +203,26 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	default:
 		return fmt.Errorf("Unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
 	}
-
 	srv := &http.Server{
 		Handler:   handler,
 		TLSConfig: tlscfg,
+	}
+
+	if enabledTLS {
+		if app.Server.TLSDynamicReload {
+			dc, err := newDynamicChecker(publicKey, privateKey)
+			if err != nil {
+				return fmt.Errorf("unable to load key pair: %w", err)
+			}
+			dc.poll(app.CmdRoot.Context(), app.Server.TLSReloadTime)
+			tlscfg.GetCertificate = dc.getCertificate
+		} else {
+			crt, err := tls.LoadX509KeyPair(publicKey, privateKey)
+			if err != nil {
+				return fmt.Errorf("unable to load key pair: %w", err)
+			}
+			tlscfg.Certificates = []tls.Certificate{crt}
+		}
 	}
 
 	// run server in background
@@ -210,7 +231,10 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 			err = srv.Serve(listener)
 		} else {
 			log.Printf("TLS enabled, private key %s, pubkey %v", privateKey, publicKey)
-			err = srv.ServeTLS(listener, publicKey, privateKey)
+			if app.Server.TLSDynamicReload {
+				log.Printf("TLS dynamic reloading enabled, will poll up to once every %s for changes", app.Server.TLSReloadTime)
+			}
+			err = srv.ServeTLS(listener, "", "")
 		}
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("listen and serve returned err: %v", err)
