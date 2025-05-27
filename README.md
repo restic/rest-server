@@ -160,6 +160,10 @@ The server can be started with `--prometheus` to expose [Prometheus](https://pro
 This repository contains an example full stack Docker Compose setup with a Grafana dashboard in [examples/compose-with-grafana/](examples/compose-with-grafana/).
 
 
+## Group-accessible Repositories
+
+Rest-server supports making repositories accessible to the filesystem group by setting the `--group-accessible-repos` option. Note that permissions of existing files are not modified. To allow the group to read and write file, use a umask of `007`. To only grant read access use `027`. To make an existing repository group-accessible, use `chmod -R g+rwX /path/to/repo`.
+
 ## Why use Rest Server?
 
 Compared to the SFTP backend, the REST backend has better performance, especially so if you can skip additional crypto overhead by using plain HTTP transport (restic already properly encrypts all data it sends, so using HTTPS is mostly about authentication).
