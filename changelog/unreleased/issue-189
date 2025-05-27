@@ -2,8 +2,9 @@ Enhancement: Support group accessible repositories
 
 Rest-server now supports making repositories accessible to the filesystem group
 by setting the `--group-accessible-repos` option. Note that permissions of
-existing files are not modified. To make an existing repository group-accessible,
-use `chmod -R g+rwX /path/to/repo`.
+existing files are not modified. To allow the group to read and write file,
+use a umask of `007`. To only grant read access use `027`. To make an existing
+repository group-accessible, use `chmod -R g+rwX /path/to/repo`.
 
 https://github.com/restic/rest-server/issues/189
 https://github.com/restic/rest-server/pull/308

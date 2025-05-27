@@ -26,8 +26,9 @@ RestartSec=5
 # The following line must be customised to your individual requirements.
 ReadWritePaths=/path/to/backups
 
-# Set to `UMask=007` and pass `--group-accessible-repos` to rest-server to
-# make created files group-readable
+# Files in the data repository are only user accessible by default. Default to
+# `UMask=077` for consistency. To make created files group-readable, set to
+# `UMask=007` and pass `--group-accessible-repos` to rest-server via `ExecStart`.
 UMask=077
 
 # If your system doesn't support all of the features below (e.g. because of
