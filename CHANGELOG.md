@@ -1,3 +1,98 @@
+Changelog for rest-server 0.14.0 (2025-05-31)
+============================================
+
+The following sections list the changes in rest-server 0.14.0 relevant
+to users. The changes are ordered by importance.
+
+Summary
+-------
+
+ * Sec #318: Fix world-readable permissions on new `.htpasswd` files
+ * Chg #322: Update dependencies and require Go 1.23 or newer
+ * Enh #174: Support proxy-based authentication
+ * Enh #189: Support group accessible repositories
+ * Enh #295: Output status of append-only mode on startup
+ * Enh #315: Hardened tls settings
+ * Enh #321: Add zip archive format for Windows releases
+
+Details
+-------
+
+ * Security #318: Fix world-readable permissions on new `.htpasswd` files
+
+   On startup the rest-server Docker container creates an empty `.htpasswd` file if
+   none exists yet. This file was world-readable by default, which can be a
+   security risk, even though the file only contains hashed passwords.
+
+   This has been fixed such that new `.htpasswd` files are no longer
+   world-readabble.
+
+   The permissions of existing `.htpasswd` files must be manually changed if
+   relevant in your setup.
+
+   https://github.com/restic/rest-server/issues/318
+   https://github.com/restic/rest-server/pull/340
+
+ * Change #322: Update dependencies and require Go 1.23 or newer
+
+   All dependencies have been updated. Rest-server now requires Go 1.23 or newer to
+   build.
+
+   This also disables support for TLS versions older than TLS 1.2. On Windows,
+   rest-server now requires at least Windows 10 or Windows Server 2016. On macOS,
+   rest-server now requires at least macOS 11 Big Sur.
+
+   https://github.com/restic/rest-server/pull/322
+   https://github.com/restic/rest-server/pull/338
+
+ * Enhancement #174: Support proxy-based authentication
+
+   Rest-server now supports authentication via HTTP proxy headers. This feature can
+   be enabled by specifying the username header using the `--proxy-auth-username`
+   option (e.g., `--proxy-auth-username=X-Forwarded-User`).
+
+   When enabled, the server authenticates users based on the specified header and
+   disables Basic Auth. Note that proxy authentication is disabled when `--no-auth`
+   is set.
+
+   https://github.com/restic/rest-server/issues/174
+   https://github.com/restic/rest-server/pull/307
+
+ * Enhancement #189: Support group accessible repositories
+
+   Rest-server now supports making repositories accessible to the filesystem group
+   by setting the `--group-accessible-repos` option. Note that permissions of
+   existing files are not modified. To allow the group to read and write file, use
+   a umask of `007`. To only grant read access use `027`. To make an existing
+   repository group-accessible, use `chmod -R g+rwX /path/to/repo`.
+
+   https://github.com/restic/rest-server/issues/189
+   https://github.com/restic/rest-server/pull/308
+
+ * Enhancement #295: Output status of append-only mode on startup
+
+   Rest-server now displays the status of append-only mode during startup.
+
+   https://github.com/restic/rest-server/pull/295
+
+ * Enhancement #315: Hardened tls settings
+
+   Rest-server now uses a secure TLS cipher suite set by default. The minimum TLS
+   version is now TLS 1.2 and can be further increased using the new
+   `--tls-min-ver` option, allowing users to enforce stricter security
+   requirements.
+
+   https://github.com/restic/rest-server/pull/315
+
+ * Enhancement #321: Add zip archive format for Windows releases
+
+   Windows users can now download rest-server binaries in zip archive format (.zip)
+   in addition to the existing tar.gz archives.
+
+   https://github.com/restic/rest-server/issues/321
+   https://github.com/restic/rest-server/pull/346
+
+
 Changelog for rest-server 0.13.0 (2024-07-26)
 ============================================
 
