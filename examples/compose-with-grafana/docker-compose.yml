@@ -3,8 +3,9 @@ version: '2'
 
 services:
   restserver:
-    # NOTE: You must run `make docker_build` in the repo root first
+    # NOTE: Use `docker compose up --build -d` to build the image locally
     # If you want to run this in production, you want auth and tls!
+    image: restic/rest-server:latest
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -34,8 +35,7 @@ services:
     image: grafana/grafana
     volumes:
       - grafanadata:/var/lib/grafana
-      - ./dashboards:/dashboards
-      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana:/etc/grafana
     ports:
       - "127.0.0.1:8030:3000"
     environment:
