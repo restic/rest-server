@@ -37,6 +37,7 @@ services:
     ports:
       - "127.0.0.1:8030:3000"
     environment:
+      GF_SECURITY_CSRF_TRUSTED_ORIGINS: grafana.example.com # Put your serving domain here
       GF_USERS_DEFAULT_THEME: light
     #  GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     depends_on:
