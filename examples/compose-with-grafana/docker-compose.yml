@@ -1,6 +1,4 @@
 # Demo of rest-server with prometheus and grafana
-version: '2'
-
 services:
   restserver:
     # NOTE: Use `docker compose up --build -d` to build the image locally
