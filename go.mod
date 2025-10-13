@@ -1,6 +1,6 @@
 module github.com/restic/rest-server
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -9,7 +9,7 @@ require (
 	github.com/miolini/datacounter v1.0.3
 	github.com/prometheus/client_golang v1.22.0
 	github.com/spf13/cobra v1.9.1
-	golang.org/x/crypto v0.38.0
+	golang.org/x/crypto v0.43.0
 )
 
 require (
@@ -23,6 +23,6 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )
