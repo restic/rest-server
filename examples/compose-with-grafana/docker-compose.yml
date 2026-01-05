@@ -1,5 +1,4 @@
 # Demo of rest-server with prometheus and grafana
-version: '2'
 
 services:
   restserver:
