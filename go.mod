@@ -3,7 +3,7 @@ module github.com/restic/rest-server
 go 1.24.0
 
 require (
-	github.com/coreos/go-systemd/v22 v22.6.0
+	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/minio/sha256-simd v1.0.1
 	github.com/miolini/datacounter v1.0.3
