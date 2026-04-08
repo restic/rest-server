@@ -35,6 +35,7 @@ type Server struct {
 	PanicOnError         bool
 	NoVerifyUpload       bool
 	GroupAccessibleRepos bool
+	TrustProxy           bool
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager

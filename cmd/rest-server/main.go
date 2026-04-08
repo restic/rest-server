@@ -74,6 +74,7 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.Prometheus, "prometheus", rv.Server.Prometheus, "enable Prometheus metrics")
 	flags.BoolVar(&rv.Server.PrometheusNoAuth, "prometheus-no-auth", rv.Server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
 	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to access repo files")
+	flags.BoolVar(&rv.Server.TrustProxy, "trust-proxy", rv.Server.TrustProxy, "trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)")
 
 	return rv
 }
@@ -162,6 +163,12 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		log.Println("Group accessible repos enabled")
 	} else {
 		log.Println("Group accessible repos disabled")
+	}
+
+	if app.Server.TrustProxy {
+		log.Println("Trust proxy headers enabled")
+	} else {
+		log.Println("Trust proxy headers disabled")
 	}
 
 	enabledTLS, privateKey, publicKey, err := app.tlsSettings()
