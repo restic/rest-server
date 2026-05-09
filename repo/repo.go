@@ -305,11 +305,15 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := h.getSubPath("config")
 
 	f, err := os.OpenFile(cfg, os.O_CREATE|os.O_WRONLY|os.O_EXCL, h.opt.fileMode)
-	if err != nil && os.IsExist(err) {
+	if err != nil {
 		if h.opt.Debug {
 			log.Print(err)
 		}
-		httpDefaultError(w, http.StatusForbidden)
+		if os.IsExist(err) {
+			httpDefaultError(w, http.StatusForbidden)
+		} else {
+			h.internalServerError(w, err)
+		}
 		return
 	}
 
