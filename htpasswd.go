@@ -251,7 +251,6 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	isValid := isMatchingHashAndPassword(hashedPassword, password)
 
 	if !isValid {
-		log.Printf("Invalid htpasswd entry for %s.", user)
 		return false
 	}
 
