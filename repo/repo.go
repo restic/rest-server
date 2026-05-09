@@ -807,7 +807,7 @@ func (h *Handler) internalServerError(w http.ResponseWriter, err error) {
 	httpDefaultError(w, http.StatusInternalServerError)
 }
 
-// internalServerError is called to report an error that occurred while
+// fileAccessError is called to report an error that occurred while
 // accessing a file. If the does not exist, the corresponding http status code
 // will be returned to the client. All other errors are passed on to
 // internalServerError
