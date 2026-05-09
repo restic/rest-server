@@ -123,7 +123,7 @@ func (h *HtpasswdFile) expiryTimer() {
 		var zeros [sha256.Size]byte
 		// try to wipe expired cache entries
 		for user, entry := range h.cache {
-			if entry.expiry.After(now) {
+			if now.After(entry.expiry) {
 				copy(entry.verifier, zeros[:])
 				delete(h.cache, user)
 			}
