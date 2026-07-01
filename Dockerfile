@@ -14,7 +14,7 @@ FROM alpine
 ENV DATA_DIRECTORY /data
 ENV PASSWORD_FILE /data/.htpasswd
 
-RUN apk add --no-cache --update apache2-utils
+RUN apk add --no-cache --update apache2-utils tzdata
 
 COPY docker/create_user /usr/bin/
 COPY docker/delete_user /usr/bin/
