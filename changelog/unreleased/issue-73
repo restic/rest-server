@@ -1,0 +1,7 @@
+Enhancement: TLS Client Authentication
+
+It is now possible to require clients to provide a certificate that was signed
+by a certain CA.
+
+https://github.com/restic/rest-server/issues/73
+https://github.com/restic/rest-server/pull/193

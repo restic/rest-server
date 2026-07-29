@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -61,6 +63,7 @@ func newRestServerApp() *restServerApp {
 	flags.Int64Var(&rv.Server.MaxRepoSize, "max-size", rv.Server.MaxRepoSize, "the maximum size of the repository in bytes")
 	flags.StringVar(&rv.Server.Path, "path", rv.Server.Path, "data directory")
 	flags.BoolVar(&rv.Server.TLS, "tls", rv.Server.TLS, "turn on TLS support")
+	flags.StringVar(&rv.Server.TLSCACert, "tls-cacert", rv.Server.TLSCACert, "TLS CA certificate path")
 	flags.StringVar(&rv.Server.TLSCert, "tls-cert", rv.Server.TLSCert, "TLS certificate path")
 	flags.StringVar(&rv.Server.TLSKey, "tls-key", rv.Server.TLSKey, "TLS key path")
 	flags.StringVar(&rv.Server.TLSMinVer, "tls-min-ver", rv.Server.TLSMinVer, "TLS min version, one of (1.2|1.3)")
@@ -197,6 +200,20 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		tlscfg.MinVersion = tls.VersionTLS13
 	default:
 		return fmt.Errorf("unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
+	}
+
+	if app.Server.TLSCACert != "" {
+		log.Printf("TLS Client Authentication enabled, CA cert %s", app.Server.TLSCACert)
+
+		caCert, err := ioutil.ReadFile(app.Server.TLSCACert)
+		if err != nil {
+			return fmt.Errorf("unable to read CA certificate: %w", err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		tlscfg.ClientAuth = tls.RequireAndVerifyClientCert
+		tlscfg.ClientCAs = caCertPool
 	}
 
 	srv := &http.Server{

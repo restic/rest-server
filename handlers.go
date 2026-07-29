@@ -20,6 +20,7 @@ type Server struct {
 	Listen               string
 	Log                  string
 	CPUProfile           string
+	TLSCACert            string
 	TLSKey               string
 	TLSCert              string
 	TLSMinVer            string
