@@ -1,10 +1,9 @@
 # Demo of rest-server with prometheus and grafana
-version: '2'
-
 services:
   restserver:
-    # NOTE: You must run `make docker_build` in the repo root first
+    # NOTE: Use `docker compose up --build -d` to build the image locally
     # If you want to run this in production, you want auth and tls!
+    image: restic/rest-server:latest
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -34,11 +33,11 @@ services:
     image: grafana/grafana
     volumes:
       - grafanadata:/var/lib/grafana
-      - ./dashboards:/dashboards
-      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana:/etc/grafana
     ports:
       - "127.0.0.1:8030:3000"
     environment:
+      GF_SECURITY_CSRF_TRUSTED_ORIGINS: grafana.example.com # Put your serving domain here
       GF_USERS_DEFAULT_THEME: light
     #  GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     depends_on:
