@@ -52,6 +52,7 @@ Flags:
       --tls-cert string              TLS certificate path
       --tls-key string               TLS key path
       --tls-min-ver string           TLS min version, one of (1.2|1.3) (default "1.2")
+      --trust-proxy                  trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)
   -v, --version                      version for rest-server
 ```
 
