@@ -41,7 +41,7 @@ Flags:
       --listen string                listen address (default ":8000")
       --log filename                 write HTTP requests in the combined log format to the specified filename (use "-" for logging to stdout)
       --max-size int                 the maximum size of the repository in bytes
-      --no-auth                      disable .htpasswd authentication
+      --no-auth                      disable authentication
       --no-verify-upload             do not verify the integrity of uploaded data. DO NOT enable unless the rest-server runs on a very low-power device
       --path string                  data directory (default "/tmp/restic")
       --private-repos                users can only access their private repo
@@ -51,6 +51,8 @@ Flags:
       --tls                          turn on TLS support
       --tls-cert string              TLS certificate path
       --tls-key string               TLS key path
+      --tls-load-dyn                 dynamically reload TLS key and cert file from disk if they change
+      --tls-load-dyn-poll duration   poll at most once per interval when tls-load-dyn is enabled (default 1m0s)      
       --tls-min-ver string           TLS min version, one of (1.2|1.3) (default "1.2")
   -v, --version                      version for rest-server
 ```
