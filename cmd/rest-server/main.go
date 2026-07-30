@@ -206,6 +206,7 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 
 	// run server in background
 	go func() {
+		var err error
 		if !enabledTLS {
 			err = srv.Serve(listener)
 		} else {
