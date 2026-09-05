@@ -32,7 +32,7 @@ check the last box. Enable a checkbox by replacing [ ] with [x].
 Please always follow these steps:
 - Enable [maintainer edits](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork).
 - Run `gofmt` on the code in all commits.
-- Format all commit messages in the same style as [the other commits in the repository](https://github.com/restic/rest-server/blob/master/CONTRIBUTING.md#git-commits).
+- Format all commit messages in the same style as [the other commits in the repository](https://github.com/restic/restic/blob/master/CONTRIBUTING.md#git-commits).
 -->
 
 - [ ] I have added tests for all code changes.
