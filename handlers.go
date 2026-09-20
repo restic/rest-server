@@ -51,7 +51,7 @@ func httpDefaultError(w http.ResponseWriter, code int) {
 	http.Error(w, http.StatusText(code), code)
 }
 
-// ServeHTTP makes this server an http.Handler. It handlers the administrative
+// ServeHTTP makes this server an http.Handler. It handles the administrative
 // part of the request (figuring out the filesystem location, performing
 // authentication, etc) and then passes it on to repo.Handler for actual
 // REST API processing.

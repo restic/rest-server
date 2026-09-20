@@ -70,7 +70,7 @@ func (m *Manager) WrapWriter(req *http.Request, w io.Writer) (io.Writer, int, er
 	if contentLenStr := req.Header.Get("Content-Length"); contentLenStr != "" {
 		contentLen, err := strconv.ParseInt(contentLenStr, 10, 64)
 		if err != nil {
-			return nil, http.StatusLengthRequired, err
+			return nil, http.StatusBadRequest, err
 		}
 		if currentSize+contentLen > m.maxRepoSize {
 			err := fmt.Errorf("incoming blob (%d bytes) would exceed maximum size of repository (%d bytes)",
