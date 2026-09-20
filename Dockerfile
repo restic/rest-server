@@ -1,6 +1,6 @@
 FROM golang:alpine AS builder
 
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 
 COPY . /build
 WORKDIR /build
@@ -11,8 +11,8 @@ RUN go build -o rest-server ./cmd/rest-server
 
 FROM alpine
 
-ENV DATA_DIRECTORY /data
-ENV PASSWORD_FILE /data/.htpasswd
+ENV DATA_DIRECTORY=/data
+ENV PASSWORD_FILE=/data/.htpasswd
 
 RUN apk add --no-cache --update apache2-utils tzdata
 
