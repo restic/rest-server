@@ -315,6 +315,7 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(f, r.Body)
 	if err != nil {
+		_ = f.Close()
 		h.internalServerError(w, err)
 		return
 	}
@@ -589,6 +590,8 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 	// ensure this blob does not put us over the quota size limit (if there is one)
 	outFile, errCode, err := h.wrapFileWriter(r, tf)
 	if err != nil {
+		_ = tf.Close()
+		_ = os.Remove(tf.Name())
 		if h.opt.Debug {
 			log.Println(err)
 		}
