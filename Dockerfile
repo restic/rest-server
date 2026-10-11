@@ -9,7 +9,7 @@ RUN go build -o rest-server ./cmd/rest-server
 
 
 
-FROM alpine
+FROM alpine:3.24
 
 ENV DATA_DIRECTORY=/data
 ENV PASSWORD_FILE=/data/.htpasswd
