@@ -1,6 +1,6 @@
-Change: Update dependencies and require Go 1.24 or newer
+Change: Update dependencies and require Go 1.26 or newer
 
-All dependencies have been updated. Rest-server now requires Go 1.24 or newer
+All dependencies have been updated. Rest-server now requires Go 1.26 or newer
 to build.
 
 https://github.com/restic/rest-server/pull/373
