@@ -112,7 +112,7 @@ func NewHandler(server *Server) (http.Handler, error) {
 			mux.HandleFunc("/metrics", server.wrapMetricsAuth(promhttp.Handler().ServeHTTP))
 		}
 	}
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.Handle("/", server)
