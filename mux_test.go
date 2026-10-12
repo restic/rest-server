@@ -80,6 +80,22 @@ func TestCheckAuth(t *testing.T) {
 	}
 }
 
+func TestHealthz(t *testing.T) {
+	handler, err := NewHandler(&Server{NoAuth: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNoContent)
+	}
+	if rec.Body.Len() != 0 {
+		t.Fatalf("body = %q, want empty", rec.Body.String())
+	}
+}
+
 func TestUnauthorizedResponsesIncludeBasicChallenge(t *testing.T) {
 	const challenge = `Basic realm="rest-server"`
 
