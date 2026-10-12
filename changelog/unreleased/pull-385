@@ -1,0 +1,7 @@
+Bugfix: Clean up uploads that exceed the repository size limit
+
+An upload that would exceed the repository size limit set with `--max-size`
+leaked a file descriptor and left a temporary file behind. Rest-server now
+closes that file and removes the temporary file.
+
+https://github.com/restic/rest-server/pull/385
