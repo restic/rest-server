@@ -59,7 +59,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// First of all, check auth (will always pass if NoAuth is set)
 	username, ok := s.checkAuth(r)
 	if !ok {
-		httpDefaultError(w, http.StatusUnauthorized)
+		s.writeUnauthorized(w)
 		return
 	}
 

@@ -56,11 +56,18 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	return username, true
 }
 
+func (s *Server) writeUnauthorized(w http.ResponseWriter) {
+	if !s.NoAuth && s.ProxyAuthUsername == "" {
+		w.Header().Set("WWW-Authenticate", `Basic realm="rest-server"`)
+	}
+	httpDefaultError(w, http.StatusUnauthorized)
+}
+
 func (s *Server) wrapMetricsAuth(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, ok := s.checkAuth(r)
 		if !ok {
-			httpDefaultError(w, http.StatusUnauthorized)
+			s.writeUnauthorized(w)
 			return
 		}
 		if s.PrivateRepos && username != "metrics" {
