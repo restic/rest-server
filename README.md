@@ -89,7 +89,7 @@ Rest Server uses exactly the same directory structure as local backend, so you s
 
 ### Systemd
 
-There's an example [systemd service file](https://github.com/restic/rest-server/blob/master/examples/systemd/rest-server.service) included with the source, so you can get Rest Server up & running as a proper Systemd service in no time.  Before installing, adapt paths and options to your environment.
+There's an example [systemd service file](https://github.com/restic/rest-server/blob/master/examples/systemd/rest-server.service) along with a [systemd socket file](https://github.com/restic/rest-server/blob/master/examples/systemd/rest-server.socket) included with the source, so you can get Rest Server up & running as a proper Systemd service with socket in no time.  Before installing, you must adapt paths and options to your specific environment. Then copy both the service file and the socket file to `/etc/systemd/system/`. 
 
 ### Docker
 
