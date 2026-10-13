@@ -48,11 +48,11 @@ Flags:
       --prometheus                   enable Prometheus metrics
       --prometheus-no-auth           disable auth for Prometheus /metrics endpoint
       --proxy-auth-username string   specifies the HTTP header containing the username for proxy-based authentication
+      --proxy-headers                trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)
       --tls                          turn on TLS support
       --tls-cert string              TLS certificate path
       --tls-key string               TLS key path
       --tls-min-ver string           TLS min version, one of (1.2|1.3) (default "1.2")
-      --trust-proxy                  trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)
   -v, --version                      version for rest-server
 ```
 
@@ -153,6 +153,16 @@ must be present in the request headers and specifies the username. Basic authent
 Warning: rest-server trusts the username in the header. It is the responsibility of the proxy
 to ensure that the username is correct and cannot be forged by an attacker.
 
+## Running behind a reverse proxy
+
+When rest-server runs behind a reverse proxy, the client address in the log
+(see `--log`) is the address of the proxy. Use `--proxy-headers` to take the
+client address from the `X-Forwarded-For`, `X-Real-IP` and `Forwarded` headers
+set by the proxy instead. This option is disabled by default.
+
+Warning: only enable this option if rest-server is reachable exclusively through
+a proxy you control, and that proxy sets or overwrites these headers. Otherwise
+clients can forge them and fake the addresses that show up in the log.
 
 ## Prometheus support and Grafana dashboard
 
