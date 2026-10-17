@@ -3,4 +3,6 @@ Change: Update dependencies and require Go 1.26 or newer
 All dependencies have been updated. Rest-server now requires Go 1.26 or newer
 to build.
 
+On macOS, rest-server now requires at least macOS 12 Monterey.
+
 https://github.com/restic/rest-server/pull/373
