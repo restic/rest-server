@@ -686,7 +686,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 
 // tempFile implements a custom version of os.CreateTemp which allows modifying the file permissions
 func tempFile(fn string, perm os.FileMode) (f *os.File, err error) {
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		name := fn + strconv.FormatInt(rand.Int63(), 10)
 		f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, perm)
 		if os.IsExist(err) {
@@ -794,7 +794,7 @@ func (h *Handler) createRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		dirPath := filepath.Join(h.path, "data", fmt.Sprintf("%02x", i))
 		if err := os.Mkdir(dirPath, h.opt.dirMode); err != nil && !os.IsExist(err) {
 			h.internalServerError(w, err)

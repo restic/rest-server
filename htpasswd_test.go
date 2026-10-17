@@ -27,7 +27,7 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		isValid := htpass.Validate(user, rawPwd)
 		if !isValid {
 			t.Fatal("correct password not accepted")
