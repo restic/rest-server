@@ -1,0 +1,7 @@
+Enhancement: Add a `/healthz` endpoint
+
+Rest-server now serves `/healthz` and responds with HTTP status 204 and an
+empty body. The endpoint can be used as a liveness probe to check that the
+server is running.
+
+https://github.com/restic/rest-server/pull/259

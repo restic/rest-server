@@ -1,6 +1,6 @@
-Bugfix: Keep cached htpasswd credentials for one minute
+Bugfix: Keep cached `.htpasswd` credentials for one minute
 
-The password cache removed entries withing seconds instead of after
-one minute as intended. This has been fixed.
+The password cache removed entries within seconds instead of after one
+minute as intended. This has been fixed.
 
 https://github.com/restic/rest-server/pull/386

@@ -1,7 +1,8 @@
 Bugfix: Include a Basic authentication challenge when credentials are rejected
 
-Requests rejected by Basic authentication now include a `WWW-Authenticate` header,
-allowing HTTP clients to prompt for credentials.
+Requests rejected by Basic authentication did not include a
+`WWW-Authenticate` header, so HTTP clients could not prompt for
+credentials. Rejected requests now include that header.
 
 https://github.com/restic/rest-server/issues/376
 https://github.com/restic/rest-server/pull/396
