@@ -121,6 +121,9 @@ func NewHandler(server *Server) (http.Handler, error) {
 	if server.Debug {
 		handler = server.debugHandler(handler)
 	}
+	if server.ProxyHeaders {
+		handler = handlers.ProxyHeaders(handler)
+	}
 	if server.Log != "" {
 		handler = server.logHandler(handler)
 	}

@@ -1,0 +1,10 @@
+Enhancement: Add --proxy-headers option for use behind a reverse proxy
+
+Rest-server now supports the `--proxy-headers` option. When enabled, the
+client address is taken from proxy headers such as `X-Forwarded-For`, so the
+log shows the real client IP address instead of the address of the reverse
+proxy. The option is disabled by default and should only be enabled when
+rest-server is reachable exclusively through a trusted proxy.
+
+https://github.com/restic/rest-server/issues/233
+https://github.com/restic/rest-server/pull/382
