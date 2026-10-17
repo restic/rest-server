@@ -1,8 +1,0 @@
-Change: Document running the container without root
-
-The Docker usage documentation now shows how to run rest-server as a non-root
-user with a read-only root filesystem. The data mount remains writable so
-repositories and authentication files can be updated.
-
-https://github.com/restic/rest-server/issues/303
-https://github.com/restic/rest-server/pull/404
