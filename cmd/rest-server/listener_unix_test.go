@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 package main
 
@@ -31,7 +30,7 @@ func TestUnixSocket(t *testing.T) {
 	// run the following twice, to test that the server will
 	// cleanup its socket file when quitting, which won't happen
 	// if it doesn't exit gracefully
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		err := testServerWithArgs([]string{
 			"--no-auth",
 			"--path", filepath.Join(td, "data"),

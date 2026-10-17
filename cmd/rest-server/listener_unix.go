@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 package main
 
@@ -24,8 +23,8 @@ func findListener(addr string) (listener net.Listener, err error) {
 	switch len(listeners) {
 	case 0:
 		// no listeners found, listen manually
-		if strings.HasPrefix(addr, "unix:") { // if we want to listen on a unix socket
-			unixAddr, err := net.ResolveUnixAddr("unix", strings.TrimPrefix(addr, "unix:"))
+		if after, ok := strings.CutPrefix(addr, "unix:"); ok { // if we want to listen on a unix socket
+			unixAddr, err := net.ResolveUnixAddr("unix", after)
 			if err != nil {
 				return nil, fmt.Errorf("unable to understand unix address %s: %w", addr, err)
 			}

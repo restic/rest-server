@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -126,17 +127,10 @@ func valid(name string) bool {
 }
 
 func isValidType(name string) bool {
-	for _, tpe := range repo.ObjectTypes {
-		if name == tpe {
-			return true
-		}
+	if slices.Contains(repo.ObjectTypes, name) {
+		return true
 	}
-	for _, tpe := range repo.FileTypes {
-		if name == tpe {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(repo.FileTypes, name)
 }
 
 // join takes a number of path names, sanitizes them, and returns them joined

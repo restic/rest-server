@@ -27,7 +27,7 @@ func New(path string, maxSize int64) (*Manager, error) {
 type Manager struct {
 	path        string
 	maxRepoSize int64
-	repoSize    int64 // must be accessed using sync/atomic
+	repoSize    atomic.Int64
 }
 
 // WrapWriter limits the number of bytes written
@@ -54,14 +54,14 @@ func (m *Manager) updateSize() error {
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&m.repoSize, initialSize)
+	m.repoSize.Store(initialSize)
 	return nil
 }
 
 // WrapWriter wraps w in a writer that enforces s.MaxRepoSize.
 // If there is an error, a status code and the error are returned.
 func (m *Manager) WrapWriter(req *http.Request, w io.Writer) (io.Writer, int, error) {
-	currentSize := atomic.LoadInt64(&m.repoSize)
+	currentSize := m.repoSize.Load()
 
 	// if content-length is set and is trustworthy, we can save some time
 	// and issue a polite error if it declares a size that's too big; since
@@ -92,19 +92,19 @@ func (m *Manager) SpaceRemaining() int64 {
 		return -1
 	}
 	maxSize := m.maxRepoSize
-	currentSize := atomic.LoadInt64(&m.repoSize)
+	currentSize := m.repoSize.Load()
 	return maxSize - currentSize
 }
 
 // SpaceUsed returns how much space is used in the repo.
 func (m *Manager) SpaceUsed() int64 {
-	return atomic.LoadInt64(&m.repoSize)
+	return m.repoSize.Load()
 }
 
 // IncUsage increments the current repo size (which
 // must already be initialized).
 func (m *Manager) IncUsage(by int64) {
-	atomic.AddInt64(&m.repoSize, by)
+	m.repoSize.Add(by)
 }
 
 // tallySize counts the size of the contents of path.

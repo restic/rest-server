@@ -542,9 +542,7 @@ func TestAbortedRequest(t *testing.T) {
 	// body and then after some data returns an error
 	rd := newDelayedErrorReader(io.ErrUnexpectedEOF)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 
 		// first, read some string, then read from rd (which blocks and then
 		// returns an error)
@@ -555,7 +553,7 @@ func TestAbortedRequest(t *testing.T) {
 		rr := httptest.NewRecorder()
 		mux.ServeHTTP(rr, req)
 		t.Logf("first upload done, response %v (%v)", rr.Code, rr.Result().Status)
-	}()
+	})
 
 	// wait until the first request starts reading from the body
 	<-rd.FirstRead
