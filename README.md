@@ -113,6 +113,25 @@ Note that:
 - It's suggested to set a container name to more easily manage users (`--name` parameter to `docker run`).
 - You can set environment variable `OPTIONS` to any extra flags you'd like to pass to rest-server.
 
+#### Run without root or a writable root filesystem
+
+The image can run as an arbitrary user with a read-only root filesystem. Only
+the persistent `/data` mount needs to be writable by that user. For example, on
+a Linux host:
+
+```sh
+mkdir -p rest-server-data
+docker run --read-only --user "$(id -u):$(id -g)" \
+    -p 8000:8000 -v "$PWD/rest-server-data:/data" \
+    --name rest_server restic/rest-server:latest
+```
+
+The entrypoint creates `/data/.htpasswd` if it is absent, and both that file and
+the repositories live on the mounted data directory. If you choose a different
+UID/GID or reuse an existing directory, make sure it and `.htpasswd` are
+writable by that user. The user-management commands below also write to this
+mount.
+
 #### Customize the image
 
 The [published image](https://hub.docker.com/r/restic/rest-server) is built from the `Dockerfile` available on this repository, which you may use as a basis for building your own customized images.
