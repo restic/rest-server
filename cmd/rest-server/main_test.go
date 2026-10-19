@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -280,5 +281,79 @@ func TestHttpListen(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestProxyAuthListenerAllowed(t *testing.T) {
+	for _, test := range []struct {
+		addr net.Addr
+		want bool
+	}{
+		{&net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8000}, true},
+		{&net.TCPAddr{IP: net.ParseIP("127.1.2.3"), Port: 8000}, true},
+		{&net.TCPAddr{IP: net.ParseIP("::1"), Port: 8000}, true},
+		{&net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: 8000}, false},
+		{&net.TCPAddr{IP: net.ParseIP("::"), Port: 8000}, false},
+		{&net.TCPAddr{IP: net.ParseIP("10.0.0.1"), Port: 8000}, false},
+		{&net.TCPAddr{IP: net.ParseIP("::ffff:10.0.0.1"), Port: 8000}, false},
+		{&net.UnixAddr{Name: "/run/rest-server.sock", Net: "unix"}, true},
+		{&net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8000}, false},
+		{nil, false},
+	} {
+		if got := proxyAuthListenerAllowed(test.addr); got != test.want {
+			t.Errorf("proxyAuthListenerAllowed(%v) = %v, want %v", test.addr, got, test.want)
+		}
+	}
+}
+
+func TestProxyAuthListen(t *testing.T) {
+	td := t.TempDir()
+
+	if err := os.MkdirAll(filepath.Join(td, "data", "repo1"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(td, "data", "repo1", "config"), []byte("foo"), 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	// proxy authentication on a loopback address works without --trusted-proxies
+	args := []string{"--proxy-auth-username", "X-Forwarded-User", "--path", filepath.Join(td, "data"), "--listen", "127.0.0.1:0"}
+	err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
+		listenAddr := app.ListenerAddress()
+		if listenAddr == nil {
+			return &url.Error{} // return this type of err, as we know this will retry
+		}
+
+		for _, test := range []struct {
+			Username   string
+			StatusCode int
+		}{
+			{"alice", http.StatusOK},
+			{"", http.StatusUnauthorized},
+			{"../alice", http.StatusUnauthorized},
+		} {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://%s/repo1/config", listenAddr), nil)
+			if err != nil {
+				return err
+			}
+			if test.Username != "" {
+				req.Header.Set("X-Forwarded-User", test.Username)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return err
+			}
+			err = resp.Body.Close()
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode != test.StatusCode {
+				return fmt.Errorf("expected %d from server for username %q, instead got %d", test.StatusCode, test.Username, resp.StatusCode)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

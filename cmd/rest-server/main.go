@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -75,6 +76,7 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.PrometheusNoAuth, "prometheus-no-auth", rv.Server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
 	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to access repo files")
 	flags.BoolVar(&rv.Server.ProxyHeaders, "proxy-headers", rv.Server.ProxyHeaders, "trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)")
+	flags.StringSliceVar(&rv.Server.TrustedProxies, "trusted-proxies", rv.Server.TrustedProxies, "IP addresses or CIDR prefixes of the proxies allowed to set the headers used by --proxy-auth-username and --proxy-headers")
 
 	return rv
 }
@@ -99,6 +101,23 @@ func (app *restServerApp) tlsSettings() (bool, string, string, error) {
 		cert = filepath.Join(app.Server.Path, "public_key")
 	}
 	return app.Server.TLS, key, cert, nil
+}
+
+// proxyAuthListenerAllowed reports whether proxy authentication may be enabled
+// on a listener with the given address without an explicit list of trusted
+// proxies. That is only safe when the listener is reachable from the local host
+// alone, i.e. for unix sockets and loopback addresses. On any other address, a
+// client bypassing the proxy could authenticate as any user by setting the
+// username header itself.
+func proxyAuthListenerAllowed(addr net.Addr) bool {
+	switch a := addr.(type) {
+	case *net.UnixAddr:
+		return true
+	case *net.TCPAddr:
+		return a.IP.IsLoopback()
+	default:
+		return false
+	}
 }
 
 // returns the address that the app is listening on.
@@ -171,6 +190,10 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		log.Println("Proxy headers disabled")
 	}
 
+	if len(app.Server.TrustedProxies) > 0 {
+		log.Printf("Trusted proxies: %s", strings.Join(app.Server.TrustedProxies, ", "))
+	}
+
 	enabledTLS, privateKey, publicKey, err := app.tlsSettings()
 	if err != nil {
 		return err
@@ -179,6 +202,11 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	listener, err := findListener(app.Server.Listen)
 	if err != nil {
 		return fmt.Errorf("unable to listen: %w", err)
+	}
+
+	if app.Server.ProxyAuthUsername != "" && len(app.Server.TrustedProxies) == 0 && !proxyAuthListenerAllowed(listener.Addr()) {
+		_ = listener.Close()
+		return fmt.Errorf("--proxy-auth-username requires --trusted-proxies when listening on a non-loopback address (%v), as any client that reaches rest-server directly could otherwise authenticate as any user", listener.Addr())
 	}
 
 	// set listener address, this is useful for tests
