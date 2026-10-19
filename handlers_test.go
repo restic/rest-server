@@ -328,6 +328,140 @@ func TestResticHandler(t *testing.T) {
 	}
 }
 
+// TestResticConfigQuota checks that config uploads are subject to the
+// repository size limit and to the config size cap.
+func TestResticConfigQuota(t *testing.T) {
+	const maxRepoSize = 100 * 1024
+
+	conf := &Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+		MaxRepoSize:  maxRepoSize,
+	}
+	mux, _, _, tempdir, cleanup := createTestHandler(t, conf)
+	defer cleanup()
+
+	// the initial tally includes the size of the (empty) repository directory
+	// itself, which depends on the filesystem
+	remaining := maxRepoSize - conf.quotaManager.SpaceUsed()
+	if remaining <= 1024 {
+		t.Fatalf("unexpected initial quota usage %d", conf.quotaManager.SpaceUsed())
+	}
+
+	tooLarge := strings.Repeat("x", int(remaining)+1)
+	small := strings.Repeat("y", 10)
+	// fits on its own, but not together with small
+	fitsAlone := strings.Repeat("z", int(remaining)-len(small)+1)
+
+	wantNoConfig := func(repo string) wantFunc {
+		return func(t testing.TB, _ *httptest.ResponseRecorder) {
+			t.Helper()
+			if _, err := os.Stat(filepath.Join(tempdir, repo, "config")); !os.IsNotExist(err) {
+				t.Errorf("config file must not exist after rejected upload, stat returned: %v", err)
+			}
+		}
+	}
+
+	// request with a Content-Length header that exceeds the quota is
+	// rejected before any data is written
+	withContentLength := newRequest(t, "POST", "/repo1/config", strings.NewReader(tooLarge))
+	withContentLength.Header.Set("Content-Length", fmt.Sprint(len(tooLarge)))
+
+	// the quota must also hold for a chunked request without Content-Length
+	withoutContentLength := newRequest(t, "POST", "/repo1/config", strings.NewReader(tooLarge))
+	withoutContentLength.ContentLength = -1
+
+	var tests = []TestRequest{
+		{
+			req:  newRequest(t, "POST", "/repo1/?create=true", nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  withContentLength,
+			want: []wantFunc{wantCode(http.StatusInsufficientStorage), wantNoConfig("repo1")},
+		},
+		{
+			req:  withoutContentLength,
+			want: []wantFunc{wantCode(http.StatusInsufficientStorage), wantNoConfig("repo1")},
+		},
+		{
+			req:  newRequest(t, "GET", "/repo1/config", nil),
+			want: []wantFunc{wantCode(http.StatusNotFound)},
+		},
+		// a config that fits must still be accepted
+		{
+			req:  newRequest(t, "POST", "/repo1/config", strings.NewReader(small)),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "GET", "/repo1/config", nil),
+			want: []wantFunc{wantCode(http.StatusOK), wantBody(small)},
+		},
+		// the quota is shared between (sub-)repositories
+		{
+			req:  newRequest(t, "POST", "/repo2/?create=true", nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "POST", "/repo2/config", strings.NewReader(fitsAlone)),
+			want: []wantFunc{wantCode(http.StatusInsufficientStorage), wantNoConfig("repo2")},
+		},
+		// deleting the config frees up quota again
+		{
+			req:  newRequest(t, "DELETE", "/repo1/config", nil),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "POST", "/repo2/config", strings.NewReader(fitsAlone)),
+			want: []wantFunc{wantCode(http.StatusOK)},
+		},
+		{
+			req:  newRequest(t, "GET", "/repo2/config", nil),
+			want: []wantFunc{wantCode(http.StatusOK), wantBody(fitsAlone)},
+		},
+	}
+
+	for i, test := range tests {
+		t.Logf("request %v: %v %v", i, test.req.Method, test.req.URL.Path)
+		checkRequest(t, mux.ServeHTTP, test.req, test.want)
+	}
+
+	// the tally must match what is on disk
+	if used, want := conf.quotaManager.SpaceUsed(), maxRepoSize-remaining+int64(len(fitsAlone)); used != want {
+		t.Errorf("wrong quota usage after uploads, want %d, got %d", want, used)
+	}
+}
+
+// TestResticConfigSizeLimit checks that oversized configs are rejected even
+// without a repository size limit.
+func TestResticConfigSizeLimit(t *testing.T) {
+	mux, _, _, tempdir, cleanup := createTestHandler(t, &Server{
+		NoAuth:       true,
+		Debug:        true,
+		PanicOnError: true,
+	})
+	defer cleanup()
+
+	tooLarge := strings.Repeat("x", 1<<20+1)
+
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/?create=true", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "POST", "/config", strings.NewReader(tooLarge)),
+		[]wantFunc{wantCode(http.StatusRequestEntityTooLarge)})
+
+	if _, err := os.Stat(filepath.Join(tempdir, "config")); !os.IsNotExist(err) {
+		t.Errorf("config file must not exist after rejected upload, stat returned: %v", err)
+	}
+
+	checkRequest(t, mux.ServeHTTP,
+		newRequest(t, "GET", "/config", nil),
+		[]wantFunc{wantCode(http.StatusNotFound)})
+}
+
 // TestResticErrorHandler runs tests on the restic handler error handling.
 func TestResticErrorHandler(t *testing.T) {
 	mux, _, _, tempdir, cleanup := createTestHandler(t, &Server{
