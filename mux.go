@@ -49,11 +49,25 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	} else {
 		var password string
 		username, password, ok = r.BasicAuth()
-		if !ok || !s.htpasswdFile.Validate(username, password) {
+		if !ok {
+			return "", false
+		}
+		if !s.htpasswdFile.Validate(username, password) {
+			s.logAuthFailure(r, username)
 			return "", false
 		}
 	}
 	return username, true
+}
+
+// logAuthFailure logs that the credentials sent with r for username were
+// rejected.
+func (s *Server) logAuthFailure(r *http.Request, username string) {
+	// not set if the Server was not created via NewHandler, as in some tests
+	if s.authFailures == nil {
+		return
+	}
+	s.authFailures.Log(clientAddress(r), username)
 }
 
 func (s *Server) writeUnauthorized(w http.ResponseWriter) {
@@ -90,6 +104,7 @@ func NewHandler(server *Server) (http.Handler, error) {
 			return nil, fmt.Errorf("cannot load %s (use --no-auth to disable): %v", server.HtpasswdPath, err)
 		}
 		log.Printf("Loaded htpasswd file %s", server.HtpasswdPath)
+		server.authFailures = newAuthFailureLogger()
 	}
 
 	const GiB = 1024 * 1024 * 1024
