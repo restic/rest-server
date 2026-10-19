@@ -15,6 +15,7 @@ import (
 	"runtime/pprof"
 	"sync"
 	"syscall"
+	"time"
 
 	restserver "github.com/restic/rest-server"
 	"github.com/spf13/cobra"
@@ -46,9 +47,11 @@ func newRestServerApp() *restServerApp {
 			Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		},
 		Server: restserver.Server{
-			Path:      filepath.Join(os.TempDir(), "restic"),
-			Listen:    ":8000",
-			TLSMinVer: "1.2",
+			Path:              filepath.Join(os.TempDir(), "restic"),
+			Listen:            ":8000",
+			TLSMinVer:         "1.2",
+			ReadHeaderTimeout: 30 * time.Second,
+			IdleTimeout:       120 * time.Second,
 		},
 	}
 	rv.CmdRoot.RunE = rv.runRoot
@@ -75,6 +78,8 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.PrometheusNoAuth, "prometheus-no-auth", rv.Server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
 	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to access repo files")
 	flags.BoolVar(&rv.Server.ProxyHeaders, "proxy-headers", rv.Server.ProxyHeaders, "trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)")
+	flags.DurationVar(&rv.Server.ReadHeaderTimeout, "read-header-timeout", rv.Server.ReadHeaderTimeout, "maximum time a client may take to send the request headers (0 disables the timeout)")
+	flags.DurationVar(&rv.Server.IdleTimeout, "idle-timeout", rv.Server.IdleTimeout, "maximum time an idle keep-alive connection is kept open (0 disables the timeout)")
 
 	return rv
 }
@@ -171,6 +176,14 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		log.Println("Proxy headers disabled")
 	}
 
+	if app.Server.ReadHeaderTimeout < 0 {
+		return fmt.Errorf("invalid --read-header-timeout %v: must not be negative", app.Server.ReadHeaderTimeout)
+	}
+	if app.Server.IdleTimeout < 0 {
+		return fmt.Errorf("invalid --idle-timeout %v: must not be negative", app.Server.IdleTimeout)
+	}
+	log.Printf("Read header timeout: %v, idle timeout: %v", app.Server.ReadHeaderTimeout, app.Server.IdleTimeout)
+
 	enabledTLS, privateKey, publicKey, err := app.tlsSettings()
 	if err != nil {
 		return err
@@ -206,9 +219,14 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
 	}
 
+	// Only the phases of a request that do not scale with the payload size
+	// are bounded. Uploads and downloads of large pack files are legitimately
+	// long-running, so no ReadTimeout or WriteTimeout is set.
 	srv := &http.Server{
-		Handler:   handler,
-		TLSConfig: tlscfg,
+		Handler:           handler,
+		TLSConfig:         tlscfg,
+		ReadHeaderTimeout: app.Server.ReadHeaderTimeout,
+		IdleTimeout:       app.Server.IdleTimeout,
 	}
 
 	// run server in background

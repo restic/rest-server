@@ -1,0 +1,15 @@
+Enhancement: Add timeouts for request headers and idle connections
+
+rest-server did not limit how long a client may take to send the request
+headers, nor how long an idle keep-alive connection is kept open. A client
+could hold connections open indefinitely, each costing a goroutine and a file
+descriptor, until the server ran out of file descriptors and legitimate
+clients were no longer served.
+
+rest-server now closes a connection if the request headers do not arrive
+within 30 seconds or if a keep-alive connection is idle for more than two
+minutes. The limits are configurable using the new `--read-header-timeout`
+and `--idle-timeout` flags; setting a flag to `0` disables that timeout.
+Uploads and downloads are not affected by these timeouts.
+
+https://github.com/restic/rest-server/issues/408
