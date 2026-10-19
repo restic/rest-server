@@ -53,6 +53,7 @@ Flags:
       --tls-cert string              TLS certificate path
       --tls-key string               TLS key path
       --tls-min-ver string           TLS min version, one of (1.2|1.3) (default "1.2")
+      --trusted-proxies strings      IP addresses or CIDR prefixes of the proxies allowed to set the headers used by --proxy-auth-username and --proxy-headers
   -v, --version                      version for rest-server
 ```
 
@@ -168,9 +169,34 @@ See above for no authentication (`--no-auth`) and basic authentication.
 
 To delegate authentication to a proxy, use the `--proxy-auth-username` flag. The specified header name, for example `X-Forwarded-User`,
 must be present in the request headers and specifies the username. Basic authentication is disabled when this flag is set.
+The username must consist of letters, digits and the characters `@`, `.`, `_` and `-`, the same rule that applies to usernames
+in the `.htpasswd` file. Requests with a missing or invalid username are rejected.
 
 Warning: rest-server trusts the username in the header. It is the responsibility of the proxy
-to ensure that the username is correct and cannot be forged by an attacker.
+to ensure that the username is correct and cannot be forged by an attacker. Therefore rest-server
+must only be reachable through that proxy, otherwise a client could bypass the proxy and
+authenticate as any user by setting the header itself. To enforce this, rest-server refuses to
+start with `--proxy-auth-username` unless one of the following holds:
+
+- `--listen` is a loopback address such as `127.0.0.1:8000` or a unix socket such as
+  `unix:/run/rest-server.sock`, so that only processes on the same host can connect. The same
+  applies to a socket passed in by systemd.
+- `--trusted-proxies` lists the IP addresses or CIDR prefixes of the proxies, for example
+  `--trusted-proxies 10.0.0.5,fd00::/64`. Only requests received from one of these addresses
+  are authenticated via the header. Requests from any other address are rejected with status 401,
+  regardless of the headers they carry.
+
+For a proxy running on the same host:
+
+```sh
+rest-server --listen 127.0.0.1:8000 --proxy-auth-username X-Forwarded-User --private-repos --path /srv/restic
+```
+
+For a proxy running in another container or on another host:
+
+```sh
+rest-server --listen :8000 --proxy-auth-username X-Forwarded-User --trusted-proxies 172.18.0.0/16 --private-repos --path /srv/restic
+```
 
 ## Running behind a reverse proxy
 
@@ -181,7 +207,10 @@ set by the proxy instead. This option is disabled by default.
 
 Warning: only enable this option if rest-server is reachable exclusively through
 a proxy you control, and that proxy sets or overwrites these headers. Otherwise
-clients can forge them and fake the addresses that show up in the log.
+clients can forge them and fake the addresses that show up in the log. Use
+`--trusted-proxies` to list the IP addresses or CIDR prefixes of the proxies;
+the headers of requests received from any other address are then ignored and the
+log shows the actual peer address instead.
 
 ## Prometheus support and Grafana dashboard
 

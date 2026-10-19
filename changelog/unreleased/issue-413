@@ -1,0 +1,22 @@
+Change: Require a trusted proxy for `--proxy-auth-username`
+
+With `--proxy-auth-username`, rest-server accepted the username from the
+configured header in every request, no matter where the request came from.
+If rest-server was reachable without going through the authenticating proxy,
+for example because it listened on all interfaces, anyone could impersonate
+any user by setting that header themselves. The username from the header was
+also not checked against the rules that apply to usernames in `.htpasswd`.
+
+Rest-server now refuses to start with `--proxy-auth-username` when it listens
+on a non-loopback address, unless the new `--trusted-proxies` option lists the
+IP addresses or CIDR prefixes of the proxies. When `--trusted-proxies` is set,
+requests from any other address are rejected, and with `--proxy-headers` the
+forwarded headers of such requests are ignored. Usernames from the header must
+now consist of letters, digits and the characters `@`, `.`, `_` and `-`, like
+usernames in `.htpasswd`; other usernames are rejected.
+
+Setups that listen on a loopback address or a unix socket are not affected.
+Setups that listen on another address, for example inside a container, must
+add `--trusted-proxies` with the address of their proxy.
+
+https://github.com/restic/rest-server/issues/413
