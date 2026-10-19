@@ -1,0 +1,15 @@
+Bugfix: Enforce `--max-size` for config uploads
+
+Uploading a repository `config` file bypassed the repository size limit set
+with `--max-size`. A client could create new (sub-)repositories and upload
+arbitrarily large `config` files into them to fill up the disk. The uploaded
+bytes were also missing from the size tally used to enforce the limit until
+rest-server was restarted.
+
+Config uploads are now subject to the size limit and are rejected with HTTP
+status `507 Insufficient Storage` when they would exceed it, just like other
+uploads. Deleting a config now frees the space in the size tally. In addition,
+a config file may not be larger than 1 MiB; larger uploads are rejected with
+HTTP status `413 Request Entity Too Large`.
+
+https://github.com/restic/rest-server/issues/407
