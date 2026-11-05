@@ -6,26 +6,15 @@ This is a demo [Docker Compose](https://docs.docker.com/compose/) setup for [Res
 
 ## Quickstart
 
-Build `rest-server` in Docker:
+Bring up the Docker Compose stack (Optionally add `--build` to build image from repository instead of downloading):
 
-    cd ../..
-    make docker_build
-    cd -
-
-Bring up the Docker Compose stack:
-
-    docker-compose build
-    docker-compose up -d
+    docker compose up -d
 
 Check if everything is up and running:
 
-    docker-compose ps
+    docker compose ps
 
-Grafana will be running on [http://localhost:8030/](http://localhost:8030/) with username "admin" and password "admin".  The first time you access it you will be asked to setup a data source. Configure it like this (make sure you name it "prometheus", as this is hardcoded in the example dashboard):
-
-![Add data source](datasource.png)
-
-The Rest Server dashboard can be accessed on [http://localhost:8030/dashboard/file/rest-server.json](http://localhost:8030/dashboard/file/rest-server.json).
+Grafana will be running on [http://localhost:8030/](http://localhost:8030/) with username "admin" and password "admin". When you login, you should be greeted by the dashboard, without any data.
 
 Prometheus can be accessed on [http://localhost:8020/](http://localhost:8020/).
 
