@@ -221,42 +221,37 @@ func TestTrustedProxyHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var got, username string
+	var got string
 	handler := s.trustedProxyHandler(
-		http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 			got = "trusted"
-			username = r.Header.Get("X-Forwarded-User")
 		}),
-		http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 			got = "untrusted"
-			username = r.Header.Get("X-Forwarded-User")
 		}),
 	)
 
 	for _, test := range []struct {
 		remoteAddr string
+		username   string
 		want       string
+		wantCode   int
 	}{
-		{"10.0.0.1:1234", "trusted"},
-		{"[::ffff:10.0.0.1]:1234", "trusted"},
-		{"192.0.2.1:1234", "untrusted"},
-		{"[::1]:1234", "untrusted"},
-		{"10.0.0.1", "untrusted"}, // not in host:port form
-		{"@", "untrusted"},        // unix socket peer
-		{"", "untrusted"},
+		{"10.0.0.1:1234", "alice", "trusted", http.StatusOK},
+		{"[::ffff:10.0.0.1]:1234", "alice", "trusted", http.StatusOK},
+		{"10.0.0.1:1234", "", "trusted", http.StatusOK},
+		{"192.0.2.1:1234", "alice", "", http.StatusUnauthorized},
+		{"[::1]:1234", "alice", "", http.StatusUnauthorized},
+		{"10.0.0.1", "alice", "", http.StatusUnauthorized}, // not in host:port form
+		{"@", "alice", "", http.StatusUnauthorized},        // unix socket peer
+		{"", "alice", "", http.StatusUnauthorized},
+		{"192.0.2.1:1234", "", "untrusted", http.StatusOK},
 	} {
-		got, username = "", ""
-		req := proxyAuthRequest(t, "GET", "/", "alice", test.remoteAddr, nil)
-		checkRequest(t, handler.ServeHTTP, req, nil)
+		got = ""
+		req := proxyAuthRequest(t, "GET", "/", test.username, test.remoteAddr, nil)
+		checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(test.wantCode)})
 		if got != test.want {
-			t.Errorf("remote address %q: request went to %s handler, want %s", test.remoteAddr, got, test.want)
-		}
-		wantUsername := ""
-		if test.want == "trusted" {
-			wantUsername = "alice"
-		}
-		if username != wantUsername {
-			t.Errorf("remote address %q: username header is %q, want %q", test.remoteAddr, username, wantUsername)
+			t.Errorf("remote address %q, username %q: request went to handler %q, want %q", test.remoteAddr, test.username, got, test.want)
 		}
 	}
 }

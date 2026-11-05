@@ -86,9 +86,9 @@ func (s *Server) isTrustedProxy(remoteAddr string) bool {
 // trustedProxyHandler decides, based on the address the request was received
 // from, whether the request comes from a trusted proxy. It must run before any
 // proxy header is evaluated, as those may rewrite the request's RemoteAddr.
-// Requests from trusted proxies are passed to trusted. All other requests are
-// passed to untrusted after the proxy authentication header, if any, has been
-// removed, so that such requests cannot authenticate via the header.
+// Requests from trusted proxies are passed to trusted. Requests from any other
+// address that carry the proxy authentication header are rejected, all others
+// are passed to untrusted.
 func (s *Server) trustedProxyHandler(trusted, untrusted http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.isTrustedProxy(r.RemoteAddr) {
@@ -96,8 +96,9 @@ func (s *Server) trustedProxyHandler(trusted, untrusted http.Handler) http.Handl
 			return
 		}
 		if s.ProxyAuthUsername != "" && r.Header.Get(s.ProxyAuthUsername) != "" {
-			log.Printf("Ignoring %s header from untrusted address %s", s.ProxyAuthUsername, r.RemoteAddr)
-			r.Header.Del(s.ProxyAuthUsername)
+			log.Printf("Rejected request with %s header from untrusted address %s", s.ProxyAuthUsername, r.RemoteAddr)
+			s.writeUnauthorized(w)
+			return
 		}
 		untrusted.ServeHTTP(w, r)
 	})
@@ -108,8 +109,8 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 		return username, true
 	}
 	if s.ProxyAuthUsername != "" {
-		// with --trusted-proxies, trustedProxyHandler has already removed the
-		// header from requests that were not sent by a trusted proxy
+		// with --trusted-proxies, trustedProxyHandler has already rejected
+		// requests with this header that were not sent by a trusted proxy
 		username = r.Header.Get(s.ProxyAuthUsername)
 		if username == "" {
 			return "", false
