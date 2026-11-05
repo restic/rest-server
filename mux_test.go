@@ -46,6 +46,57 @@ func TestCheckAuth(t *testing.T) {
 			expectedOk: false,
 		},
 		{
+			name: "Proxy Auth username with allowed special characters",
+			server: &Server{
+				ProxyAuthUsername: "X-Remote-User",
+			},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "jörg.müller_1-2@example.com",
+			},
+			expectedUser: "jörg.müller_1-2@example.com",
+			expectedOk:   true,
+		},
+		{
+			name: "Proxy Auth username with path separator",
+			server: &Server{
+				ProxyAuthUsername: "X-Remote-User",
+			},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "../restic",
+			},
+			expectedOk: false,
+		},
+		{
+			name: "Proxy Auth username with whitespace",
+			server: &Server{
+				ProxyAuthUsername: "X-Remote-User",
+			},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "restic user",
+			},
+			expectedOk: false,
+		},
+		{
+			name: "Proxy Auth username with newline",
+			server: &Server{
+				ProxyAuthUsername: "X-Remote-User",
+			},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "restic\nuser",
+			},
+			expectedOk: false,
+		},
+		{
+			name: "Proxy Auth username with separator",
+			server: &Server{
+				ProxyAuthUsername: "X-Remote-User",
+			},
+			requestHeaders: map[string]string{
+				"X-Remote-User": "restic;user",
+			},
+			expectedOk: false,
+		},
+		{
 			name: "Proxy Auth missing header",
 			server: &Server{
 				ProxyAuthUsername: "X-Remote-User",
