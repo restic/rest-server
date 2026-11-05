@@ -168,6 +168,8 @@ See above for no authentication (`--no-auth`) and basic authentication.
 
 To delegate authentication to a proxy, use the `--proxy-auth-username` flag. The specified header name, for example `X-Forwarded-User`,
 must be present in the request headers and specifies the username. Basic authentication is disabled when this flag is set.
+The username must consist of letters, digits and the characters `@`, `.`, `_` and `-`, the same rule that applies to usernames
+in the `.htpasswd` file. Requests with a missing or invalid username are rejected.
 
 Warning: rest-server trusts the username in the header. It is the responsibility of the proxy
 to ensure that the username is correct and cannot be forged by an attacker.
