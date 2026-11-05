@@ -1,12 +1,16 @@
 package restserver
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -37,11 +41,92 @@ func (s *Server) logHandler(next http.Handler) http.Handler {
 	return handlers.CombinedLoggingHandler(accessLog, next)
 }
 
+// parseTrustedProxies converts a list of IP addresses and CIDR prefixes into
+// prefixes. A plain IP address matches only that address.
+func parseTrustedProxies(list []string) ([]netip.Prefix, error) {
+	prefixes := make([]netip.Prefix, 0, len(list))
+	for _, entry := range list {
+		entry = strings.TrimSpace(entry)
+		if prefix, err := netip.ParsePrefix(entry); err == nil {
+			prefixes = append(prefixes, prefix.Masked())
+			continue
+		}
+		addr, err := netip.ParseAddr(entry)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trusted proxy %q: expected an IP address or CIDR prefix", entry)
+		}
+		addr = addr.Unmap()
+		prefixes = append(prefixes, netip.PrefixFrom(addr, addr.BitLen()))
+	}
+	return prefixes, nil
+}
+
+// isTrustedProxy reports whether remoteAddr (in "host:port" form, as found in
+// http.Request.RemoteAddr) belongs to one of the configured trusted proxies.
+// Addresses that are not IP addresses, such as unix socket peers, are never
+// trusted.
+func (s *Server) isTrustedProxy(remoteAddr string) bool {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		return false
+	}
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return false
+	}
+	addr = addr.Unmap()
+	for _, prefix := range s.trustedProxies {
+		if prefix.Contains(addr) {
+			return true
+		}
+	}
+	return false
+}
+
+// forwardedHeaders are the headers evaluated by handlers.ProxyHeaders.
+var forwardedHeaders = []string{
+	"X-Forwarded-For",
+	"X-Forwarded-Host",
+	"X-Forwarded-Proto",
+	"X-Forwarded-Scheme",
+	"X-Real-IP",
+	"Forwarded",
+}
+
+// trustedProxyHandler rejects requests that carry a header only a trusted
+// proxy may set, but were not received from a trusted proxy. These are the
+// proxy authentication header and, with --proxy-headers, the forwarded
+// headers. It must run before any proxy header is evaluated, as those may
+// rewrite the request's RemoteAddr.
+func (s *Server) trustedProxyHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !s.isTrustedProxy(r.RemoteAddr) {
+			if s.ProxyAuthUsername != "" && r.Header.Get(s.ProxyAuthUsername) != "" {
+				log.Printf("Rejected request with %s header from untrusted address %s", s.ProxyAuthUsername, r.RemoteAddr)
+				s.writeUnauthorized(w)
+				return
+			}
+			if s.ProxyHeaders {
+				for _, header := range forwardedHeaders {
+					if r.Header.Get(header) != "" {
+						log.Printf("Rejected request with %s header from untrusted address %s", header, r.RemoteAddr)
+						httpDefaultError(w, http.StatusBadRequest)
+						return
+					}
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 	if s.NoAuth {
 		return username, true
 	}
 	if s.ProxyAuthUsername != "" {
+		// with --trusted-proxies, trustedProxyHandler has already rejected
+		// requests with this header that were not sent by a trusted proxy
 		username = r.Header.Get(s.ProxyAuthUsername)
 		if username == "" {
 			return "", false
@@ -92,6 +177,17 @@ func NewHandler(server *Server) (http.Handler, error) {
 		log.Printf("Loaded htpasswd file %s", server.HtpasswdPath)
 	}
 
+	if len(server.TrustedProxies) > 0 {
+		if server.ProxyAuthUsername == "" && !server.ProxyHeaders {
+			return nil, errors.New("--trusted-proxies requires --proxy-auth-username or --proxy-headers")
+		}
+		var err error
+		server.trustedProxies, err = parseTrustedProxies(server.TrustedProxies)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	const GiB = 1024 * 1024 * 1024
 
 	if server.MaxRepoSize > 0 {
@@ -123,6 +219,10 @@ func NewHandler(server *Server) (http.Handler, error) {
 	}
 	if server.ProxyHeaders {
 		handler = handlers.ProxyHeaders(handler)
+	}
+	if len(server.trustedProxies) > 0 {
+		// must run before handlers.ProxyHeaders rewrites the client address
+		handler = server.trustedProxyHandler(handler)
 	}
 	if server.Log != "" {
 		handler = server.logHandler(handler)

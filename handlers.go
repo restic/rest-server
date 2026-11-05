@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/netip"
 	"path"
 	"path/filepath"
 	"slices"
@@ -37,10 +38,12 @@ type Server struct {
 	NoVerifyUpload       bool
 	GroupAccessibleRepos bool
 	ProxyHeaders         bool
+	TrustedProxies       []string
 
-	htpasswdFile *HtpasswdFile
-	quotaManager *quota.Manager
-	fsyncWarning sync.Once
+	htpasswdFile   *HtpasswdFile
+	trustedProxies []netip.Prefix
+	quotaManager   *quota.Manager
+	fsyncWarning   sync.Once
 }
 
 // MaxFolderDepth is the maxDepth param passed to splitURLPath.

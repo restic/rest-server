@@ -1,8 +1,11 @@
 package restserver
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -146,6 +149,209 @@ func TestUnauthorizedResponsesIncludeBasicChallenge(t *testing.T) {
 			if got := rec.Header().Get("WWW-Authenticate"); got != tt.wantChallenge {
 				t.Errorf("WWW-Authenticate = %q, want %q", got, tt.wantChallenge)
 			}
+		})
+	}
+}
+
+func TestParseTrustedProxies(t *testing.T) {
+	for _, test := range []struct {
+		input   []string
+		want    []string
+		wantErr bool
+	}{
+		{input: []string{"10.0.0.1"}, want: []string{"10.0.0.1/32"}},
+		{input: []string{"::1"}, want: []string{"::1/128"}},
+		{input: []string{"::ffff:10.0.0.1"}, want: []string{"10.0.0.1/32"}},
+		{input: []string{"10.1.2.3/8", " fd00::/64 "}, want: []string{"10.0.0.0/8", "fd00::/64"}},
+		{input: []string{"proxy.example.com"}, wantErr: true},
+		{input: []string{"10.0.0.1:8080"}, wantErr: true},
+		{input: []string{"10.0.0.0/33"}, wantErr: true},
+		{input: []string{""}, wantErr: true},
+	} {
+		prefixes, err := parseTrustedProxies(test.input)
+		if test.wantErr {
+			if err == nil {
+				t.Errorf("parseTrustedProxies(%q): expected error, got %v", test.input, prefixes)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("parseTrustedProxies(%q): unexpected error %v", test.input, err)
+			continue
+		}
+		got := make([]string, 0, len(prefixes))
+		for _, prefix := range prefixes {
+			got = append(got, prefix.String())
+		}
+		if !reflect.DeepEqual(got, test.want) {
+			t.Errorf("parseTrustedProxies(%q) = %v, want %v", test.input, got, test.want)
+		}
+	}
+}
+
+func TestNewHandlerTrustedProxies(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		conf    *Server
+		wantErr bool
+	}{
+		{"with proxy auth", &Server{ProxyAuthUsername: "X-Forwarded-User", TrustedProxies: []string{"10.0.0.0/8"}}, false},
+		{"with proxy headers", &Server{NoAuth: true, ProxyHeaders: true, TrustedProxies: []string{"10.0.0.1"}}, false},
+		{"without proxy options", &Server{NoAuth: true, TrustedProxies: []string{"10.0.0.1"}}, true},
+		{"invalid entry", &Server{ProxyAuthUsername: "X-Forwarded-User", TrustedProxies: []string{"proxy"}}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			test.conf.Path = t.TempDir()
+			_, err := NewHandler(test.conf)
+			if test.wantErr && err == nil {
+				t.Error("expected error, got nil")
+			}
+			if !test.wantErr && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestTrustedProxyHandler(t *testing.T) {
+	s := &Server{ProxyAuthUsername: "X-Forwarded-User", ProxyHeaders: true}
+	var err error
+	s.trustedProxies, err = parseTrustedProxies([]string{"10.0.0.0/8"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var called bool
+	handler := s.trustedProxyHandler(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		called = true
+	}))
+
+	for _, test := range []struct {
+		remoteAddr string
+		header     string
+		want       int
+	}{
+		{"10.0.0.1:1234", "X-Forwarded-User", http.StatusOK},
+		{"[::ffff:10.0.0.1]:1234", "X-Forwarded-User", http.StatusOK},
+		{"10.0.0.1:1234", "X-Forwarded-For", http.StatusOK},
+		{"10.0.0.1:1234", "", http.StatusOK},
+		{"192.0.2.1:1234", "X-Forwarded-User", http.StatusUnauthorized},
+		{"[::1]:1234", "X-Forwarded-User", http.StatusUnauthorized},
+		{"10.0.0.1", "X-Forwarded-User", http.StatusUnauthorized}, // not in host:port form
+		{"@", "X-Forwarded-User", http.StatusUnauthorized},        // unix socket peer
+		{"", "X-Forwarded-User", http.StatusUnauthorized},
+		{"192.0.2.1:1234", "X-Forwarded-For", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Host", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Proto", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Scheme", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Real-IP", http.StatusBadRequest},
+		{"192.0.2.1:1234", "Forwarded", http.StatusBadRequest},
+		{"192.0.2.1:1234", "", http.StatusOK},
+	} {
+		called = false
+		req := newRequest(t, "GET", "/", nil)
+		req.RemoteAddr = test.remoteAddr
+		if test.header != "" {
+			req.Header.Set(test.header, "x")
+		}
+		checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(test.want)})
+		if wantCalled := test.want == http.StatusOK; called != wantCalled {
+			t.Errorf("remote address %q, header %q: next handler called = %v, want %v", test.remoteAddr, test.header, called, wantCalled)
+		}
+	}
+
+	// without --proxy-headers, forwarded headers are not evaluated and thus
+	// not rejected
+	s.ProxyHeaders = false
+	req := newRequest(t, "GET", "/", nil)
+	req.RemoteAddr = "192.0.2.1:1234"
+	req.Header.Set("X-Forwarded-For", "x")
+	checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(http.StatusOK)})
+}
+
+// proxyAuthRequest returns a request that carries username in the
+// X-Forwarded-User header (if not empty) and was sent from remoteAddr.
+func proxyAuthRequest(t testing.TB, method, path, username, remoteAddr string, body io.Reader) *http.Request {
+	req := newRequest(t, method, path, body)
+	if username != "" {
+		req.Header.Set("X-Forwarded-User", username)
+	}
+	req.RemoteAddr = remoteAddr
+	return req
+}
+
+func TestProxyAuth(t *testing.T) {
+	mux, data, _, _, cleanup := createTestHandler(t, &Server{
+		ProxyAuthUsername: "X-Forwarded-User",
+		PrivateRepos:      true,
+	})
+	defer cleanup()
+
+	// create alice's repository and store a config file
+	checkRequest(t, mux.ServeHTTP,
+		proxyAuthRequest(t, "POST", "/alice/?create=true", "alice", "", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+	checkRequest(t, mux.ServeHTTP,
+		proxyAuthRequest(t, "POST", "/alice/config", "alice", "", strings.NewReader(data)),
+		[]wantFunc{wantCode(http.StatusOK)})
+
+	for _, test := range []struct {
+		name     string
+		username string
+		want     int
+	}{
+		{"valid username", "alice", http.StatusOK},
+		{"missing username", "", http.StatusUnauthorized},
+		{"other user", "bob", http.StatusUnauthorized},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			checkRequest(t, mux.ServeHTTP,
+				proxyAuthRequest(t, "GET", "/alice/config", test.username, "", nil),
+				[]wantFunc{wantCode(test.want)})
+		})
+	}
+}
+
+func TestProxyAuthTrustedProxies(t *testing.T) {
+	mux, data, _, _, cleanup := createTestHandler(t, &Server{
+		ProxyAuthUsername: "X-Forwarded-User",
+		ProxyHeaders:      true,
+		TrustedProxies:    []string{"127.0.0.1", "10.0.0.0/8"},
+	})
+	defer cleanup()
+
+	// create alice's repository and store a config file via the trusted proxy
+	checkRequest(t, mux.ServeHTTP,
+		proxyAuthRequest(t, "POST", "/alice/?create=true", "alice", "127.0.0.1:1234", nil),
+		[]wantFunc{wantCode(http.StatusOK)})
+	checkRequest(t, mux.ServeHTTP,
+		proxyAuthRequest(t, "POST", "/alice/config", "alice", "127.0.0.1:1234", strings.NewReader(data)),
+		[]wantFunc{wantCode(http.StatusOK)})
+
+	for _, test := range []struct {
+		name         string
+		username     string
+		remoteAddr   string
+		forwardedFor string
+		want         int
+	}{
+		{"trusted address", "alice", "127.0.0.1:1234", "", http.StatusOK},
+		{"trusted prefix", "alice", "10.1.2.3:1234", "", http.StatusOK},
+		{"trusted ipv4-mapped address", "alice", "[::ffff:10.1.2.3]:1234", "", http.StatusOK},
+		{"trusted address with forwarded client", "alice", "127.0.0.1:1234", "192.0.2.1", http.StatusOK},
+		{"trusted address without username", "", "127.0.0.1:1234", "", http.StatusUnauthorized},
+		{"untrusted address", "alice", "192.0.2.1:1234", "", http.StatusUnauthorized},
+		{"untrusted ipv6 loopback", "alice", "[::1]:1234", "", http.StatusUnauthorized},
+		{"untrusted address with forged X-Forwarded-For", "alice", "192.0.2.1:1234", "127.0.0.1", http.StatusUnauthorized},
+		{"untrusted address with only X-Forwarded-For", "", "192.0.2.1:1234", "127.0.0.1", http.StatusBadRequest},
+		{"no peer address", "alice", "", "", http.StatusUnauthorized},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			req := proxyAuthRequest(t, "GET", "/alice/config", test.username, test.remoteAddr, nil)
+			if test.forwardedFor != "" {
+				req.Header.Set("X-Forwarded-For", test.forwardedFor)
+			}
+			checkRequest(t, mux.ServeHTTP, req, []wantFunc{wantCode(test.want)})
 		})
 	}
 }
