@@ -214,46 +214,59 @@ func TestNewHandlerTrustedProxies(t *testing.T) {
 }
 
 func TestTrustedProxyHandler(t *testing.T) {
-	s := &Server{ProxyAuthUsername: "X-Forwarded-User"}
+	s := &Server{ProxyAuthUsername: "X-Forwarded-User", ProxyHeaders: true}
 	var err error
 	s.trustedProxies, err = parseTrustedProxies([]string{"10.0.0.0/8"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var got string
-	handler := s.trustedProxyHandler(
-		http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-			got = "trusted"
-		}),
-		http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-			got = "untrusted"
-		}),
-	)
+	var called bool
+	handler := s.trustedProxyHandler(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		called = true
+	}))
 
 	for _, test := range []struct {
 		remoteAddr string
-		username   string
-		want       string
-		wantCode   int
+		header     string
+		want       int
 	}{
-		{"10.0.0.1:1234", "alice", "trusted", http.StatusOK},
-		{"[::ffff:10.0.0.1]:1234", "alice", "trusted", http.StatusOK},
-		{"10.0.0.1:1234", "", "trusted", http.StatusOK},
-		{"192.0.2.1:1234", "alice", "", http.StatusUnauthorized},
-		{"[::1]:1234", "alice", "", http.StatusUnauthorized},
-		{"10.0.0.1", "alice", "", http.StatusUnauthorized}, // not in host:port form
-		{"@", "alice", "", http.StatusUnauthorized},        // unix socket peer
-		{"", "alice", "", http.StatusUnauthorized},
-		{"192.0.2.1:1234", "", "untrusted", http.StatusOK},
+		{"10.0.0.1:1234", "X-Forwarded-User", http.StatusOK},
+		{"[::ffff:10.0.0.1]:1234", "X-Forwarded-User", http.StatusOK},
+		{"10.0.0.1:1234", "X-Forwarded-For", http.StatusOK},
+		{"10.0.0.1:1234", "", http.StatusOK},
+		{"192.0.2.1:1234", "X-Forwarded-User", http.StatusUnauthorized},
+		{"[::1]:1234", "X-Forwarded-User", http.StatusUnauthorized},
+		{"10.0.0.1", "X-Forwarded-User", http.StatusUnauthorized}, // not in host:port form
+		{"@", "X-Forwarded-User", http.StatusUnauthorized},        // unix socket peer
+		{"", "X-Forwarded-User", http.StatusUnauthorized},
+		{"192.0.2.1:1234", "X-Forwarded-For", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Host", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Proto", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Forwarded-Scheme", http.StatusBadRequest},
+		{"192.0.2.1:1234", "X-Real-IP", http.StatusBadRequest},
+		{"192.0.2.1:1234", "Forwarded", http.StatusBadRequest},
+		{"192.0.2.1:1234", "", http.StatusOK},
 	} {
-		got = ""
-		req := proxyAuthRequest(t, "GET", "/", test.username, test.remoteAddr, nil)
-		checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(test.wantCode)})
-		if got != test.want {
-			t.Errorf("remote address %q, username %q: request went to handler %q, want %q", test.remoteAddr, test.username, got, test.want)
+		called = false
+		req := newRequest(t, "GET", "/", nil)
+		req.RemoteAddr = test.remoteAddr
+		if test.header != "" {
+			req.Header.Set(test.header, "x")
+		}
+		checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(test.want)})
+		if wantCalled := test.want == http.StatusOK; called != wantCalled {
+			t.Errorf("remote address %q, header %q: next handler called = %v, want %v", test.remoteAddr, test.header, called, wantCalled)
 		}
 	}
+
+	// without --proxy-headers, forwarded headers are not evaluated and thus
+	// not rejected
+	s.ProxyHeaders = false
+	req := newRequest(t, "GET", "/", nil)
+	req.RemoteAddr = "192.0.2.1:1234"
+	req.Header.Set("X-Forwarded-For", "x")
+	checkRequest(t, handler.ServeHTTP, req, []wantFunc{wantCode(http.StatusOK)})
 }
 
 // proxyAuthRequest returns a request that carries username in the
@@ -330,6 +343,7 @@ func TestProxyAuthTrustedProxies(t *testing.T) {
 		{"untrusted address", "alice", "192.0.2.1:1234", "", http.StatusUnauthorized},
 		{"untrusted ipv6 loopback", "alice", "[::1]:1234", "", http.StatusUnauthorized},
 		{"untrusted address with forged X-Forwarded-For", "alice", "192.0.2.1:1234", "127.0.0.1", http.StatusUnauthorized},
+		{"untrusted address with only X-Forwarded-For", "", "192.0.2.1:1234", "127.0.0.1", http.StatusBadRequest},
 		{"no peer address", "alice", "", "", http.StatusUnauthorized},
 	} {
 		t.Run(test.name, func(t *testing.T) {

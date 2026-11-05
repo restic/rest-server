@@ -9,8 +9,9 @@ any user by setting that header themselves.
 Rest-server now refuses to start with `--proxy-auth-username` when it listens
 on a non-loopback address, unless the new `--trusted-proxies` option lists the
 IP addresses or CIDR prefixes of the proxies. When `--trusted-proxies` is set,
-requests from any other address are rejected, and with `--proxy-headers` the
-forwarded headers of such requests are ignored.
+requests from any other address are rejected. With `--proxy-headers`, requests
+from any other address that carry forwarded headers such as `X-Forwarded-For`
+are rejected, too.
 
 Setups that listen on a loopback address or a unix socket are not affected.
 Setups that listen on another address, for example inside a container, must

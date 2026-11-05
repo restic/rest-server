@@ -207,8 +207,8 @@ Warning: only enable this option if rest-server is reachable exclusively through
 a proxy you control, and that proxy sets or overwrites these headers. Otherwise
 clients can forge them and fake the addresses that show up in the log. Use
 `--trusted-proxies` to list the IP addresses or CIDR prefixes of the proxies;
-the headers of requests received from any other address are then ignored and the
-log shows the actual peer address instead.
+requests that carry these headers but were received from any other address are
+then rejected with status 400.
 
 ## Prometheus support and Grafana dashboard
 
