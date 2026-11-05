@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/restic/rest-server/quota"
 	"github.com/restic/rest-server/repo"
@@ -38,12 +37,6 @@ type Server struct {
 	NoVerifyUpload       bool
 	GroupAccessibleRepos bool
 	ProxyHeaders         bool
-	// ReadHeaderTimeout bounds the time a client may take to send the
-	// request headers. Zero disables the timeout.
-	ReadHeaderTimeout time.Duration
-	// IdleTimeout bounds the time an idle keep-alive connection is kept open
-	// while waiting for the next request. Zero disables the timeout.
-	IdleTimeout time.Duration
 
 	htpasswdFile *HtpasswdFile
 	quotaManager *quota.Manager

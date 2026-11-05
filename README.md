@@ -38,7 +38,6 @@ Flags:
       --group-accessible-repos       let filesystem group be able to access repo files
   -h, --help                         help for rest-server
       --htpasswd-file string         location of .htpasswd file (default: "<data directory>/.htpasswd)"
-      --idle-timeout duration        maximum time an idle keep-alive connection is kept open (0 disables the timeout) (default 2m0s)
       --listen string                listen address (default ":8000")
       --log filename                 write HTTP requests in the combined log format to the specified filename (use "-" for logging to stdout)
       --max-size int                 the maximum size of the repository in bytes
@@ -50,7 +49,6 @@ Flags:
       --prometheus-no-auth           disable auth for Prometheus /metrics endpoint
       --proxy-auth-username string   specifies the HTTP header containing the username for proxy-based authentication
       --proxy-headers                trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)
-      --read-header-timeout duration maximum time a client may take to send the request headers (0 disables the timeout) (default 30s)
       --tls                          turn on TLS support
       --tls-cert string              TLS certificate path
       --tls-key string               TLS key path
@@ -190,10 +188,11 @@ clients can forge them and fake the addresses that show up in the log.
 Each open connection costs a goroutine and a file descriptor. To stop clients
 from holding connections open forever without sending a complete request,
 rest-server closes a connection if the request headers do not arrive within
-`--read-header-timeout` (default 30 seconds) or if a keep-alive connection
-stays idle for longer than `--idle-timeout` (default 2 minutes). Set either
-flag to `0` to disable that timeout. Uploads and downloads are not subject to
-a timeout, as transferring large pack files legitimately takes a long time.
+30 seconds or if a keep-alive connection stays idle for longer than 2 minutes.
+If rest-server answers a request without reading its body, for example because
+the credentials are missing or wrong, it closes the connection instead of
+waiting for the rest of the body. Uploads and downloads are not subject to a
+timeout, as transferring large pack files legitimately takes a long time.
 
 Note that these timeouts do not bound the number of concurrent *active*
 connections. If you need to limit that, for example to protect against many

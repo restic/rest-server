@@ -323,9 +323,19 @@ func expectClosed(conn net.Conn, deadline time.Duration) error {
 	}
 }
 
+// setTimeouts shortens the server timeouts for the duration of a test.
+func setTimeouts(t *testing.T, header, idle time.Duration) {
+	oldHeader, oldIdle := readHeaderTimeout, idleTimeout
+	readHeaderTimeout, idleTimeout = header, idle
+	t.Cleanup(func() {
+		readHeaderTimeout, idleTimeout = oldHeader, oldIdle
+	})
+}
+
 func TestReadHeaderTimeout(t *testing.T) {
+	setTimeouts(t, 200*time.Millisecond, time.Minute)
 	td := t.TempDir()
-	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0", "--read-header-timeout", "200ms"}
+	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0"}
 
 	err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
 		conn, err := rawConn(ctx, app)
@@ -346,8 +356,9 @@ func TestReadHeaderTimeout(t *testing.T) {
 }
 
 func TestIdleTimeout(t *testing.T) {
+	setTimeouts(t, time.Minute, 200*time.Millisecond)
 	td := t.TempDir()
-	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0", "--idle-timeout", "200ms"}
+	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0"}
 
 	err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
 		conn, err := rawConn(ctx, app)
@@ -382,16 +393,5 @@ func TestIdleTimeout(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestNegativeTimeouts(t *testing.T) {
-	for _, flag := range []string{"--read-header-timeout", "--idle-timeout"} {
-		app := newRestServerApp()
-		app.CmdRoot.SetArgs([]string{"--no-auth", "--path", t.TempDir(), "--listen", "127.0.0.1:0", flag, "-1s"})
-		err := app.CmdRoot.ExecuteContext(context.Background())
-		if err == nil || !strings.Contains(err.Error(), "must not be negative") {
-			t.Fatalf("expected error for negative %s, got %v", flag, err)
-		}
 	}
 }

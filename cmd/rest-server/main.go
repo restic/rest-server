@@ -21,6 +21,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Timeouts for the HTTP server. They are variables only so that tests can
+// shorten them.
+var (
+	// readHeaderTimeout bounds the time a client may take to send the request
+	// headers.
+	readHeaderTimeout = 30 * time.Second
+	// idleTimeout bounds the time an idle keep-alive connection is kept open.
+	// It is longer than the 90 seconds after which restic closes idle
+	// connections, so that the client and not the server closes them. This
+	// avoids a race in which the client reuses a connection that the server
+	// is just closing.
+	idleTimeout = 2 * time.Minute
+)
+
 type restServerApp struct {
 	CmdRoot    *cobra.Command
 	Server     restserver.Server
@@ -47,11 +61,9 @@ func newRestServerApp() *restServerApp {
 			Version: fmt.Sprintf("rest-server %s compiled with %v on %v/%v\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		},
 		Server: restserver.Server{
-			Path:              filepath.Join(os.TempDir(), "restic"),
-			Listen:            ":8000",
-			TLSMinVer:         "1.2",
-			ReadHeaderTimeout: 30 * time.Second,
-			IdleTimeout:       120 * time.Second,
+			Path:      filepath.Join(os.TempDir(), "restic"),
+			Listen:    ":8000",
+			TLSMinVer: "1.2",
 		},
 	}
 	rv.CmdRoot.RunE = rv.runRoot
@@ -78,8 +90,6 @@ func newRestServerApp() *restServerApp {
 	flags.BoolVar(&rv.Server.PrometheusNoAuth, "prometheus-no-auth", rv.Server.PrometheusNoAuth, "disable auth for Prometheus /metrics endpoint")
 	flags.BoolVar(&rv.Server.GroupAccessibleRepos, "group-accessible-repos", rv.Server.GroupAccessibleRepos, "let filesystem group be able to access repo files")
 	flags.BoolVar(&rv.Server.ProxyHeaders, "proxy-headers", rv.Server.ProxyHeaders, "trust proxy headers such as X-Forwarded-For (use when running behind a reverse proxy)")
-	flags.DurationVar(&rv.Server.ReadHeaderTimeout, "read-header-timeout", rv.Server.ReadHeaderTimeout, "maximum time a client may take to send the request headers (0 disables the timeout)")
-	flags.DurationVar(&rv.Server.IdleTimeout, "idle-timeout", rv.Server.IdleTimeout, "maximum time an idle keep-alive connection is kept open (0 disables the timeout)")
 
 	return rv
 }
@@ -176,14 +186,6 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		log.Println("Proxy headers disabled")
 	}
 
-	if app.Server.ReadHeaderTimeout < 0 {
-		return fmt.Errorf("invalid --read-header-timeout %v: must not be negative", app.Server.ReadHeaderTimeout)
-	}
-	if app.Server.IdleTimeout < 0 {
-		return fmt.Errorf("invalid --idle-timeout %v: must not be negative", app.Server.IdleTimeout)
-	}
-	log.Printf("Read header timeout: %v, idle timeout: %v", app.Server.ReadHeaderTimeout, app.Server.IdleTimeout)
-
 	enabledTLS, privateKey, publicKey, err := app.tlsSettings()
 	if err != nil {
 		return err
@@ -225,8 +227,8 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 	srv := &http.Server{
 		Handler:           handler,
 		TLSConfig:         tlscfg,
-		ReadHeaderTimeout: app.Server.ReadHeaderTimeout,
-		IdleTimeout:       app.Server.IdleTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	// run server in background
