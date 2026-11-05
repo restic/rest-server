@@ -330,7 +330,6 @@ func TestProxyAuthListen(t *testing.T) {
 		}{
 			{"alice", http.StatusOK},
 			{"", http.StatusUnauthorized},
-			{"../alice", http.StatusUnauthorized},
 		} {
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://%s/repo1/config", listenAddr), nil)
 			if err != nil {

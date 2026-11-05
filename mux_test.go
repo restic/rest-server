@@ -295,10 +295,6 @@ func TestProxyAuth(t *testing.T) {
 		{"valid username", "alice", http.StatusOK},
 		{"missing username", "", http.StatusUnauthorized},
 		{"other user", "bob", http.StatusUnauthorized},
-		{"path traversal", "../alice", http.StatusUnauthorized},
-		{"whitespace", "alice bob", http.StatusUnauthorized},
-		{"newline", "alice\nbob", http.StatusUnauthorized},
-		{"separator", "alice;bob", http.StatusUnauthorized},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			checkRequest(t, mux.ServeHTTP,

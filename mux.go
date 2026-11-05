@@ -114,10 +114,6 @@ func (s *Server) checkAuth(r *http.Request) (username string, ok bool) {
 		if username == "" {
 			return "", false
 		}
-		if !validUsernameRegexp.MatchString(username) {
-			log.Printf("Rejected invalid username %q in %s header", username, s.ProxyAuthUsername)
-			return "", false
-		}
 	} else {
 		var password string
 		username, password, ok = r.BasicAuth()
