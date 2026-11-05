@@ -1,0 +1,16 @@
+Enhancement: Add timeouts for request headers and idle connections
+
+rest-server did not limit how long a client may take to send a request, nor
+how long an idle keep-alive connection is kept open. A client could hold
+connections open indefinitely, each costing a goroutine and a file
+descriptor, until the server ran out of file descriptors and legitimate
+clients were no longer served. This did not require valid credentials.
+
+rest-server now closes a connection if the request headers do not arrive
+within 30 seconds or if a keep-alive connection is idle for more than two
+minutes. If rest-server rejects a request without reading its body, for
+example because of missing credentials, it now closes the connection instead
+of waiting for the client to send the rest of the body. Uploads and downloads
+are not affected by these timeouts.
+
+https://github.com/restic/rest-server/issues/408

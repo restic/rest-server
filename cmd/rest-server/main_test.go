@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -280,5 +283,115 @@ func TestHttpListen(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+// rawConn opens a raw TCP connection to the server once it is listening.
+func rawConn(ctx context.Context, app *restServerApp) (net.Conn, error) {
+	listenAddr := app.ListenerAddress()
+	if listenAddr == nil {
+		return nil, &url.Error{} // return this type of err, as we know this will retry
+	}
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", listenAddr.String())
+	if err != nil {
+		return nil, &url.Error{Op: "dial", URL: listenAddr.String(), Err: err}
+	}
+	return conn, nil
+}
+
+// expectClosed reads from conn and fails unless the server closes the
+// connection (optionally after sending a response) before the deadline.
+func expectClosed(conn net.Conn, deadline time.Duration) error {
+	if err := conn.SetReadDeadline(time.Now().Add(deadline)); err != nil {
+		return err
+	}
+	buf := make([]byte, 4096)
+	for {
+		_, err := conn.Read(buf)
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				return fmt.Errorf("server did not close the connection within %v", deadline)
+			}
+			// the server reset the connection, which also counts as closed
+			return nil
+		}
+	}
+}
+
+// setTimeouts shortens the server timeouts for the duration of a test.
+func setTimeouts(t *testing.T, header, idle time.Duration) {
+	oldHeader, oldIdle := readHeaderTimeout, idleTimeout
+	readHeaderTimeout, idleTimeout = header, idle
+	t.Cleanup(func() {
+		readHeaderTimeout, idleTimeout = oldHeader, oldIdle
+	})
+}
+
+func TestReadHeaderTimeout(t *testing.T) {
+	setTimeouts(t, 200*time.Millisecond, time.Minute)
+	td := t.TempDir()
+	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0"}
+
+	err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
+		conn, err := rawConn(ctx, app)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = conn.Close() }()
+
+		// send an incomplete request and then stall
+		if _, err := conn.Write([]byte("GET /config HTTP/1.1\r\nHost: localhost\r\n")); err != nil {
+			return err
+		}
+		return expectClosed(conn, 5*time.Second)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestIdleTimeout(t *testing.T) {
+	setTimeouts(t, time.Minute, 200*time.Millisecond)
+	td := t.TempDir()
+	args := []string{"--no-auth", "--path", td, "--listen", "127.0.0.1:0"}
+
+	err := testServerWithArgs(args, time.Second*10, func(ctx context.Context, app *restServerApp) error {
+		conn, err := rawConn(ctx, app)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = conn.Close() }()
+
+		// complete one request on a keep-alive connection
+		if _, err := conn.Write([]byte("GET /config HTTP/1.1\r\nHost: localhost\r\n\r\n")); err != nil {
+			return err
+		}
+		if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+			return err
+		}
+		resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+			return err
+		}
+		if err := resp.Body.Close(); err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("expected %d from server, instead got %d", http.StatusNotFound, resp.StatusCode)
+		}
+
+		// leave the connection idle; the server must close it
+		return expectClosed(conn, 5*time.Second)
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

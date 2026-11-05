@@ -15,9 +15,24 @@ import (
 	"runtime/pprof"
 	"sync"
 	"syscall"
+	"time"
 
 	restserver "github.com/restic/rest-server"
 	"github.com/spf13/cobra"
+)
+
+// Timeouts for the HTTP server. They are variables only so that tests can
+// shorten them.
+var (
+	// readHeaderTimeout bounds the time a client may take to send the request
+	// headers.
+	readHeaderTimeout = 30 * time.Second
+	// idleTimeout bounds the time an idle keep-alive connection is kept open.
+	// It is longer than the 90 seconds after which restic closes idle
+	// connections, so that the client and not the server closes them. This
+	// avoids a race in which the client reuses a connection that the server
+	// is just closing.
+	idleTimeout = 2 * time.Minute
 )
 
 type restServerApp struct {
@@ -206,9 +221,14 @@ func (app *restServerApp) runRoot(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("unsupported TLS min version: %s. Allowed versions are 1.2 or 1.3", app.Server.TLSMinVer)
 	}
 
+	// Only the phases of a request that do not scale with the payload size
+	// are bounded. Uploads and downloads of large pack files are legitimately
+	// long-running, so no ReadTimeout or WriteTimeout is set.
 	srv := &http.Server{
-		Handler:   handler,
-		TLSConfig: tlscfg,
+		Handler:           handler,
+		TLSConfig:         tlscfg,
+		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	// run server in background

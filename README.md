@@ -183,6 +183,22 @@ Warning: only enable this option if rest-server is reachable exclusively through
 a proxy you control, and that proxy sets or overwrites these headers. Otherwise
 clients can forge them and fake the addresses that show up in the log.
 
+## Connection timeouts
+
+Each open connection costs a goroutine and a file descriptor. To stop clients
+from holding connections open forever without sending a complete request,
+rest-server closes a connection if the request headers do not arrive within
+30 seconds or if a keep-alive connection stays idle for longer than 2 minutes.
+If rest-server answers a request without reading its body, for example because
+the credentials are missing or wrong, it closes the connection instead of
+waiting for the rest of the body. Uploads and downloads are not subject to a
+timeout, as transferring large pack files legitimately takes a long time.
+
+Note that these timeouts do not bound the number of concurrent *active*
+connections. If you need to limit that, for example to protect against many
+parallel slow uploads, put rest-server behind a reverse proxy that enforces a
+connection limit.
+
 ## Prometheus support and Grafana dashboard
 
 The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`. If authentication is enabled, this endpoint requires authentication for the 'metrics' user, but this can be overridden with the `--prometheus-no-auth` flag.
