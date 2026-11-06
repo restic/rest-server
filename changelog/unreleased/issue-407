@@ -13,3 +13,4 @@ a config file may not be larger than 1 MiB; larger uploads are rejected with
 HTTP status `413 Request Entity Too Large`.
 
 https://github.com/restic/rest-server/issues/407
+https://github.com/restic/rest-server/pull/409
