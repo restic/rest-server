@@ -302,6 +302,18 @@ func (h *Handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 // prevents clients from storing arbitrary amounts of data in the config file.
 const maxConfigSize = 1 << 20 // 1 MiB
 
+// isInsufficientStorage reports whether err means that there is no space left
+// for an upload: the repository reached --max-size, the disk is full, or the
+// filesystem quota is exhausted.
+func isInsufficientStorage(err error) bool {
+	if errors.Is(err, quota.ErrMaxSizeExceeded) {
+		return true
+	}
+	var pathError *os.PathError
+	return errors.As(err, &pathError) &&
+		(pathError.Err == syscall.ENOSPC || pathError.Err == syscall.EDQUOT)
+}
+
 // saveConfig allows for a config to be saved.
 func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 	if h.opt.Debug {
@@ -346,7 +358,7 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.As(err, &maxBytesErr):
 			httpDefaultError(w, http.StatusRequestEntityTooLarge)
-		case errors.Is(err, quota.ErrMaxSizeExceeded):
+		case isInsufficientStorage(err):
 			httpDefaultError(w, http.StatusInsufficientStorage)
 		default:
 			h.internalServerError(w, err)
@@ -668,10 +680,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		if h.opt.Debug {
 			log.Print(err)
 		}
-		var pathError *os.PathError
-		if errors.Is(err, quota.ErrMaxSizeExceeded) ||
-			(errors.As(err, &pathError) && (pathError.Err == syscall.ENOSPC ||
-				pathError.Err == syscall.EDQUOT)) {
+		if isInsufficientStorage(err) {
 			// The error is disk-related (no space left, no quota left),
 			// notify the client using the correct HTTP status
 			httpDefaultError(w, http.StatusInsufficientStorage)
