@@ -1,0 +1,11 @@
+Bugfix: Reject unknown users as slowly as wrong passwords
+
+Rest-server rejected a username that does not exist in the `.htpasswd` file
+much faster than a wrong password for an existing user. The response time
+allowed an attacker to find out which usernames exist, which also reveals the
+repository names when using `--private-repos`.
+
+Unknown usernames and wrong passwords are now rejected in the same amount of
+time.
+
+https://github.com/restic/rest-server/pull/416

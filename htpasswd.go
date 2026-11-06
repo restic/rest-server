@@ -25,6 +25,7 @@ THE SOFTWARE.
 */
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -64,6 +65,12 @@ type HtpasswdFile struct {
 	throttle chan struct{}
 	users    map[string]string
 	cache    map[string]cacheEntry
+	// dummyHash is a password hash that is as expensive to verify as the most
+	// expensive hash in the htpasswd file. Validate compares the password of
+	// an unknown user against it, so that rejecting an unknown user takes as
+	// long as rejecting a wrong password. Otherwise, the response time would
+	// reveal which usernames exist.
+	dummyHash string
 }
 
 // NewHtpasswdFromFile reads the users and passwords from a htpasswd file and returns them.  If an error is encountered,
@@ -160,6 +167,15 @@ func (h *HtpasswdFile) Reload() error {
 		users[record[0]] = record[1]
 	}
 
+	h.mutex.Lock()
+	currentDummyHash := h.dummyHash
+	h.mutex.Unlock()
+	dummyHash, err := dummyHashFor(users, currentDummyHash)
+	if err != nil {
+		_ = r.Close()
+		return err
+	}
+
 	// Replace the Users map
 	h.mutex.Lock()
 	var zeros [sha256.Size]byte
@@ -170,6 +186,7 @@ func (h *HtpasswdFile) Reload() error {
 	h.cache = make(map[string]cacheEntry)
 
 	h.users = users
+	h.dummyHash = dummyHash
 	h.mutex.Unlock()
 
 	_ = r.Close()
@@ -230,9 +247,13 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	cache := h.cache
 	hashedPassword, exists := h.users[user]
 	entry, cacheExists := h.cache[user]
+	dummyHash := h.dummyHash
 	h.mutex.Unlock()
 
 	if !exists {
+		// Take as long as for a wrong password of an existing user, so that
+		// the response time does not reveal which usernames exist.
+		_ = isMatchingHashAndPassword(dummyHash, password)
 		return false
 	}
 
@@ -263,6 +284,43 @@ func (h *HtpasswdFile) Validate(user string, password string) bool {
 	h.mutex.Unlock()
 
 	return true
+}
+
+// dummyHashFor returns a password hash that takes as long to verify as the
+// most expensive hash in users. If current already is such a hash, it is
+// returned, as generating a bcrypt hash is slow by design.
+func dummyHashFor(users map[string]string, current string) (string, error) {
+	cost := -1
+	for _, hashedPassword := range users {
+		if !bcrRe.MatchString(hashedPassword) {
+			continue
+		}
+		c, err := bcrypt.Cost([]byte(hashedPassword))
+		if err == nil && c > cost {
+			cost = c
+		}
+	}
+
+	if cost < 0 {
+		// no bcrypt hashes, verifying a SHA hash is cheap anyway
+		return "{SHA}" + base64.StdEncoding.EncodeToString(make([]byte, sha1.Size)), nil
+	}
+
+	if bcrRe.MatchString(current) {
+		if c, err := bcrypt.Cost([]byte(current)); err == nil && c == cost {
+			return current, nil
+		}
+	}
+
+	var password [32]byte
+	if _, err := rand.Read(password[:]); err != nil {
+		return "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword(password[:], cost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
 
 func isMatchingHashAndPassword(hashedPassword string, password string) bool {
