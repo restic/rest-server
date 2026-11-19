@@ -6,3 +6,4 @@ to build.
 On macOS, rest-server now requires at least macOS 12 Monterey.
 
 https://github.com/restic/rest-server/pull/373
+https://github.com/restic/rest-server/pull/402
