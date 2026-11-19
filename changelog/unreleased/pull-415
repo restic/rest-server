@@ -1,9 +1,9 @@
 Change: Validate usernames from `--proxy-auth-username`
 
-With `--proxy-auth-username`, rest-server accepted any username from the
-configured header. Usernames from that header must now consist of letters,
-digits and the characters `@`, `.`, `_` and `-`, like usernames in
-`.htpasswd`. Requests with any other username are now rejected with HTTP
-status 401.
+With `--proxy-auth-username`, rest-server previously accepted any username
+from the configured header. Usernames from that header must now match the
+same rules as usernames in `.htpasswd`, meaning digits and the characters
+`@`, `.`, `_` and `-`. Requests with any other username are now rejected
+with HTTP status 401.
 
 https://github.com/restic/rest-server/pull/415
