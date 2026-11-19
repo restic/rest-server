@@ -192,7 +192,6 @@ func (h *HtpasswdFile) ReloadCheck() error {
 		h.mutex.Lock()
 		if stat.ModTime() != h.stat.ModTime() || stat.Size() != h.stat.Size() {
 			reload = true
-			h.stat = stat
 		}
 		h.mutex.Unlock()
 
@@ -200,6 +199,7 @@ func (h *HtpasswdFile) ReloadCheck() error {
 			err := h.Reload()
 			if err == nil {
 				log.Printf("Reloaded htpasswd file")
+				h.stat = stat
 			} else {
 				log.Printf("Could not reload htpasswd file: %v", err)
 				return err
