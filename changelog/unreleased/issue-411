@@ -1,0 +1,14 @@
+Enhancement: Log rejected authentication attempts
+
+Rest-server did not log rejected authentication attempts, so password
+guessing against a server reachable from the internet went unnoticed.
+
+Rest-server now logs rejected authentication attempts together with the
+attempted username and the client address. To avoid filling the log, at most
+one message per client address is written every 10 seconds; further attempts
+within that time are counted and reported with the next message. Tools such
+as fail2ban can use these messages to block clients.
+
+https://github.com/restic/rest-server/issues/411
+https://github.com/restic/rest-server/pull/167
+https://forum.restic.net/t/rest-server-and-fail2ban/2569
