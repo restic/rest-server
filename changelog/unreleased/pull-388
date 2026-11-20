@@ -1,4 +1,4 @@
-Enhancement: Honor the `TZ` environment variable in the Docker image
+Enhancement: Honor `TZ` environment variable in Docker image
 
 The Docker image now includes timezone data. The environment variable `TZ`
 can now be used to set the timezone for the container.

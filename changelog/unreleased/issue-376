@@ -1,4 +1,4 @@
-Bugfix: Include a Basic authentication challenge when credentials are rejected
+Bugfix: Include Basic auth challenge when credentials are rejected
 
 Requests rejected by Basic authentication did not include a
 `WWW-Authenticate` header, so HTTP clients could not prompt for
