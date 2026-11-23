@@ -1,0 +1,10 @@
+Security: Retry loading `.htpasswd` after a failed reload
+
+Rest-server reloads the `.htpasswd` file when its size or modification time
+changes. If that reload failed, the server did not try again until the file
+changed once more. Changes such as removed users or new passwords could
+therefore be ignored. A failed reload is now retried until it succeeds.
+
+Thanks to Wenhao Wu (@d3do-23) for reporting this issue.
+
+https://github.com/restic/rest-server/pull/420
