@@ -1,3 +1,105 @@
+Changelog for rest-server 0.15.0 (2026-11-23)
+============================================
+
+The following sections list the changes in rest-server 0.15.0 relevant
+to users. The changes are ordered by importance.
+
+Summary
+-------
+
+ * Sec #420: Retry loading `.htpasswd` after a failed reload
+ * Fix #376: Include Basic auth challenge when credentials are rejected
+ * Fix #385: Clean up uploads that exceed the repository size limit
+ * Fix #386: Keep cached `.htpasswd` credentials for one minute
+ * Chg #373: Update dependencies and require Go 1.26 or newer
+ * Chg #415: Validate usernames from `--proxy-auth-username`
+ * Enh #233: Add `--proxy-headers` option for use behind a reverse proxy
+ * Enh #259: Add `/healthz` endpoint
+ * Enh #388: Honor `TZ` environment variable in Docker image
+
+Details
+-------
+
+ * Security #420: Retry loading `.htpasswd` after a failed reload
+
+   Rest-server reloads the `.htpasswd` file when its size or modification time
+   changes. If that reload failed, the server did not try again until the file
+   changed once more. Changes such as removed users or new passwords could
+   therefore be ignored. A failed reload is now retried until it succeeds.
+
+   Thanks to Wenhao Wu (@d3do-23) for reporting this issue.
+
+   https://github.com/restic/rest-server/pull/420
+
+ * Bugfix #376: Include Basic auth challenge when credentials are rejected
+
+   Requests rejected by Basic authentication did not include a `WWW-Authenticate`
+   header, so HTTP clients could not prompt for credentials. Rejected requests now
+   include that header.
+
+   https://github.com/restic/rest-server/issues/376
+   https://github.com/restic/rest-server/pull/396
+
+ * Bugfix #385: Clean up uploads that exceed the repository size limit
+
+   An upload that would exceed the repository size limit set with `--max-size`
+   leaked a file descriptor and left a temporary file behind. Rest-server now
+   closes that file and removes the temporary file.
+
+   https://github.com/restic/rest-server/pull/385
+
+ * Bugfix #386: Keep cached `.htpasswd` credentials for one minute
+
+   Cached `.htpasswd` credentials were removed within seconds instead of after one
+   minute. They are now kept for one minute as intended.
+
+   https://github.com/restic/rest-server/pull/386
+
+ * Change #373: Update dependencies and require Go 1.26 or newer
+
+   All dependencies have been updated. Rest-server now requires Go 1.26 or newer to
+   build. On macOS, rest-server now requires at least macOS 12 Monterey.
+
+   https://github.com/restic/rest-server/pull/373
+   https://github.com/restic/rest-server/pull/402
+
+ * Change #415: Validate usernames from `--proxy-auth-username`
+
+   With `--proxy-auth-username`, rest-server previously accepted any username from
+   the configured header. Usernames from that header must now match the same rules
+   as usernames in `.htpasswd`, meaning unicode letters, digits and the characters
+   `@`, `.`, `_` and `-`. Requests with any other username are now rejected with
+   HTTP status 401.
+
+   https://github.com/restic/rest-server/pull/415
+
+ * Enhancement #233: Add `--proxy-headers` option for use behind a reverse proxy
+
+   Rest-server now supports the `--proxy-headers` option. When enabled, the client
+   address is taken from proxy headers such as `X-Forwarded-For`, so the log shows
+   the real client IP address instead of the address of the reverse proxy. The
+   option is disabled by default and should only be enabled when rest-server is
+   reachable exclusively through a trusted proxy.
+
+   https://github.com/restic/rest-server/issues/233
+   https://github.com/restic/rest-server/pull/382
+
+ * Enhancement #259: Add `/healthz` endpoint
+
+   Rest-server now serves `/healthz` and responds with HTTP status 204 and an empty
+   body. The endpoint can be used as a liveness probe to check that the server is
+   running.
+
+   https://github.com/restic/rest-server/pull/259
+
+ * Enhancement #388: Honor `TZ` environment variable in Docker image
+
+   The Docker image now includes timezone data. The environment variable `TZ` can
+   now be used to set the timezone for the container.
+
+   https://github.com/restic/rest-server/pull/388
+
+
 Changelog for rest-server 0.14.0 (2025-05-31)
 ============================================
 
