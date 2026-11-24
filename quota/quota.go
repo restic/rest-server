@@ -1,6 +1,7 @@
 package quota
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,6 +24,10 @@ func New(path string, maxSize int64) (*Manager, error) {
 	return m, nil
 }
 
+// ErrMaxSizeExceeded is returned (wrapped) when a write would exceed the
+// maximum repository size.
+var ErrMaxSizeExceeded = errors.New("repository has reached maximum size")
+
 // Manager manages the repo quota for given filesystem root path, including subrepos
 type Manager struct {
 	path        string
@@ -41,7 +46,7 @@ type maxSizeWriter struct {
 
 func (w maxSizeWriter) Write(p []byte) (n int, err error) {
 	if int64(len(p)) > w.m.SpaceRemaining() {
-		return 0, fmt.Errorf("repository has reached maximum size (%d bytes)", w.m.maxRepoSize)
+		return 0, fmt.Errorf("%w (%d bytes)", ErrMaxSizeExceeded, w.m.maxRepoSize)
 	}
 	n, err = w.Writer.Write(p)
 	w.m.IncUsage(int64(n))
@@ -73,8 +78,8 @@ func (m *Manager) WrapWriter(req *http.Request, w io.Writer) (io.Writer, int, er
 			return nil, http.StatusBadRequest, err
 		}
 		if currentSize+contentLen > m.maxRepoSize {
-			err := fmt.Errorf("incoming blob (%d bytes) would exceed maximum size of repository (%d bytes)",
-				contentLen, m.maxRepoSize)
+			err := fmt.Errorf("%w: incoming blob (%d bytes) would exceed maximum size of repository (%d bytes)",
+				ErrMaxSizeExceeded, contentLen, m.maxRepoSize)
 			return nil, http.StatusInsufficientStorage, err
 		}
 	}

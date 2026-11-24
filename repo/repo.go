@@ -297,6 +297,23 @@ func (h *Handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
+// maxConfigSize is the maximum accepted size of a repository config file. A
+// restic config is a few hundred bytes, so this is a generous upper bound that
+// prevents clients from storing arbitrary amounts of data in the config file.
+const maxConfigSize = 1 << 20 // 1 MiB
+
+// isInsufficientStorage reports whether err means that there is no space left
+// for an upload: the repository reached --max-size, the disk is full, or the
+// filesystem quota is exhausted.
+func isInsufficientStorage(err error) bool {
+	if errors.Is(err, quota.ErrMaxSizeExceeded) {
+		return true
+	}
+	var pathError *os.PathError
+	return errors.As(err, &pathError) &&
+		(pathError.Err == syscall.ENOSPC || pathError.Err == syscall.EDQUOT)
+}
+
 // saveConfig allows for a config to be saved.
 func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 	if h.opt.Debug {
@@ -317,15 +334,42 @@ func (h *Handler) saveConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = io.Copy(f, r.Body)
+	// ensure the config does not put us over the quota size limit (if there is one)
+	outFile, errCode, err := h.wrapFileWriter(r, f)
 	if err != nil {
 		_ = f.Close()
-		h.internalServerError(w, err)
+		_ = os.Remove(cfg)
+		if h.opt.Debug {
+			log.Println(err)
+		}
+		httpDefaultError(w, errCode)
+		return
+	}
+
+	written, err := io.Copy(outFile, http.MaxBytesReader(w, r.Body, maxConfigSize))
+	if err != nil {
+		_ = f.Close()
+		_ = os.Remove(cfg)
+		h.incrementRepoSpaceUsage(-written)
+		if h.opt.Debug {
+			log.Print(err)
+		}
+		var maxBytesErr *http.MaxBytesError
+		switch {
+		case errors.As(err, &maxBytesErr):
+			httpDefaultError(w, http.StatusRequestEntityTooLarge)
+		case isInsufficientStorage(err):
+			httpDefaultError(w, http.StatusInsufficientStorage)
+		default:
+			h.internalServerError(w, err)
+		}
 		return
 	}
 
 	err = f.Close()
 	if err != nil {
+		_ = os.Remove(cfg)
+		h.incrementRepoSpaceUsage(-written)
 		h.internalServerError(w, err)
 		return
 	}
@@ -346,6 +390,14 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, _ *http.Request) {
 
 	cfg := h.getSubPath("config")
 
+	var size int64
+	if h.opt.QuotaManager != nil {
+		stat, err := os.Stat(cfg)
+		if err == nil {
+			size = stat.Size()
+		}
+	}
+
 	if err := os.Remove(cfg); err != nil {
 		// ignore not exist errors to make deleting idempotent, which is
 		// necessary to properly handle request retries
@@ -354,6 +406,8 @@ func (h *Handler) deleteConfig(w http.ResponseWriter, _ *http.Request) {
 		}
 		return
 	}
+
+	h.incrementRepoSpaceUsage(-size)
 }
 
 const (
@@ -626,9 +680,7 @@ func (h *Handler) saveBlob(w http.ResponseWriter, r *http.Request) {
 		if h.opt.Debug {
 			log.Print(err)
 		}
-		var pathError *os.PathError
-		if errors.As(err, &pathError) && (pathError.Err == syscall.ENOSPC ||
-			pathError.Err == syscall.EDQUOT) {
+		if isInsufficientStorage(err) {
 			// The error is disk-related (no space left, no quota left),
 			// notify the client using the correct HTTP status
 			httpDefaultError(w, http.StatusInsufficientStorage)
