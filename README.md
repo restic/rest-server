@@ -185,6 +185,15 @@ Warning: only enable this option if rest-server is reachable exclusively through
 a proxy you control, and that proxy sets or overwrites these headers. Otherwise
 clients can forge them and fake the addresses that show up in the log.
 
+## Protecting against password guessing
+
+rest-server itself does not limit the rate of authentication attempts. Every attempt with a wrong password costs the server one bcrypt computation, so an attacker who can reach the server can guess passwords at full speed and keep the server busy.
+
+If rest-server is reachable from the internet, protect it in one or more of these ways:
+
+- Put rest-server behind a reverse proxy that limits the request rate per client address, or that requires client certificates (mutual TLS).
+- Restrict who can reach the server on the network level, for example by only exposing it inside a VPN.
+
 ## Prometheus support and Grafana dashboard
 
 The server can be started with `--prometheus` to expose [Prometheus](https://prometheus.io/) metrics at `/metrics`. If authentication is enabled, this endpoint requires authentication for the 'metrics' user, but this can be overridden with the `--prometheus-no-auth` flag.
