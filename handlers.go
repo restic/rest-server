@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/restic/rest-server/quota"
 	"github.com/restic/rest-server/repo"
@@ -25,6 +26,8 @@ type Server struct {
 	TLSCert              string
 	TLSMinVer            string
 	TLS                  bool
+	TLSDynamicReload     bool
+	TLSReloadTime        time.Duration
 	NoAuth               bool
 	ProxyAuthUsername    string
 	AppendOnly           bool
