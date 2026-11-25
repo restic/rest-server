@@ -72,6 +72,24 @@ If you want to disable authentication, you must add the `--no-auth` flag. If thi
 
 NOTE: In older versions of rest-server (up to 0.9.7), this flag does not exist and the server disables authentication if `.htpasswd` is missing or cannot be opened.
 
+Rejected authentication attempts are written to the server log (standard error, not the access log written by `--log`) together with the attempted username and the client address, for example:
+
+```
+Rejected authentication for user "alice" from 192.0.2.1
+```
+
+To keep a flood of attempts from filling the log, at most one such message is written per client address every 10 seconds. Further attempts within that time are counted and reported with the next message as `(and 42 more since the last message)`.
+
+A tool such as [fail2ban](https://github.com/fail2ban/fail2ban) can use these messages to block clients with repeated rejected attempts. If rest-server runs as a systemd service, a filter could look like this:
+
+```ini
+[Definition]
+failregex = ^Rejected authentication for user ".*" from <HOST>( \(and \d+ more since the last message\))?$
+journalmatch = _SYSTEMD_UNIT=rest-server.service
+```
+
+As rest-server logs at most one message per client address every 10 seconds, set the `maxretry` and `findtime` of the jail accordingly. When rest-server runs behind a reverse proxy, enable `--proxy-headers` (see [Running behind a reverse proxy](#running-behind-a-reverse-proxy)), as the logged address is otherwise the address of the proxy.
+
 By default the server uses HTTP protocol.  This is not very secure since with Basic Authentication, user name and passwords will be sent in clear text in every request.  In order to enable TLS support just add the `--tls` argument and add a private and public key at the root of your persistence directory. You may also specify private and public keys by `--tls-cert` and `--tls-key` and set the minimum TLS version to 1.3 using `--tls-min-ver 1.3`.
 
 Signed certificate is normally required by the restic backend, but if you just want to test the feature you can generate password-less unsigned keys with the following command:

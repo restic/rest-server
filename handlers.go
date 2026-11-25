@@ -39,6 +39,7 @@ type Server struct {
 	ProxyHeaders         bool
 
 	htpasswdFile *HtpasswdFile
+	authFailures *authFailureLogger
 	quotaManager *quota.Manager
 	fsyncWarning sync.Once
 }
